@@ -5,6 +5,8 @@ import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { Loader2, Plus, ChevronDown } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
+import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
+import { Building2 } from 'lucide-react';
 
 const formatCurrency = (val) => {
   if (!val) return "$0";
@@ -18,10 +20,13 @@ export function BriefView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
   const updateBrief = useMutation(api.briefs.updateBrief);
+  const updateMatch = useMutation(api.matches.updateMatch);
   
   // Need to ensure id is valid, Convex useQuery will throw if id is structurally invalid for v.id("briefs")
   const brief = useQuery(api.briefs.getBrief, id ? { id } : "skip");
+  const matches = useQuery(api.matches.getMatchesForBrief, id ? { briefId: id } : "skip");
 
   if (brief === undefined) {
     return (
@@ -104,7 +109,10 @@ export function BriefView() {
             >
               Edit
             </button>
-            <button className="bg-brand-500 hover:bg-brand-400 text-brand-950 px-4 py-2 rounded-md text-sm font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.15)] flex items-center">
+            <button 
+              onClick={() => setIsMatchModalOpen(true)}
+              className="bg-brand-500 hover:bg-brand-400 text-brand-950 px-4 py-2 rounded-md text-sm font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.15)] flex items-center"
+            >
               <Plus className="w-4 h-4 mr-1.5" />
               Match Property
             </button>
@@ -182,17 +190,66 @@ export function BriefView() {
       }
       centerColumn={
         <div className="space-y-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-brand-500">Pipeline (Matched Properties)</h2>
-          
-          <div className="border border-brand-800/30 rounded-lg bg-[#111] p-12 text-center flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-brand-900/30 flex items-center justify-center mb-3">
-              <Plus className="w-6 h-6 text-brand-500/50" />
-            </div>
-            <h3 className="text-brand-50 font-medium mb-1">No properties matched</h3>
-            <p className="text-sm text-brand-100/50 max-w-sm">
-              Click "Match Property" to start evaluating commercial assets against this brief.
-            </p>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-brand-500">Pipeline (Matched Properties)</h2>
+            <span className="px-2 py-0.5 rounded-full bg-brand-900/30 text-brand-400 text-xs font-bold border border-brand-800/50">
+              {matches?.length || 0} MATCHES
+            </span>
           </div>
+          
+          {matches === undefined ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
+            </div>
+          ) : matches.length === 0 ? (
+            <div className="border border-brand-800/30 rounded-lg bg-[#111] p-12 text-center flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full bg-brand-900/30 flex items-center justify-center mb-3">
+                <Plus className="w-6 h-6 text-brand-500/50" />
+              </div>
+              <h3 className="text-brand-50 font-medium mb-1">No properties matched</h3>
+              <p className="text-sm text-brand-100/50 max-w-sm">
+                Click "Match Property" to start evaluating commercial assets against this brief.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {matches.map((match) => (
+                <div key={match._id} className="border border-brand-800/50 rounded-lg bg-[#111] overflow-hidden transition-all hover:border-brand-500/30">
+                  <div className="p-4 flex items-start justify-between">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 rounded bg-brand-900/30 flex items-center justify-center flex-shrink-0 mt-0.5 border border-brand-800/50">
+                        <Building2 className="w-5 h-5 text-brand-500/70" />
+                      </div>
+                      <div>
+                        <h4 className="text-brand-50 font-medium cursor-pointer hover:text-brand-400 transition-colors" onClick={() => navigate('/properties')}>
+                          {match.property?.address}
+                        </h4>
+                        <p className="text-xs text-brand-100/50 mt-1">
+                          {match.property?.assetType} • {formatCurrency(match.property?.askingPrice)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Status Select for Match */}
+                    <div className="relative">
+                      <select
+                        value={match.status}
+                        onChange={(e) => updateMatch({ id: match._id, status: e.target.value })}
+                        className="appearance-none pl-3 pr-8 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer bg-brand-900/20 text-brand-400 border border-brand-800/50 hover:border-brand-500/50"
+                      >
+                        <option value="Shortlisted">Shortlisted</option>
+                        <option value="Under Review">Under Review</option>
+                        <option value="Offered">Offered</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-brand-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       }
       rightColumn={
@@ -226,6 +283,11 @@ export function BriefView() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         editingBrief={brief}
+      />
+      <MatchPropertyModal 
+        isOpen={isMatchModalOpen}
+        onClose={() => setIsMatchModalOpen(false)}
+        briefId={brief._id}
       />
     </>
   );

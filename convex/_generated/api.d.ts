@@ -9,6 +9,7 @@
  */
 
 import type * as briefs from "../briefs.js";
+import type * as matches from "../matches.js";
 import type * as properties from "../properties.js";
 import type * as settings from "../settings.js";
 
@@ -20,6 +21,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   briefs: typeof briefs;
+  matches: typeof matches;
   properties: typeof properties;
   settings: typeof settings;
 }>;

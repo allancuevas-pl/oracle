@@ -69,4 +69,21 @@ export default defineSchema({
     wales: v.optional(v.number()), // Weighted Average Lease Expiry (years)
     createdBy: v.string(), // clerkId
   }).index("by_status", ["status"]),
+
+  matches: defineTable({
+    briefId: v.id("briefs"),
+    propertyId: v.id("properties"),
+    status: v.union(
+      v.literal("Shortlisted"),
+      v.literal("Under Review"),
+      v.literal("Rejected"),
+      v.literal("Offered"),
+      v.literal("Accepted")
+    ),
+    notes: v.optional(v.string()),
+    createdBy: v.string(), // clerkId
+  })
+    .index("by_brief", ["briefId"])
+    .index("by_property", ["propertyId"])
+    .index("by_brief_and_property", ["briefId", "propertyId"]),
 });
