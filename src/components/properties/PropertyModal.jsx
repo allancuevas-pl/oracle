@@ -4,6 +4,7 @@ import { api } from '../../../convex/_generated/api';
 import { X, Building } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { CustomSelect } from '../ui/CustomSelect';
 
 export function PropertyModal({ isOpen, onClose, editingProperty }) {
   const createProperty = useMutation(api.properties.createProperty);
@@ -136,28 +137,21 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Asset Type</label>
-                <select
+                <CustomSelect
                   value={formData.assetType}
-                  onChange={e => setFormData({...formData, assetType: e.target.value})}
-                  className="w-full bg-[#111] border border-brand-800/50 rounded-md px-4 py-2 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"
-                >
-                  {settings.assetTypes.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                  onChange={value => setFormData({...formData, assetType: value})}
+                  options={settings.assetTypes}
+                  variant="form"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Status</label>
-                <select
+                <CustomSelect
                   value={formData.status}
-                  onChange={e => setFormData({...formData, status: e.target.value})}
-                  className="w-full bg-[#111] border border-brand-800/50 rounded-md px-4 py-2 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"
-                >
-                  <option value="Off Market">Off Market</option>
-                  <option value="On Market">On Market</option>
-                  <option value="Under Offer">Under Offer</option>
-                  <option value="Sold">Sold</option>
-                </select>
+                  onChange={value => setFormData({...formData, status: value})}
+                  options={['Off Market', 'On Market', 'Under Offer', 'Sold']}
+                  variant="form"
+                />
               </div>
             </div>
 

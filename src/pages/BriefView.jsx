@@ -209,18 +209,13 @@ export function BriefView() {
                     
                     {/* Status Select for Match */}
                     <div className="relative">
-                      <select
+                      <CustomSelect
                         value={match.status}
-                        onChange={(e) => updateMatch({ id: match._id, status: e.target.value })}
-                        className="appearance-none pl-3 pr-8 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer bg-brand-900/20 text-brand-400 border border-brand-800/50 hover:border-brand-500/50"
-                      >
-                        <option value="Shortlisted">Shortlisted</option>
-                        <option value="Under Review">Under Review</option>
-                        <option value="Offered">Offered</option>
-                        <option value="Accepted">Accepted</option>
-                        <option value="Rejected">Rejected</option>
-                      </select>
-                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-brand-400 pointer-events-none" />
+                        onChange={(value) => updateMatch({ id: match._id, status: value })}
+                        options={['Shortlisted', 'Under Review', 'Offered', 'Accepted', 'Rejected']}
+                        variant="pill"
+                        className="w-32"
+                      />
                     </div>
                   </div>
                 </div>

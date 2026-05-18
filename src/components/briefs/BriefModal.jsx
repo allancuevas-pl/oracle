@@ -6,6 +6,7 @@ import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { CustomSelect } from '../ui/CustomSelect';
 
 // Helper to format numbers to currency
 const formatCurrency = (val) => {
@@ -32,6 +33,8 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
   const [selectedStrategies, setSelectedStrategies] = useState([]);
   const [selectedDebt, setSelectedDebt] = useState([]);
   const [selectedLocations, setSelectedLocations] = useState([]);
+  const [stage, setStage] = useState("Triage");
+  const [priority, setPriority] = useState("Medium");
 
   // Reset or initialize state when modal opens or editingBrief changes
   useEffect(() => {
@@ -44,6 +47,8 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
         setSelectedStrategies(editingBrief.strategies || []);
         setSelectedDebt(editingBrief.debtStructure || []);
         setSelectedLocations(editingBrief.location || []);
+        setStage(editingBrief.stage || "Triage");
+        setPriority(editingBrief.priority || "Medium");
       } else {
         setBudgetRange([5000000, 20000000]);
         setDurationRange([1, 3]);
@@ -52,6 +57,8 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
         setSelectedStrategies([]);
         setSelectedDebt([]);
         setSelectedLocations([]);
+        setStage("Triage");
+        setPriority("Medium");
       }
     }
   }, [isOpen, editingBrief]);
@@ -85,8 +92,8 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
     const rawCapital = Number(capitalInput.replace(/\D/g, ""));
     const payload = {
       clientName: formData.get("clientName"),
-      stage: formData.get("stage"),
-      priority: formData.get("priority"),
+      stage: stage,
+      priority: priority,
       capital: rawCapital || undefined,
       budgetMin: budgetRange[0],
       budgetMax: budgetRange[1],
@@ -153,20 +160,21 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-brand-100/70 mb-1">Stage *</label>
-                <select defaultValue={editingBrief?.stage || "Triage"} required name="stage" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 appearance-none">
-                  <option value="Triage">Triage</option>
-                  <option value="Active Search">Active Search</option>
-                  <option value="Offer Submitted">Offer Submitted</option>
-                  <option value="Due Diligence">Due Diligence</option>
-                </select>
+                <CustomSelect
+                  value={stage}
+                  onChange={setStage}
+                  options={['Triage', 'Active Search', 'Offer Submitted', 'Due Diligence']}
+                  variant="form"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-brand-100/70 mb-1">Priority</label>
-                <select defaultValue={editingBrief?.priority || "Medium"} name="priority" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 appearance-none">
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </select>
+                <CustomSelect
+                  value={priority}
+                  onChange={setPriority}
+                  options={['High', 'Medium', 'Low']}
+                  variant="form"
+                />
               </div>
             </div>
 
