@@ -9,4 +9,44 @@ export default defineSchema({
     lastName: v.optional(v.string()),
     role: v.union(v.literal("staff"), v.literal("client"), v.literal("admin")),
   }).index("by_clerkId", ["clerkId"]),
+
+  settings: defineTable({
+    assetTypes: v.array(v.string()),
+    strategies: v.array(v.string()),
+    locations: v.array(v.string()),
+    debtStructures: v.array(v.string()),
+  }),
+
+  briefs: defineTable({
+    briefId: v.optional(v.string()), // e.g. "ORC-B0001"
+    clientName: v.string(), // Denormalized for fast reads
+    stage: v.string(), // e.g. "Triage", "Feasibility"
+    priority: v.optional(v.string()), // "High", "Medium", "Low"
+    
+    // Structured Brief Fields
+    capital: v.optional(v.number()), // e.g. 3500000
+    budgetMin: v.optional(v.number()), // e.g. 5000000
+    budgetMax: v.optional(v.number()), // e.g. 7000000
+    durationMin: v.optional(v.number()), // e.g. 1
+    durationMax: v.optional(v.number()), // e.g. 3
+    assetTypes: v.optional(v.array(v.string())), // e.g. ["Retail", "Industrial"]
+    strategies: v.optional(v.array(v.string())), // e.g. ["Rental Reversion Upside"]
+    debtStructure: v.optional(v.array(v.string())), // e.g. ["Cash", "Lease Debt"]
+    location: v.optional(v.array(v.string())), // e.g. ["VIC", "QLD"]
+    
+    // Kept as strings for now
+    targets: v.optional(v.string()), // e.g. "Project Margin 17%-20% Net"
+    others: v.optional(v.string()), // Notes on contamination, flood risk, etc.
+    
+    // Deprecated legacy fields
+    duration: v.optional(v.string()),
+    budget: v.optional(v.string()),
+    assetType: v.optional(v.string()),
+    assetTarget: v.optional(v.string()), 
+    estimatedValue: v.optional(v.string()),
+    requirements: v.optional(v.string()),
+
+    status: v.union(v.literal("active"), v.literal("archived")),
+    createdBy: v.string(), // clerkId of the creator
+  }).index("by_status", ["status"]),
 });

@@ -1,0 +1,108 @@
+import { query, mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+// The Bouncer: Helper to verify identity
+async function requireStaff(ctx: any) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Unauthenticated call");
+  }
+  return identity;
+}
+
+export const getBriefs = query({
+  args: {
+    status: v.optional(v.union(v.literal("active"), v.literal("archived"))),
+  },
+  handler: async (ctx, args) => {
+    await requireStaff(ctx); 
+    const targetStatus = args.status ?? "active";
+    return await ctx.db
+      .query("briefs")
+      .withIndex("by_status", (q) => q.eq("status", targetStatus))
+      .order("desc")
+      .take(50); 
+  },
+});
+
+export const getBrief = query({
+  args: {
+    id: v.id("briefs"),
+  },
+  handler: async (ctx, args) => {
+    await requireStaff(ctx);
+    return await ctx.db.get(args.id);
+  },
+});
+
+export const createBrief = mutation({
+  args: {
+    clientName: v.string(),
+    stage: v.string(),
+    priority: v.optional(v.string()),
+    capital: v.optional(v.number()),
+    budgetMin: v.optional(v.number()),
+    budgetMax: v.optional(v.number()),
+    durationMin: v.optional(v.number()),
+    durationMax: v.optional(v.number()),
+    debtStructure: v.optional(v.array(v.string())),
+    location: v.optional(v.array(v.string())),
+    assetTypes: v.optional(v.array(v.string())),
+    strategies: v.optional(v.array(v.string())),
+    targets: v.optional(v.string()),
+    others: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireStaff(ctx); 
+    
+    // Generate sequential briefId (e.g. ORC-B0001)
+    const existingBriefs = await ctx.db.query("briefs").collect();
+    const nextNum = existingBriefs.length + 1;
+    const briefId = `ORC-B${nextNum.toString().padStart(4, '0')}`;
+    
+    return await ctx.db.insert("briefs", {
+      briefId,
+      clientName: args.clientName,
+      stage: args.stage,
+      priority: args.priority,
+      capital: args.capital,
+      budgetMin: args.budgetMin,
+      budgetMax: args.budgetMax,
+      durationMin: args.durationMin,
+      durationMax: args.durationMax,
+      debtStructure: args.debtStructure,
+      location: args.location,
+      assetTypes: args.assetTypes,
+      strategies: args.strategies,
+      targets: args.targets,
+      others: args.others,
+      status: "active",
+      createdBy: identity.subject, 
+    });
+  },
+});
+
+export const updateBrief = mutation({
+  args: {
+    id: v.id("briefs"),
+    clientName: v.optional(v.string()),
+    stage: v.optional(v.string()),
+    priority: v.optional(v.string()),
+    capital: v.optional(v.number()),
+    budgetMin: v.optional(v.number()),
+    budgetMax: v.optional(v.number()),
+    durationMin: v.optional(v.number()),
+    durationMax: v.optional(v.number()),
+    debtStructure: v.optional(v.array(v.string())),
+    location: v.optional(v.array(v.string())),
+    assetTypes: v.optional(v.array(v.string())),
+    strategies: v.optional(v.array(v.string())),
+    targets: v.optional(v.string()),
+    others: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireStaff(ctx);
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, updates);
+  },
+});

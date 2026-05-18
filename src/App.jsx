@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
 import { AppLayout } from './components/layout/AppLayout';
 import { Dashboard } from './pages/Dashboard';
+import { Briefs } from './pages/Briefs';
+import { BriefView } from './pages/BriefView';
 
 function App() {
   return (
@@ -24,7 +26,8 @@ function App() {
           <Routes>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/briefs" element={<div className="p-4 text-brand-400">Briefs View (Mock)</div>} />
+              <Route path="/briefs" element={<Briefs />} />
+              <Route path="/briefs/:id" element={<BriefView />} />
               <Route path="/properties" element={<div className="p-4 text-brand-400">Properties View (Mock)</div>} />
               <Route path="/tasks" element={<div className="p-4 text-brand-400">Tasks View (Mock)</div>} />
             </Route>

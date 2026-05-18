@@ -9,7 +9,7 @@ const mockPipeline = [
 
 export function Dashboard() {
   return (
-    <div className="space-y-6">
+    <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-white">Overview</h1>
         <p className="text-brand-100/60 text-sm mt-1">Welcome back, Will. Here's what's happening today.</p>
