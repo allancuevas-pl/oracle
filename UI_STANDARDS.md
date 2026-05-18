@@ -28,3 +28,6 @@ When viewing an individual record (like a specific Brief or Property), the layou
 
 ## 5. Form Modals
 *   **Rule:** Create and Edit operations should happen in a centered overlay modal (`max-w-2xl bg-[#0A0A0A]`) rather than routing the user to a completely new page. This preserves context.
+
+## List Views (Tables)
+- **Search Bar**: All list views (Briefs, Properties, etc.) MUST include a search bar at the top of the table for consistency. It should span roughly one-third of the width or have a fixed max-width, with the total record count displayed on the right edge.

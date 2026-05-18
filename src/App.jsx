@@ -7,6 +7,7 @@ import { Briefs } from './pages/Briefs';
 import { BriefView } from './pages/BriefView';
 
 import { Properties } from './pages/Properties';
+import { PropertyView } from './pages/PropertyView';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/briefs" element={<Briefs />} />
               <Route path="/briefs/:id" element={<BriefView />} />
               <Route path="/properties" element={<Properties />} />
+              <Route path="/properties/:id" element={<PropertyView />} />
               <Route path="/tasks" element={<div className="p-4 text-brand-400">Tasks View (Mock)</div>} />
             </Route>
           </Routes>

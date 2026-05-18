@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Plus, X, Loader2, ArrowUpDown } from 'lucide-react';
+import { Plus, X, Loader2, ArrowUpDown, Search } from 'lucide-react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
@@ -22,6 +22,7 @@ export function Briefs() {
   const briefs = useQuery(api.briefs.getBriefs, { status: "active" });
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Sorting State
   const [sortField, setSortField] = useState(null);
@@ -49,9 +50,21 @@ export function Briefs() {
 
   const getSortedBriefs = () => {
     if (!briefs) return [];
-    if (!sortField) return briefs;
     
-    return [...briefs].sort((a, b) => {
+    // 1. Filter by search term
+    let filtered = briefs;
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = briefs.filter(b => 
+        (b.clientName && b.clientName.toLowerCase().includes(lowerSearch)) ||
+        (b.briefId && b.briefId.toLowerCase().includes(lowerSearch))
+      );
+    }
+
+    // 2. Sort
+    if (!sortField) return filtered;
+    
+    return [...filtered].sort((a, b) => {
       let aVal, bVal;
       
       switch (sortField) {
@@ -113,7 +126,23 @@ export function Briefs() {
         </button>
       </div>
 
-      <div className="bg-[#111] border border-brand-800/40 rounded-lg overflow-hidden">
+      <div className="bg-[#111] border border-brand-800/40 rounded-lg overflow-hidden flex flex-col relative shadow-xl">
+        {/* Toolbar */}
+        <div className="p-4 border-b border-brand-800/30 bg-[#111] flex items-center justify-between">
+          <div className="relative w-64">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/30" />
+            <input 
+              type="text" 
+              placeholder="Search client or brief ID..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md pl-9 pr-3 py-1.5 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"
+            />
+          </div>
+          <div className="text-sm text-brand-100/50">
+            {briefs ? `${sortedBriefs.length} Briefs` : 'Loading...'}
+          </div>
+        </div>
         {briefs === undefined ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />

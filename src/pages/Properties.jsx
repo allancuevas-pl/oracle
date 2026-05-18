@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from 'convex/react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
 import { Plus, Building, Search, Building2 } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
@@ -13,6 +14,7 @@ const formatCurrency = (val) => {
 };
 
 export function Properties() {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const properties = useQuery(api.properties.getProperties, {});
 
@@ -24,7 +26,7 @@ export function Properties() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-white flex items-center">
             <Building2 className="w-6 h-6 mr-3 text-brand-500" />
-            Property Inventory
+            Properties
           </h1>
           <p className="text-sm text-brand-100/50 mt-1">Manage and match commercial assets.</p>
         </div>
@@ -83,7 +85,11 @@ export function Properties() {
                 </tr>
               ) : (
                 properties.map((prop) => (
-                  <tr key={prop._id} className="hover:bg-brand-900/10 transition-colors cursor-pointer group">
+                  <tr 
+                    key={prop._id} 
+                    onClick={() => navigate(`/properties/${prop._id}`)}
+                    className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-brand-500 font-mono text-xs">
                       {prop.propertyId}
                     </td>
