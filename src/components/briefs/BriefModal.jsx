@@ -363,7 +363,6 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
             Save Brief
           </button>
         </div>
-        </div>
       </motion.div>
     </div>
   )}
