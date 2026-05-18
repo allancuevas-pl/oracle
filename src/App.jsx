@@ -6,6 +6,8 @@ import { Dashboard } from './pages/Dashboard';
 import { Briefs } from './pages/Briefs';
 import { BriefView } from './pages/BriefView';
 
+import { Properties } from './pages/Properties';
+
 function App() {
   return (
     <>
@@ -28,7 +30,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/briefs" element={<Briefs />} />
               <Route path="/briefs/:id" element={<BriefView />} />
-              <Route path="/properties" element={<div className="p-4 text-brand-400">Properties View (Mock)</div>} />
+              <Route path="/properties" element={<Properties />} />
               <Route path="/tasks" element={<div className="p-4 text-brand-400">Tasks View (Mock)</div>} />
             </Route>
           </Routes>

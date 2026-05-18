@@ -41,7 +41,7 @@ export function BriefView() {
   }
 
   const renderTags = (tagsStringOrArray) => {
-    if (!tagsStringOrArray) return '-';
+    if (!tagsStringOrArray || tagsStringOrArray.length === 0) return <span className="text-brand-100/30 italic">Not specified</span>;
     if (Array.isArray(tagsStringOrArray)) return tagsStringOrArray.join(", ");
     return tagsStringOrArray;
   };
@@ -61,13 +61,13 @@ export function BriefView() {
               <select 
                 value={brief.priority || 'Low'}
                 onChange={(e) => updateBrief({ id: brief._id, priority: e.target.value })}
-                className="appearance-none pl-6 pr-6 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer bg-[#111] border border-brand-800/50 hover:border-brand-500/50 text-white"
+                className="appearance-none pl-7 pr-6 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer bg-[#111] border border-brand-800/50 hover:border-brand-500/50 text-white"
               >
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
               </select>
-              <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
                 {brief.priority === 'High' && <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>}
                 {brief.priority === 'Medium' && <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"></div>}
                 {(brief.priority === 'Low' || !brief.priority) && <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>}
@@ -104,7 +104,7 @@ export function BriefView() {
             >
               Edit
             </button>
-            <button className="bg-brand-500 hover:bg-brand-400 text-brand-950 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-[0_0_15px_rgba(212,175,55,0.15)] flex items-center">
+            <button className="bg-brand-500 hover:bg-brand-400 text-brand-950 px-4 py-2 rounded-md text-sm font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.15)] flex items-center">
               <Plus className="w-4 h-4 mr-1.5" />
               Match Property
             </button>
@@ -118,21 +118,21 @@ export function BriefView() {
             <div>
               <p className="text-xs text-brand-100/50 mb-1">Budget Range</p>
               <p className="text-sm text-brand-50 font-medium">
-                {brief.budgetMin && brief.budgetMax ? `${formatCurrency(brief.budgetMin)} - ${formatCurrency(brief.budgetMax)}` : (brief.budget || '-')}
+                {brief.budgetMin && brief.budgetMax ? `${formatCurrency(brief.budgetMin)} - ${formatCurrency(brief.budgetMax)}` : (brief.budget || <span className="text-brand-100/30 italic">Not specified</span>)}
               </p>
             </div>
             
             <div>
               <p className="text-xs text-brand-100/50 mb-1">Target Duration</p>
               <p className="text-sm text-brand-50 font-medium">
-                {brief.durationMin && brief.durationMax ? `${brief.durationMin} to ${brief.durationMax} years` : '-'}
+                {brief.durationMin && brief.durationMax ? `${brief.durationMin} to ${brief.durationMax} years` : <span className="text-brand-100/30 italic">Not specified</span>}
               </p>
             </div>
 
             <div>
               <p className="text-xs text-brand-100/50 mb-1">Available Capital</p>
               <p className="text-sm text-brand-50 font-medium">
-                {brief.capital ? formatCurrency(brief.capital) : '-'}
+                {brief.capital ? formatCurrency(brief.capital) : <span className="text-brand-100/30 italic">Not specified</span>}
               </p>
             </div>
             
@@ -167,14 +167,14 @@ export function BriefView() {
             <div>
               <p className="text-xs text-brand-100/50 mb-1">Financial Targets</p>
               <p className="text-sm text-brand-50 font-medium">
-                {brief.targets || '-'}
+                {brief.targets || <span className="text-brand-100/30 italic">Not specified</span>}
               </p>
             </div>
 
             <div className="pt-4 border-t border-brand-800/20">
               <p className="text-xs text-brand-100/50 mb-1">Additional Notes</p>
               <p className="text-sm text-brand-100/70 whitespace-pre-wrap">
-                {brief.others || 'No additional notes provided.'}
+                {brief.others || <span className="text-brand-100/30 italic">No additional notes provided.</span>}
               </p>
             </div>
           </div>

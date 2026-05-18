@@ -49,4 +49,24 @@ export default defineSchema({
     status: v.union(v.literal("active"), v.literal("archived")),
     createdBy: v.string(), // clerkId of the creator
   }).index("by_status", ["status"]),
+  properties: defineTable({
+    propertyId: v.optional(v.string()), // e.g. "ORC-P0001"
+    address: v.string(),
+    assetType: v.string(), // e.g. "Retail", "Industrial"
+    askingPrice: v.optional(v.number()), // e.g. 5000000
+    estimatedYield: v.optional(v.number()), // e.g. 5.5
+    status: v.union(
+      v.literal("On Market"),
+      v.literal("Off Market"),
+      v.literal("Under Offer"),
+      v.literal("Sold"),
+      v.literal("Archived")
+    ),
+    location: v.optional(v.string()), // e.g. "VIC"
+    description: v.optional(v.string()),
+    landArea: v.optional(v.number()), // in sqm
+    buildingArea: v.optional(v.number()), // in sqm
+    wales: v.optional(v.number()), // Weighted Average Lease Expiry (years)
+    createdBy: v.string(), // clerkId
+  }).index("by_status", ["status"]),
 });
