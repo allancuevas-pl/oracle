@@ -7,8 +7,10 @@ import 'rc-slider/assets/index.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { CustomSelect } from '../ui/CustomSelect';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
-// Helper to format numbers to currency
 const formatCurrency = (val) => {
   if (!val) return "$0";
   if (val >= 1000000) {
@@ -16,6 +18,15 @@ const formatCurrency = (val) => {
   }
   return "$" + val.toLocaleString();
 };
+
+const briefSchema = z.object({
+  clientName: z.string().min(1, "Client Name is required"),
+  stage: z.string().min(1, "Stage is required"),
+  priority: z.string().min(1, "Priority is required"),
+  capital: z.string().optional(),
+  targets: z.string().optional(),
+  others: z.string().optional(),
+});
 
 export function BriefModal({ isOpen, onClose, editingBrief }) {
   const settings = useQuery(api.settings.getSettings);
@@ -25,47 +36,64 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State
+  // Non-RHF State for complex inputs
   const [budgetRange, setBudgetRange] = useState([5000000, 20000000]);
   const [durationRange, setDurationRange] = useState([1, 3]);
-  const [capitalInput, setCapitalInput] = useState("");
   const [selectedAssetTypes, setSelectedAssetTypes] = useState([]);
   const [selectedStrategies, setSelectedStrategies] = useState([]);
   const [selectedDebt, setSelectedDebt] = useState([]);
   const [selectedLocations, setSelectedLocations] = useState([]);
-  const [stage, setStage] = useState("Triage");
-  const [priority, setPriority] = useState("Medium");
 
-  // Reset or initialize state when modal opens or editingBrief changes
+  const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm({
+    resolver: zodResolver(briefSchema),
+    defaultValues: {
+      clientName: '',
+      stage: 'Triage',
+      priority: 'Medium',
+      capital: '',
+      targets: '',
+      others: '',
+    }
+  });
+
   useEffect(() => {
     if (isOpen) {
       if (editingBrief) {
         setBudgetRange([editingBrief.budgetMin || 0, editingBrief.budgetMax || 0]);
         setDurationRange([editingBrief.durationMin || 0, editingBrief.durationMax || 0]);
-        setCapitalInput(editingBrief.capital ? editingBrief.capital.toLocaleString() : "");
         setSelectedAssetTypes(editingBrief.assetTypes || []);
         setSelectedStrategies(editingBrief.strategies || []);
         setSelectedDebt(editingBrief.debtStructure || []);
         setSelectedLocations(editingBrief.location || []);
-        setStage(editingBrief.stage || "Triage");
-        setPriority(editingBrief.priority || "Medium");
+        
+        reset({
+          clientName: editingBrief.clientName || '',
+          stage: editingBrief.stage || 'Triage',
+          priority: editingBrief.priority || 'Medium',
+          capital: editingBrief.capital ? editingBrief.capital.toLocaleString() : '',
+          targets: editingBrief.targets || '',
+          others: editingBrief.others || '',
+        });
       } else {
         setBudgetRange([5000000, 20000000]);
         setDurationRange([1, 3]);
-        setCapitalInput("");
         setSelectedAssetTypes([]);
         setSelectedStrategies([]);
         setSelectedDebt([]);
         setSelectedLocations([]);
-        setStage("Triage");
-        setPriority("Medium");
+        
+        reset({
+          clientName: '',
+          stage: 'Triage',
+          priority: 'Medium',
+          capital: '',
+          targets: '',
+          others: '',
+        });
       }
     }
-  }, [isOpen, editingBrief]);
+  }, [isOpen, editingBrief, reset]);
 
-  // Removed early return for AnimatePresence
-
-  // Handle Tag Selection
   const toggleTag = (tag, list, setList) => {
     if (list.includes(tag)) {
       setList(list.filter(t => t !== tag));
@@ -74,27 +102,16 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
     }
   };
 
-  // Handle Capital formatting
-  const handleCapitalChange = (e) => {
-    const rawVal = e.target.value.replace(/\D/g, "");
-    if (!rawVal) {
-      setCapitalInput("");
-      return;
-    }
-    setCapitalInput(Number(rawVal).toLocaleString());
-  };
-
-  async function handleSubmit(e) {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setIsSubmitting(true);
-    const formData = new FormData(e.target);
     
-    const rawCapital = Number(capitalInput.replace(/\D/g, ""));
+    const rawCapital = data.capital ? Number(data.capital.replace(/\D/g, "")) : undefined;
+    
     const payload = {
-      clientName: formData.get("clientName"),
-      stage: stage,
-      priority: priority,
-      capital: rawCapital || undefined,
+      clientName: data.clientName,
+      stage: data.stage,
+      priority: data.priority,
+      capital: rawCapital,
       budgetMin: budgetRange[0],
       budgetMax: budgetRange[1],
       durationMin: durationRange[0],
@@ -103,8 +120,8 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
       location: selectedLocations,
       assetTypes: selectedAssetTypes,
       strategies: selectedStrategies,
-      targets: formData.get("targets"),
-      others: formData.get("others"),
+      targets: data.targets,
+      others: data.others,
     };
 
     try {
@@ -122,7 +139,7 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <AnimatePresence>
@@ -150,30 +167,49 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
             </div>
         
         <div className="p-6 overflow-y-auto">
-          <form id="create-brief-form" onSubmit={handleSubmit} className="space-y-8">
+          <form id="create-brief-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             
             {/* ROW 1: Client, Stage & Priority */}
             <div className="grid grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-brand-100/70 mb-1">Client Name *</label>
-                <input defaultValue={editingBrief?.clientName} required name="clientName" type="text" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Smith Family Office" />
+                <input 
+                  {...register("clientName")} 
+                  type="text" 
+                  className={`w-full bg-[#0A0A0A] border ${errors.clientName ? 'border-red-500/50' : 'border-brand-800/50'} rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50`} 
+                  placeholder="e.g. Smith Family Office" 
+                />
+                {errors.clientName && <p className="text-red-400 text-xs mt-1">{errors.clientName.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-brand-100/70 mb-1">Stage *</label>
-                <CustomSelect
-                  value={stage}
-                  onChange={setStage}
-                  options={['Triage', 'Active Search', 'Offer Submitted', 'Due Diligence']}
-                  variant="form"
+                <Controller
+                  name="stage"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={['Triage', 'Active Search', 'Offer Submitted', 'Due Diligence']}
+                      variant="form"
+                    />
+                  )}
                 />
+                {errors.stage && <p className="text-red-400 text-xs mt-1">{errors.stage.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-brand-100/70 mb-1">Priority</label>
-                <CustomSelect
-                  value={priority}
-                  onChange={setPriority}
-                  options={['High', 'Medium', 'Low']}
-                  variant="form"
+                <Controller
+                  name="priority"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={['High', 'Medium', 'Low']}
+                      variant="form"
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -331,8 +367,16 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-brand-100/50">$</span>
                   <input 
-                    value={capitalInput}
-                    onChange={handleCapitalChange}
+                    {...register("capital", {
+                      onChange: (e) => {
+                        const rawVal = e.target.value.replace(/\D/g, "");
+                        if (rawVal) {
+                          setValue("capital", Number(rawVal).toLocaleString());
+                        } else {
+                          setValue("capital", "");
+                        }
+                      }
+                    })}
                     type="text" 
                     className="w-full bg-[#111] border border-brand-800/50 rounded-md pl-7 pr-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" 
                     placeholder="3,500,000" 
@@ -341,14 +385,14 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-brand-100/70 mb-1">Financial Targets</label>
-                <input defaultValue={editingBrief?.targets} name="targets" type="text" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Project Margin - 17%-20% Net After Tax" />
+                <input {...register("targets")} type="text" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Project Margin - 17%-20% Net After Tax" />
               </div>
             </div>
 
             {/* ROW 5: Notes */}
             <div>
               <label className="block text-sm font-medium text-brand-100/70 mb-1">Others (Notes / DD Requirements)</label>
-              <textarea defaultValue={editingBrief?.others} name="others" rows={2} className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Contamination – will review, require 60 days DD..."></textarea>
+              <textarea {...register("others")} rows={2} className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Contamination – will review, require 60 days DD..."></textarea>
             </div>
           </form>
         </div>
