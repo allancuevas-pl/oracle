@@ -1,13 +1,11 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireStaffOrAdmin } from "./authz";
 
 export const getActivities = query({
   args: { recordId: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthorized");
-    }
+    await requireStaffOrAdmin(ctx);
 
     const activities = await ctx.db
       .query("activities")
@@ -42,10 +40,7 @@ export const addNote = mutation({
     content: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Unauthorized");
-    }
+    const { identity } = await requireStaffOrAdmin(ctx);
 
     await ctx.db.insert("activities", {
       recordId: args.recordId,

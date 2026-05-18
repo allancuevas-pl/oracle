@@ -1,8 +1,10 @@
-import { query, mutation } from "./_generated/server";
+import { query, internalMutation } from "./_generated/server";
+import { requireStaffOrAdmin } from "./authz";
 
 export const getSettings = query({
   args: {},
   handler: async (ctx) => {
+    await requireStaffOrAdmin(ctx);
     let settings = await ctx.db.query("settings").first();
     
     // Auto-seed default settings if none exist
@@ -24,7 +26,7 @@ export const getSettings = query({
   },
 });
 
-export const updateDebtStructures = mutation({
+export const updateDebtStructures = internalMutation({
   args: {},
   handler: async (ctx) => {
     let settings = await ctx.db.query("settings").first();

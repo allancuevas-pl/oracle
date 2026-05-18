@@ -1,22 +1,15 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { logSystemActivity } from "./activities";
-
-// The Bouncer: Helper to verify identity
-async function requireStaff(ctx: any) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Unauthenticated call");
-  }
-  return identity;
-}
+import { requireStaffOrAdmin } from "./authz";
+import { generateId } from "./utils";
 
 export const getBriefs = query({
   args: {
     status: v.optional(v.union(v.literal("active"), v.literal("archived"))),
   },
   handler: async (ctx, args) => {
-    await requireStaff(ctx); 
+    await requireStaffOrAdmin(ctx); 
     const targetStatus = args.status ?? "active";
     return await ctx.db
       .query("briefs")
@@ -31,7 +24,7 @@ export const getBrief = query({
     id: v.id("briefs"),
   },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    await requireStaffOrAdmin(ctx);
     return await ctx.db.get(args.id);
   },
 });
@@ -54,14 +47,12 @@ export const createBrief = mutation({
     others: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await requireStaff(ctx); 
+    const { identity } = await requireStaffOrAdmin(ctx); 
     
     // Generate sequential briefId (e.g. ORC-B0001)
-    const existingBriefs = await ctx.db.query("briefs").collect();
-    const nextNum = existingBriefs.length + 1;
-    const briefId = `ORC-B${nextNum.toString().padStart(4, '0')}`;
+    const briefId = await generateId(ctx, "B");
     
-    return await ctx.db.insert("briefs", {
+    const newId = await ctx.db.insert("briefs", {
       briefId,
       clientName: args.clientName,
       stage: args.stage,
@@ -111,7 +102,7 @@ export const updateBrief = mutation({
     others: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await requireStaff(ctx);
+    const { identity } = await requireStaffOrAdmin(ctx);
     const { id, ...updates } = args;
     
     const oldBrief = await ctx.db.get(id);

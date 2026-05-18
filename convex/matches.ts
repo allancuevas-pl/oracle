@@ -1,19 +1,12 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-
-async function requireStaff(ctx: any) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Unauthenticated call");
-  }
-  return identity;
-}
+import { requireStaffOrAdmin } from "./authz";
 
 // Get all matches for a specific brief, joined with the property details
 export const getMatchesForBrief = query({
   args: { briefId: v.id("briefs") },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    await requireStaffOrAdmin(ctx);
     const matches = await ctx.db
       .query("matches")
       .withIndex("by_brief", (q) => q.eq("briefId", args.briefId))
@@ -42,7 +35,7 @@ export const createMatch = mutation({
     status: v.string(), // "Shortlisted", "Under Review", etc.
   },
   handler: async (ctx, args) => {
-    const identity = await requireStaff(ctx);
+    const { identity } = await requireStaffOrAdmin(ctx);
     
     // Check if match already exists to prevent duplicates
     const existing = await ctx.db
@@ -73,7 +66,7 @@ export const updateMatch = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    await requireStaffOrAdmin(ctx);
     const { id, ...updates } = args;
     await ctx.db.patch(id, updates);
   },
@@ -85,7 +78,7 @@ export const deleteMatch = mutation({
     id: v.id("matches"),
   },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    await requireStaffOrAdmin(ctx);
     await ctx.db.delete(args.id);
   },
 });

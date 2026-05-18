@@ -95,4 +95,9 @@ export default defineSchema({
     metadata: v.optional(v.string()), // Optional JSON string for tracking previous/new states
     createdBy: v.string(), // clerkId
   }).index("by_recordId", ["recordId"]),
+
+  idCounters: defineTable({
+    prefix: v.string(), // e.g. "B" for Briefs, "P" for Properties
+    count: v.number(),
+  }).index("by_prefix", ["prefix"]),
 });

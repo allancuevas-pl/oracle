@@ -1,21 +1,15 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { logSystemActivity } from "./activities";
-
-async function requireStaff(ctx: any) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Unauthenticated call");
-  }
-  return identity;
-}
+import { requireStaffOrAdmin } from "./authz";
+import { generateId } from "./utils";
 
 export const getProperties = query({
   args: {
     status: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    await requireStaffOrAdmin(ctx);
     let q = ctx.db.query("properties");
     if (args.status) {
       q = q.withIndex("by_status", (q) => q.eq("status", args.status as any));
@@ -27,7 +21,7 @@ export const getProperties = query({
 export const getProperty = query({
   args: { id: v.id("properties") },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    await requireStaffOrAdmin(ctx);
     return await ctx.db.get(args.id);
   },
 });
@@ -46,11 +40,9 @@ export const createProperty = mutation({
     wales: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await requireStaff(ctx);
+    const { identity } = await requireStaffOrAdmin(ctx);
     
-    const existingProps = await ctx.db.query("properties").collect();
-    const nextNum = existingProps.length + 1;
-    const propertyId = `ORC-P${nextNum.toString().padStart(4, '0')}`;
+    const propertyId = await generateId(ctx, "P");
     
     const newId = await ctx.db.insert("properties", {
       ...args,
@@ -85,7 +77,7 @@ export const updateProperty = mutation({
     wales: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await requireStaff(ctx);
+    const { identity } = await requireStaffOrAdmin(ctx);
     const { id, ...updates } = args;
     
     const oldProp = await ctx.db.get(id);
