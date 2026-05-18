@@ -4,6 +4,8 @@ import { api } from '../../../convex/_generated/api';
 import { X, Loader2 } from 'lucide-react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 // Helper to format numbers to currency
 const formatCurrency = (val) => {
@@ -54,7 +56,7 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
     }
   }, [isOpen, editingBrief]);
 
-  if (!isOpen) return null;
+  // Removed early return for AnimatePresence
 
   // Handle Tag Selection
   const toggleTag = (tag, list, setList) => {
@@ -101,27 +103,44 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
     try {
       if (editingBrief) {
         await updateBrief({ id: editingBrief._id, ...payload });
+        toast.success("Brief updated successfully");
       } else {
         await createBrief(payload);
+        toast.success("Brief created successfully");
       }
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Failed to save brief.");
+      toast.error("Failed to save brief.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#111] border border-brand-800/50 rounded-lg w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-brand-800/30">
-          <h2 className="text-lg font-medium text-white">{editingBrief ? "Edit Brief" : "Create Structured Brief"}</h2>
-          <button onClick={onClose} className="text-brand-100/50 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            className="bg-[#0A0A0A]/95 border border-white/5 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] relative z-10 overflow-hidden backdrop-blur-md"
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+              <h2 className="text-lg font-medium text-brand-50 tracking-tight">{editingBrief ? "Edit Brief" : "Create Structured Brief"}</h2>
+              <button onClick={onClose} className="text-brand-100/50 hover:text-white transition-colors p-2 rounded-md hover:bg-white/5">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
         
         <div className="p-6 overflow-y-auto">
           <form id="create-brief-form" onSubmit={handleSubmit} className="space-y-8">
@@ -344,7 +363,10 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
             Save Brief
           </button>
         </div>
-      </div>
+        </div>
+      </motion.div>
     </div>
+  )}
+</AnimatePresence>
   );
 }

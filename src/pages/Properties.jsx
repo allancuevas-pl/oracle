@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
 import { Plus, Building, Search, Building2 } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const formatCurrency = (val) => {
   if (!val) return "-";
@@ -72,53 +73,59 @@ export function Properties() {
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-800/20">
-              {properties === undefined ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-brand-100/30">Loading inventory...</td>
-                </tr>
-              ) : properties.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-brand-100/30">
-                    <Building className="w-8 h-8 mx-auto mb-3 opacity-50 text-brand-500" />
-                    No properties in inventory. Click "Add Property" to start.
-                  </td>
-                </tr>
-              ) : (
-                properties.map((prop) => (
-                  <tr 
-                    key={prop._id} 
-                    onClick={() => navigate(`/properties/${prop._id}`)}
-                    className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-brand-500 font-mono text-xs">
-                      {prop.propertyId}
+              <AnimatePresence>
+                {properties === undefined ? (
+                  <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <td colSpan="6" className="px-6 py-12 text-center text-brand-100/30">Loading inventory...</td>
+                  </motion.tr>
+                ) : properties.length === 0 ? (
+                  <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <td colSpan="6" className="px-6 py-12 text-center text-brand-100/30">
+                      <Building className="w-8 h-8 mx-auto mb-3 opacity-50 text-brand-500" />
+                      No properties in inventory. Click "Add Property" to start.
                     </td>
-                    <td className="px-6 py-4 text-brand-50 font-medium">
-                      {prop.address}
-                    </td>
-                    <td className="px-6 py-4 text-brand-100/70">
-                      {prop.assetType}
-                    </td>
-                    <td className="px-6 py-4 text-brand-50 text-right font-medium">
-                      {formatCurrency(prop.askingPrice)}
-                    </td>
-                    <td className="px-6 py-4 text-brand-50 text-right">
-                      {prop.estimatedYield ? `${prop.estimatedYield}%` : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                        prop.status === 'On Market' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                        prop.status === 'Off Market' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                        prop.status === 'Under Offer' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                        prop.status === 'Sold' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                        'bg-brand-800/10 text-brand-100/50 border-brand-800/20'
-                      }`}>
-                        {prop.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
+                  </motion.tr>
+                ) : (
+                  properties.map((prop, index) => (
+                    <motion.tr 
+                      key={prop._id} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: index * 0.05, type: 'spring', bounce: 0, duration: 0.4 }}
+                      onClick={() => navigate(`/properties/${prop._id}`)}
+                      className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-brand-500 font-mono text-xs">
+                        {prop.propertyId}
+                      </td>
+                      <td className="px-6 py-4 text-brand-50 font-medium group-hover:text-brand-400 transition-colors">
+                        {prop.address}
+                      </td>
+                      <td className="px-6 py-4 text-brand-100/70">
+                        {prop.assetType}
+                      </td>
+                      <td className="px-6 py-4 text-brand-50 text-right font-medium">
+                        {formatCurrency(prop.askingPrice)}
+                      </td>
+                      <td className="px-6 py-4 text-brand-50 text-right">
+                        {prop.estimatedYield ? `${prop.estimatedYield}%` : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                          prop.status === 'On Market' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                          prop.status === 'Off Market' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                          prop.status === 'Under Offer' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                          prop.status === 'Sold' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                          'bg-brand-800/10 text-brand-100/50 border-brand-800/20'
+                        }`}>
+                          {prop.status}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>

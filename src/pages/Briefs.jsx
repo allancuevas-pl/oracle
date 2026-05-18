@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Plus, X, Loader2, ArrowUpDown, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
@@ -223,47 +224,53 @@ export function Briefs() {
                 </tr>
               </thead>
               <tbody>
-                {sortedBriefs.map((brief) => {
-                  const daysOpen = Math.floor((Date.now() - (brief._creationTime || Date.now())) / (1000 * 60 * 60 * 24));
-                  
-                  return (
-                  <tr 
-                    key={brief._id} 
-                    onClick={() => navigate('/briefs/' + brief._id)}
-                    className="border-b border-brand-800/20 hover:bg-brand-900/10 transition-colors cursor-pointer"
-                  >
-                    <td className="px-4 py-4 w-20">
-                      <div className="flex items-center justify-center">
-                        {brief.priority === 'High' && <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" title="High Priority"></div>}
-                        {brief.priority === 'Medium' && <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]" title="Medium Priority"></div>}
-                        {(brief.priority === 'Low' || !brief.priority) && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" title="Low Priority"></div>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 font-medium text-brand-50 whitespace-nowrap">
-                      {brief.clientName}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                        {brief.stage}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-brand-100/70">
-                      {daysOpen} {daysOpen === 1 ? 'day' : 'days'}
-                    </td>
-                    <td className="px-4 py-4 text-brand-100/70 truncate max-w-[150px]">
-                      {renderTags(brief.assetTypes || brief.assetType)}
-                    </td>
-                    <td className="px-4 py-4 text-brand-100/70 whitespace-nowrap">
-                      {brief.budgetMin && brief.budgetMax ? `${formatCurrency(brief.budgetMin)} - ${formatCurrency(brief.budgetMax)}` : (brief.budget || brief.estimatedValue)}
-                    </td>
-                    <td className="px-4 py-4 text-brand-100/70 truncate max-w-[100px]">
-                      {renderTags(brief.location)}
-                    </td>
-                    <td className="px-4 py-4 text-brand-100/50 truncate max-w-[200px]">
-                      {renderTags(brief.strategies || brief.requirements)}
-                    </td>
-                  </tr>
-                )})}
+                <AnimatePresence>
+                  {sortedBriefs.map((brief, index) => {
+                    const daysOpen = Math.floor((Date.now() - (brief._creationTime || Date.now())) / (1000 * 60 * 60 * 24));
+                    
+                    return (
+                    <motion.tr 
+                      key={brief._id} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: index * 0.05, type: 'spring', bounce: 0, duration: 0.4 }}
+                      onClick={() => navigate('/briefs/' + brief._id)}
+                      className="border-b border-brand-800/20 hover:bg-brand-900/10 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-4 py-4 w-20">
+                        <div className="flex items-center justify-center">
+                          {brief.priority === 'High' && <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" title="High Priority"></div>}
+                          {brief.priority === 'Medium' && <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]" title="Medium Priority"></div>}
+                          {(brief.priority === 'Low' || !brief.priority) && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" title="Low Priority"></div>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 font-medium text-brand-50 whitespace-nowrap group-hover:text-brand-400 transition-colors">
+                        {brief.clientName}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                          {brief.stage}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-brand-100/70">
+                        {daysOpen} {daysOpen === 1 ? 'day' : 'days'}
+                      </td>
+                      <td className="px-4 py-4 text-brand-100/70 truncate max-w-[150px]">
+                        {renderTags(brief.assetTypes || brief.assetType)}
+                      </td>
+                      <td className="px-4 py-4 text-brand-100/70 whitespace-nowrap">
+                        {brief.budgetMin && brief.budgetMax ? `${formatCurrency(brief.budgetMin)} - ${formatCurrency(brief.budgetMax)}` : (brief.budget || brief.estimatedValue)}
+                      </td>
+                      <td className="px-4 py-4 text-brand-100/70 truncate max-w-[100px]">
+                        {renderTags(brief.location)}
+                      </td>
+                      <td className="px-4 py-4 text-brand-100/50 truncate max-w-[200px]">
+                        {renderTags(brief.strategies || brief.requirements)}
+                      </td>
+                    </motion.tr>
+                  )})}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>

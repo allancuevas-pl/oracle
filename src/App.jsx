@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { Dashboard } from './pages/Dashboard';
 import { Briefs } from './pages/Briefs';
 import { BriefView } from './pages/BriefView';
+import { Toaster } from 'sonner';
 
 import { Properties } from './pages/Properties';
 import { PropertyView } from './pages/PropertyView';
@@ -25,6 +26,16 @@ function App() {
       </SignedOut>
       
       <SignedIn>
+        <Toaster 
+          theme="dark" 
+          toastOptions={{
+            style: {
+              background: '#0A0A0A',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              color: '#F9F9F9',
+            }
+          }} 
+        />
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>

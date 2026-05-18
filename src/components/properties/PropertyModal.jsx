@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { X, Building } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export function PropertyModal({ isOpen, onClose, editingProperty }) {
   const createProperty = useMutation(api.properties.createProperty);
@@ -51,7 +53,7 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
     }
   }, [editingProperty, isOpen]);
 
-  if (!isOpen || !settings) return null;
+  // Removed early return
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,21 +70,39 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
     try {
       if (editingProperty) {
         await updateProperty({ id: editingProperty._id, ...payload });
+        toast.success("Property updated successfully");
       } else {
         await createProperty(payload);
+        toast.success("Property created successfully");
       }
       onClose();
     } catch (err) {
       console.error("Failed to save property", err);
+      toast.error("Failed to save property.");
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-[#0A0A0A] border border-brand-800/30 w-full max-w-2xl rounded-xl shadow-2xl relative my-8 flex flex-col max-h-[90vh]">
-        
-        {/* Header */}
-        <div className="flex-none flex items-center justify-between p-6 border-b border-brand-800/30">
+    <AnimatePresence>
+      {(isOpen && settings) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            className="bg-[#0A0A0A]/95 border border-white/5 w-full max-w-2xl rounded-xl shadow-2xl relative my-8 flex flex-col max-h-[90vh] z-10 overflow-hidden backdrop-blur-md"
+          >
+            
+            {/* Header */}
+            <div className="flex-none flex items-center justify-between p-6 border-b border-white/5">
           <div>
             <h2 className="text-xl font-semibold text-white flex items-center">
               <Building className="w-5 h-5 mr-2 text-brand-500" />
@@ -213,7 +233,7 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
         </div>
 
         {/* Footer */}
-        <div className="flex-none p-6 border-t border-brand-800/30 flex justify-end space-x-3 bg-[#0A0A0A] rounded-b-xl">
+        <div className="flex-none p-6 border-t border-white/5 flex justify-end space-x-3 bg-white/[0.02]">
           <button
             type="button"
             onClick={onClose}
@@ -230,7 +250,9 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
           </button>
         </div>
 
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
