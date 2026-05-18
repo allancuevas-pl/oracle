@@ -30,11 +30,11 @@ export function RecordWorkspace({
     <div className="flex flex-col bg-[#050505] min-h-[calc(100vh-theme(spacing.16))]">
       
       {/* 1. Header Area */}
-      <div className="flex-none bg-[#0A0A0A] border-b border-brand-800/30 px-6 lg:px-8 py-5 flex items-center justify-between z-10 sticky top-0">
+      <div className="flex-none bg-[#0A0A0A] border-b border-white/5 px-6 lg:px-8 py-5 flex items-center justify-between z-10 sticky top-0 shadow-sm backdrop-blur-md">
         <div className="flex items-center space-x-4">
           <button 
             onClick={handleBack}
-            className="p-1.5 rounded-md bg-brand-900/10 hover:bg-brand-900/30 text-brand-100/50 hover:text-brand-400 transition-colors border border-brand-800/30 shrink-0"
+            className="p-1.5 rounded-md bg-white/[0.02] hover:bg-white/[0.06] text-brand-100/50 hover:text-brand-400 transition-all border border-white/5 shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -52,7 +52,7 @@ export function RecordWorkspace({
         {/* Top Right Action Bar */}
         <div className="flex items-center space-x-4 shrink-0 pl-4">
           {statusControls && (
-            <div className="flex items-center space-x-2 border-r border-brand-800/30 pr-4 mr-1">
+            <div className="flex items-center space-x-2 border-r border-white/5 pr-4 mr-1">
               {statusControls}
             </div>
           )}
@@ -67,17 +67,17 @@ export function RecordWorkspace({
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-full items-stretch">
           
           {/* Left Column (25%) - Static Data */}
-          <div className="w-full lg:w-1/4 min-w-[280px] bg-[#0A0A0A] border border-brand-800/30 rounded-xl p-6 shadow-md overflow-hidden">
+          <div className="w-full lg:w-1/4 min-w-[280px] bg-[#0A0A0A] border border-white/5 rounded-xl p-6 shadow-2xl overflow-hidden hover:border-white/10 transition-colors">
             {leftColumn}
           </div>
           
           {/* Center Column (50%) - The Feed / Pipeline */}
-          <div className="flex-1 min-w-[320px] bg-[#0A0A0A] border border-brand-800/30 rounded-xl p-6 shadow-md overflow-hidden">
+          <div className="flex-1 min-w-[320px] bg-[#0A0A0A] border border-white/5 rounded-xl p-6 shadow-2xl overflow-hidden hover:border-white/10 transition-colors">
             {centerColumn}
           </div>
           
           {/* Right Column (25%) - Activity / Associations */}
-          <div className="w-full lg:w-1/4 min-w-[280px] bg-[#0A0A0A] border border-brand-800/30 rounded-xl p-6 shadow-md overflow-hidden">
+          <div className="w-full lg:w-1/4 min-w-[280px] bg-[#0A0A0A] border border-white/5 rounded-xl p-6 shadow-2xl overflow-hidden hover:border-white/10 transition-colors">
             {rightColumn}
           </div>
           

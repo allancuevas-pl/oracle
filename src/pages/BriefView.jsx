@@ -7,6 +7,7 @@ import { Loader2, Plus, ChevronDown } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
 import { Building2 } from 'lucide-react';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 const formatCurrency = (val) => {
   if (!val) return "$0";
@@ -61,43 +62,19 @@ export function BriefView() {
         subtitle={`${subtitlePrefix}Opened ${daysOpen} days ago`}
         statusControls={
           <div className="flex items-center space-x-2">
-            {/* Priority Dropdown */}
-            <div className="relative group cursor-pointer">
-              <select 
-                value={brief.priority || 'Low'}
-                onChange={(e) => updateBrief({ id: brief._id, priority: e.target.value })}
-                className="appearance-none pl-7 pr-6 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer bg-[#111] border border-brand-800/50 hover:border-brand-500/50 text-white"
-              >
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                {brief.priority === 'High' && <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>}
-                {brief.priority === 'Medium' && <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"></div>}
-                {(brief.priority === 'Low' || !brief.priority) && <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>}
-              </div>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-brand-100/50">
-                <ChevronDown className="w-3 h-3" />
-              </div>
-            </div>
-
-            {/* Stage Dropdown */}
-            <div className="relative group cursor-pointer">
-              <select 
-                value={brief.stage}
-                onChange={(e) => updateBrief({ id: brief._id, stage: e.target.value })}
-                className="appearance-none px-3 pr-7 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer bg-brand-500/10 text-brand-400 border border-brand-500/20 hover:bg-brand-500/20"
-              >
-                <option value="Triage">Triage</option>
-                <option value="Active Search">Active Search</option>
-                <option value="Offer Submitted">Offer Submitted</option>
-                <option value="Due Diligence">Due Diligence</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-brand-400">
-                <ChevronDown className="w-3 h-3" />
-              </div>
-            </div>
+            <CustomSelect
+              value={brief.priority || 'Low'}
+              onChange={(value) => updateBrief({ id: brief._id, priority: value })}
+              options={['High', 'Medium', 'Low']}
+              variant="priority"
+              className="w-32"
+            />
+            <CustomSelect
+              value={brief.stage}
+              onChange={(value) => updateBrief({ id: brief._id, stage: value })}
+              options={['Triage', 'Active Search', 'Offer Submitted', 'Due Diligence']}
+              variant="pill"
+            />
           </div>
         }
         onBack={() => navigate('/briefs')}

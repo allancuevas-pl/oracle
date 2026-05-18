@@ -3,14 +3,14 @@ import { Bell, Search } from 'lucide-react';
 
 export function Header() {
   return (
-    <header className="h-16 bg-[#0A0A0A]/95 backdrop-blur border-b border-brand-800/50 flex items-center justify-between px-8 sticky top-0 z-10">
+    <header className="h-16 bg-[#0A0A0A]/95 backdrop-blur border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-10">
       <div className="flex items-center flex-1">
         <div className="relative w-96">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/50" />
           <input 
             type="text" 
             placeholder="Search properties, clients, or briefs..." 
-            className="w-full bg-[#111] border border-brand-800/50 rounded-md py-1.5 pl-9 pr-4 text-sm text-brand-50 placeholder:text-brand-100/30 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all"
+            className="w-full bg-[#111] border border-white/5 rounded-md py-1.5 pl-9 pr-4 text-sm text-brand-50 placeholder:text-brand-100/30 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all shadow-inner"
           />
         </div>
       </div>

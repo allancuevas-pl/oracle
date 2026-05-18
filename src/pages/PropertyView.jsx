@@ -5,6 +5,7 @@ import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { Loader2, Building2, ChevronDown, Plus } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 const formatCurrency = (val) => {
   if (!val) return "$0";
@@ -49,29 +50,12 @@ export function PropertyView() {
         subtitle={`${subtitlePrefix}Added ${daysOpen} days ago`}
         statusControls={
           <div className="flex items-center space-x-2">
-            {/* Status Dropdown */}
-            <div className="relative group cursor-pointer">
-              <select 
-                value={property.status}
-                onChange={(e) => updateProperty({ id: property._id, status: e.target.value })}
-                className={`appearance-none pl-3 pr-7 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer border ${
-                  property.status === 'On Market' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                  property.status === 'Off Market' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                  property.status === 'Under Offer' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                  property.status === 'Sold' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                  'bg-brand-800/10 text-brand-100/50 border-brand-800/20'
-                }`}
-              >
-                <option value="On Market">On Market</option>
-                <option value="Off Market">Off Market</option>
-                <option value="Under Offer">Under Offer</option>
-                <option value="Sold">Sold</option>
-                <option value="Archived">Archived</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
-                <ChevronDown className="w-3 h-3" />
-              </div>
-            </div>
+            <CustomSelect
+              value={property.status}
+              onChange={(value) => updateProperty({ id: property._id, status: value })}
+              options={['On Market', 'Off Market', 'Under Offer', 'Sold', 'Archived']}
+              variant="status-pill"
+            />
           </div>
         }
         onBack={() => navigate('/properties')}
