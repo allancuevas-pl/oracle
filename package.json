@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run security:check && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "security:check": "node scripts/check-authz.js"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.6",
