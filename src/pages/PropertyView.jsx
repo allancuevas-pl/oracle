@@ -6,6 +6,7 @@ import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { Loader2, Building2, ChevronDown, Plus } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
 import { CustomSelect } from '../components/ui/CustomSelect';
+import { PulseFeed } from '../components/ui/PulseFeed';
 
 const formatCurrency = (val) => {
   if (!val) return "$0";
@@ -129,30 +130,7 @@ export function PropertyView() {
         </div>
       }
       rightColumn={
-        <div className="space-y-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-brand-500">Activity & Pulse</h2>
-          
-          <div className="relative pl-4 border-l border-brand-800/30 space-y-6">
-            <div className="relative">
-              <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-brand-500 border border-[#0A0A0A]"></div>
-              <p className="text-sm text-brand-50">Property Added</p>
-              <p className="text-xs text-brand-100/50 mt-0.5">By {property.createdBy || 'Unknown'} • {new Date(property._creationTime).toLocaleDateString()}</p>
-            </div>
-          </div>
-
-          <div className="pt-6 mt-6 border-t border-brand-800/20">
-            <textarea 
-              className="w-full bg-[#111] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 placeholder:text-brand-100/30" 
-              placeholder="Leave a private note..."
-              rows={3}
-            ></textarea>
-            <div className="flex justify-end mt-2">
-              <button className="px-3 py-1.5 bg-brand-900/30 text-brand-400 hover:bg-brand-900/50 text-xs font-medium rounded transition-colors">
-                Save Note
-              </button>
-            </div>
-          </div>
-        </div>
+        <PulseFeed recordId={property._id} recordType="property" />
       }
       />
       <PropertyModal 

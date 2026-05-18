@@ -86,4 +86,13 @@ export default defineSchema({
     .index("by_brief", ["briefId"])
     .index("by_property", ["propertyId"])
     .index("by_brief_and_property", ["briefId", "propertyId"]),
+
+  activities: defineTable({
+    recordId: v.string(), // ID of the brief or property
+    recordType: v.union(v.literal("brief"), v.literal("property")),
+    type: v.union(v.literal("note"), v.literal("system")),
+    content: v.string(), // e.g. "Changed stage to Due Diligence" or the user note text
+    metadata: v.optional(v.string()), // Optional JSON string for tracking previous/new states
+    createdBy: v.string(), // clerkId
+  }).index("by_recordId", ["recordId"]),
 });

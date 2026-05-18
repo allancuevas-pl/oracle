@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { logSystemActivity } from "./activities";
 
 async function requireStaff(ctx: any) {
   const identity = await ctx.auth.getUserIdentity();
@@ -51,12 +52,21 @@ export const createProperty = mutation({
     const nextNum = existingProps.length + 1;
     const propertyId = `ORC-P${nextNum.toString().padStart(4, '0')}`;
     
-    return await ctx.db.insert("properties", {
+    const newId = await ctx.db.insert("properties", {
       ...args,
       status: args.status as any,
       propertyId,
       createdBy: identity.subject,
     });
+
+    await logSystemActivity(ctx, {
+      recordId: newId,
+      recordType: "property",
+      content: `Property added`,
+      userId: identity.subject,
+    });
+
+    return newId;
   },
 });
 
@@ -75,8 +85,21 @@ export const updateProperty = mutation({
     wales: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    const identity = await requireStaff(ctx);
     const { id, ...updates } = args;
+    
+    const oldProp = await ctx.db.get(id);
+    if (!oldProp) throw new Error("Property not found");
+
     await ctx.db.patch(id, updates);
+
+    if (updates.status && updates.status !== oldProp.status) {
+      await logSystemActivity(ctx, {
+        recordId: id,
+        recordType: "property",
+        content: `Status changed to ${updates.status}`,
+        userId: identity.subject,
+      });
+    }
   },
 });

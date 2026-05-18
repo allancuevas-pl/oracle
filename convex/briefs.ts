@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { logSystemActivity } from "./activities";
 
 // The Bouncer: Helper to verify identity
 async function requireStaff(ctx: any) {
@@ -79,6 +80,15 @@ export const createBrief = mutation({
       status: "active",
       createdBy: identity.subject, 
     });
+
+    await logSystemActivity(ctx, {
+      recordId: newId,
+      recordType: "brief",
+      content: `Brief created`,
+      userId: identity.subject,
+    });
+
+    return newId;
   },
 });
 
@@ -101,8 +111,30 @@ export const updateBrief = mutation({
     others: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireStaff(ctx);
+    const identity = await requireStaff(ctx);
     const { id, ...updates } = args;
+    
+    const oldBrief = await ctx.db.get(id);
+    if (!oldBrief) throw new Error("Brief not found");
+
     await ctx.db.patch(id, updates);
+
+    if (updates.stage && updates.stage !== oldBrief.stage) {
+      await logSystemActivity(ctx, {
+        recordId: id,
+        recordType: "brief",
+        content: `Stage changed to ${updates.stage}`,
+        userId: identity.subject,
+      });
+    }
+    
+    if (updates.priority && updates.priority !== oldBrief.priority) {
+      await logSystemActivity(ctx, {
+        recordId: id,
+        recordType: "brief",
+        content: `Priority changed to ${updates.priority}`,
+        userId: identity.subject,
+      });
+    }
   },
 });
