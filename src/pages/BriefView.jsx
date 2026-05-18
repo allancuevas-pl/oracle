@@ -192,14 +192,18 @@ export function BriefView() {
           ) : (
             <div className="space-y-3">
               {matches.map((match) => (
-                <div key={match._id} className="border border-brand-800/50 rounded-lg bg-[#111] overflow-hidden transition-all hover:border-brand-500/30">
+                <div 
+                  key={match._id} 
+                  onClick={() => navigate(`/properties/${match.property?._id}`)}
+                  className="border border-brand-800/50 rounded-lg bg-[#111] overflow-hidden transition-all hover:border-brand-500/30 cursor-pointer group"
+                >
                   <div className="p-4 flex items-start justify-between">
                     <div className="flex items-start space-x-3">
                       <div className="w-10 h-10 rounded bg-brand-900/30 flex items-center justify-center flex-shrink-0 mt-0.5 border border-brand-800/50">
                         <Building2 className="w-5 h-5 text-brand-500/70" />
                       </div>
                       <div>
-                        <h4 className="text-brand-50 font-medium cursor-pointer hover:text-brand-400 transition-colors" onClick={() => navigate('/properties')}>
+                        <h4 className="text-brand-50 font-medium group-hover:text-brand-400 transition-colors">
                           {match.property?.address}
                         </h4>
                         <p className="text-xs text-brand-100/50 mt-1">
@@ -209,7 +213,7 @@ export function BriefView() {
                     </div>
                     
                     {/* Status Select for Match */}
-                    <div className="relative">
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
                       <CustomSelect
                         value={match.status}
                         onChange={(value) => updateMatch({ id: match._id, status: value })}

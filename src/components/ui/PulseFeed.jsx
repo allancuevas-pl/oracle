@@ -57,7 +57,7 @@ export function PulseFeed({ recordId, recordType }) {
                   {activity.content}
                 </p>
                 <p className="text-xs text-brand-100/50 mt-1">
-                  {new Date(activity._creationTime).toLocaleString()}
+                  By {activity.creatorName} • {new Date(activity._creationTime).toLocaleString()}
                 </p>
               </div>
             ))}

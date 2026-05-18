@@ -1,12 +1,11 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "./auth.config";
 
 export const getActivities = query({
   args: { recordId: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Unauthorized");
     }
 
@@ -16,7 +15,23 @@ export const getActivities = query({
       .order("desc") // newest first
       .collect();
 
-    return activities;
+    const enrichedActivities = await Promise.all(
+      activities.map(async (activity) => {
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_clerkId", (q) => q.eq("clerkId", activity.createdBy))
+          .first();
+        
+        return {
+          ...activity,
+          creatorName: user 
+            ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email 
+            : "Unknown User"
+        };
+      })
+    );
+
+    return enrichedActivities;
   },
 });
 
@@ -27,8 +42,8 @@ export const addNote = mutation({
     content: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Unauthorized");
     }
 
@@ -37,7 +52,7 @@ export const addNote = mutation({
       recordType: args.recordType,
       type: "note",
       content: args.content,
-      createdBy: userId,
+      createdBy: identity.subject,
     });
   },
 });
