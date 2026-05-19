@@ -9,12 +9,20 @@ import { Toaster } from 'sonner';
 
 import { Properties } from './pages/Properties';
 import { PropertyView } from './pages/PropertyView';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Loader2, ShieldAlert } from 'lucide-react';
+import { useEffect } from 'react';
 
 function RoleGuard({ children }) {
   const user = useQuery(api.users.getCurrentUser);
+  const storeUser = useMutation(api.users.storeUser);
+
+  useEffect(() => {
+    // Only try to store if the query returned null or undefined, 
+    // or just run it blindly (mutation checks internally)
+    storeUser().catch(() => {});
+  }, [storeUser]);
 
   if (user === undefined) {
     return (
