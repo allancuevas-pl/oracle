@@ -14,6 +14,7 @@ import type * as briefs from "../briefs.js";
 import type * as matches from "../matches.js";
 import type * as properties from "../properties.js";
 import type * as settings from "../settings.js";
+import type * as testing from "../testing.js";
 import type * as users from "../users.js";
 import type * as utils from "../utils.js";
 
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   matches: typeof matches;
   properties: typeof properties;
   settings: typeof settings;
+  testing: typeof testing;
   users: typeof users;
   utils: typeof utils;
 }>;
