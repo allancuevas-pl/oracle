@@ -22,12 +22,22 @@ function checkFile(filePath) {
       // Get the next 100 chars to see if they call an authz helper
       const handlerSnippet = content.substring(handlerIndex, handlerIndex + 150);
       
-      const hasAuthz = handlerSnippet.includes('requireStaffOrAdmin') || 
-                       handlerSnippet.includes('requireAuthenticatedUser');
+      let hasAuthz = false;
+      
+      // users.ts is the only file allowed to use requireAuthenticatedUser for now
+      if (path.basename(filePath) === 'users.ts') {
+        hasAuthz = handlerSnippet.includes('requireAuthenticatedUser');
+      } else {
+        hasAuthz = handlerSnippet.includes('requireStaffOrAdmin');
+      }
 
       if (!hasAuthz) {
         console.error(`❌ SECURITY LINT FAILURE in ${path.basename(filePath)}`);
-        console.error(`   Exported public function near index ${functionStart} is missing an authz check.`);
+        if (path.basename(filePath) === 'users.ts') {
+          console.error(`   Exported public function near index ${functionStart} is missing requireAuthenticatedUser check.`);
+        } else {
+          console.error(`   Exported public function near index ${functionStart} is missing requireStaffOrAdmin check. (requireAuthenticatedUser is not permitted for CRM files)`);
+        }
         failed = true;
       }
     }
@@ -39,7 +49,7 @@ function run() {
   files.forEach(f => checkFile(path.join(CONVEX_DIR, f)));
 
   if (failed) {
-    console.error("\nBuild Failed: All public Convex queries and mutations must begin with a requireStaffOrAdmin or requireAuthenticatedUser check.");
+    console.error("\nBuild Failed: All public Convex CRM queries and mutations must begin with a requireStaffOrAdmin check.");
     process.exit(1);
   } else {
     console.log("✅ Security Lint Passed: All public endpoints are locked down.");
