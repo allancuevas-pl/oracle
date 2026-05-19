@@ -41,11 +41,11 @@ test("authz role-matrix test", async () => {
   await expect(clientUser.query(api.settings.getSettings)).rejects.toThrow("Unauthorized: Insufficient permissions");
   await expect(clientUser.query(api.briefs.getBriefs, {})).rejects.toThrow("Unauthorized: Insufficient permissions");
   await expect(clientUser.query(api.properties.getProperties, {})).rejects.toThrow("Unauthorized: Insufficient permissions");
-  // Create a dummy brief ID for testing queries that require v.id("briefs")
-  const briefId = await t.mutation(api.briefs.createBrief, { 
+  // Ensure unauthenticated user cannot create a brief
+  await expect(t.mutation(api.briefs.createBrief, { 
     clientName: "Test",
     stage: "active",
-  }).catch(() => null); // Just in case, though this should be created by an admin
+  })).rejects.toThrow("Unauthenticated call");
   
   // Actually, we must create it using staffUser
   const adminIdentity = t.withIdentity({ subject: "admin_id_1" });
