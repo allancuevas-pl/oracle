@@ -2,6 +2,26 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireStaffOrAdmin } from "./authz";
 
+// Get ALL matches across all briefs — used by the global Pipeline view
+export const getAllMatches = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireStaffOrAdmin(ctx);
+    const matches = await ctx.db.query("matches").collect();
+
+    const enriched = await Promise.all(
+      matches.map(async (match) => {
+        const [brief, property] = await Promise.all([
+          ctx.db.get(match.briefId),
+          ctx.db.get(match.propertyId),
+        ]);
+        return { ...match, brief, property };
+      })
+    );
+    return enriched;
+  },
+});
+
 // Get all matches for a specific brief, joined with the property details
 export const getMatchesForBrief = query({
   args: { briefId: v.id("briefs") },
@@ -62,7 +82,13 @@ export const createMatch = mutation({
 export const updateMatch = mutation({
   args: {
     id: v.id("matches"),
-    status: v.optional(v.string()),
+    status: v.optional(v.union(
+      v.literal("Shortlisted"),
+      v.literal("Under Review"),
+      v.literal("Rejected"),
+      v.literal("Offered"),
+      v.literal("Accepted"),
+    )),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
