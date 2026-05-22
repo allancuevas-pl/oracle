@@ -25,12 +25,27 @@ export const getBrief = query({
   },
   handler: async (ctx, args) => {
     await requireStaffOrAdmin(ctx);
-    return await ctx.db.get(args.id);
+    const brief = await ctx.db.get(args.id);
+    if (!brief) return null;
+    const client = brief.clientId ? await ctx.db.get(brief.clientId) : null;
+    return { ...brief, client };
+  },
+});
+
+export const getBriefsByClient = query({
+  args: { clientId: v.id("clients") },
+  handler: async (ctx, args) => {
+    await requireStaffOrAdmin(ctx);
+    return await ctx.db
+      .query("briefs")
+      .withIndex("by_clientId", (q) => q.eq("clientId", args.clientId))
+      .collect();
   },
 });
 
 export const createBrief = mutation({
   args: {
+    clientId: v.optional(v.id("clients")),
     clientName: v.string(),
     stage: v.string(),
     priority: v.optional(v.string()),
@@ -47,14 +62,16 @@ export const createBrief = mutation({
     others: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { identity } = await requireStaffOrAdmin(ctx); 
-    
+    const { identity } = await requireStaffOrAdmin(ctx);
+
     // Generate sequential briefId (e.g. ORC-B0001)
     const briefId = await generateId(ctx, "B");
-    
+
     const newId = await ctx.db.insert("briefs", {
       briefId,
+      clientId: args.clientId,
       clientName: args.clientName,
+      startDate: Date.now(),
       stage: args.stage,
       priority: args.priority,
       capital: args.capital,
@@ -69,7 +86,7 @@ export const createBrief = mutation({
       targets: args.targets,
       others: args.others,
       status: "active",
-      createdBy: identity.subject, 
+      createdBy: identity.subject,
     });
 
     await logSystemActivity(ctx, {
@@ -86,6 +103,7 @@ export const createBrief = mutation({
 export const updateBrief = mutation({
   args: {
     id: v.id("briefs"),
+    clientId: v.optional(v.id("clients")),
     clientName: v.optional(v.string()),
     stage: v.optional(v.string()),
     priority: v.optional(v.string()),

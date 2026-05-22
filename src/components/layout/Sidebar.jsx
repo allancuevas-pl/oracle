@@ -1,9 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, FileText, Building2, Layers, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Building2, Layers, Users, Settings, LogOut } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  { icon: Users, label: 'Clients', path: '/clients' },
   { icon: FileText, label: 'Client Briefs', path: '/briefs' },
   { icon: Building2, label: 'Properties', path: '/properties' },
   { icon: Layers, label: 'Pipeline', path: '/pipeline' },

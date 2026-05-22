@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, UserPlus, ChevronDown } from 'lucide-react';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { CustomSelect } from '../ui/CustomSelect';
+import { ClientModal } from '../clients/ClientModal';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,7 +21,6 @@ const formatCurrency = (val) => {
 };
 
 const briefSchema = z.object({
-  clientName: z.string().min(1, "Client Name is required"),
   stage: z.string().min(1, "Stage is required"),
   priority: z.string().min(1, "Priority is required"),
   capital: z.string().optional(),
@@ -30,11 +30,17 @@ const briefSchema = z.object({
 
 export function BriefModal({ isOpen, onClose, editingBrief }) {
   const settings = useQuery(api.settings.getSettings);
-  
+  const clients = useQuery(api.clients.getClients);
+
   const createBrief = useMutation(api.briefs.createBrief);
   const updateBrief = useMutation(api.briefs.updateBrief);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+
+  // Client selection state (not managed by RHF)
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [selectedClientName, setSelectedClientName] = useState('');
 
   // Non-RHF State for complex inputs
   const [budgetRange, setBudgetRange] = useState([5000000, 20000000]);
@@ -47,7 +53,6 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
   const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(briefSchema),
     defaultValues: {
-      clientName: '',
       stage: 'Triage',
       priority: 'Medium',
       capital: '',
@@ -65,9 +70,10 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
         setSelectedStrategies(editingBrief.strategies || []);
         setSelectedDebt(editingBrief.debtStructure || []);
         setSelectedLocations(editingBrief.location || []);
-        
+        setSelectedClientId(editingBrief.clientId || '');
+        setSelectedClientName(editingBrief.clientName || '');
+
         reset({
-          clientName: editingBrief.clientName || '',
           stage: editingBrief.stage || 'Triage',
           priority: editingBrief.priority || 'Medium',
           capital: editingBrief.capital ? editingBrief.capital.toLocaleString() : '',
@@ -81,9 +87,10 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
         setSelectedStrategies([]);
         setSelectedDebt([]);
         setSelectedLocations([]);
-        
+        setSelectedClientId('');
+        setSelectedClientName('');
+
         reset({
-          clientName: '',
           stage: 'Triage',
           priority: 'Medium',
           capital: '',
@@ -103,12 +110,18 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
   };
 
   const onSubmit = async (data) => {
+    if (!selectedClientId) {
+      toast.error("Please select a client before saving.");
+      return;
+    }
+
     setIsSubmitting(true);
-    
+
     const rawCapital = data.capital ? Number(data.capital.replace(/\D/g, "")) : undefined;
-    
+
     const payload = {
-      clientName: data.clientName,
+      clientId: selectedClientId,
+      clientName: selectedClientName,
       stage: data.stage,
       priority: data.priority,
       capital: rawCapital,
@@ -142,6 +155,16 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
   };
 
   return (
+    <>
+    <ClientModal
+      isOpen={isClientModalOpen}
+      onClose={() => setIsClientModalOpen(false)}
+      editingClient={null}
+      onCreated={(newClient) => {
+        setSelectedClientId(newClient._id);
+        setSelectedClientName(newClient.name);
+      }}
+    />
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -172,14 +195,35 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
             {/* ROW 1: Client, Stage & Priority */}
             <div className="grid grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-brand-100/70 mb-1">Client Name *</label>
-                <input 
-                  {...register("clientName")} 
-                  type="text" 
-                  className={`w-full bg-[#0A0A0A] border ${errors.clientName ? 'border-red-500/50' : 'border-brand-800/50'} rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50`} 
-                  placeholder="e.g. Smith Family Office" 
-                />
-                {errors.clientName && <p className="text-red-400 text-xs mt-1">{errors.clientName.message}</p>}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-brand-100/70">Client *</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsClientModalOpen(true)}
+                    className="flex items-center text-xs text-brand-500 hover:text-brand-400 transition-colors"
+                  >
+                    <UserPlus className="w-3 h-3 mr-1" />
+                    New
+                  </button>
+                </div>
+                <div className="relative">
+                  <select
+                    value={selectedClientId}
+                    onChange={(e) => {
+                      const client = clients?.find(c => c._id === e.target.value);
+                      setSelectedClientId(e.target.value);
+                      setSelectedClientName(client?.name ?? '');
+                    }}
+                    className={`w-full appearance-none bg-[#0A0A0A] border ${!selectedClientId ? 'border-red-500/30' : 'border-brand-800/50'} rounded-md pl-3 pr-8 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20`}
+                  >
+                    <option value="" className="bg-[#111]">Select client...</option>
+                    {(clients ?? []).map(c => (
+                      <option key={c._id} value={c._id} className="bg-[#111]">{c.name}{c.company ? ` (${c.company})` : ''}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-100/30 pointer-events-none" />
+                </div>
+                {!selectedClientId && <p className="text-red-400/70 text-xs mt-1">Client is required</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-brand-100/70 mb-1">Stage *</label>
@@ -419,5 +463,6 @@ export function BriefModal({ isOpen, onClose, editingBrief }) {
     </div>
   )}
 </AnimatePresence>
+    </>
   );
 }

@@ -6,7 +6,7 @@ import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { Loader2, Plus, ChevronDown } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
-import { Building2 } from 'lucide-react';
+import { Building2, Users } from 'lucide-react';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { PulseFeed } from '../components/ui/PulseFeed';
 
@@ -53,14 +53,18 @@ export function BriefView() {
     return tagsStringOrArray;
   };
 
-  const daysOpen = Math.floor((Date.now() - (brief._creationTime || Date.now())) / (1000 * 60 * 60 * 24));
+  const startTime = brief.startDate ?? brief._creationTime ?? Date.now();
+  const daysOpen = Math.floor((Date.now() - startTime) / (1000 * 60 * 60 * 24));
   const subtitlePrefix = brief.briefId ? `${brief.briefId} • ` : "";
+  const clientLabel = brief.client
+    ? `${brief.client.name}${brief.client.company ? ` · ${brief.client.company}` : ''}`
+    : brief.clientName;
 
   return (
     <>
       <RecordWorkspace
-        title={brief.clientName}
-        subtitle={`${subtitlePrefix}Opened ${daysOpen} days ago`}
+        title={brief.client ? brief.client.name : brief.clientName}
+        subtitle={`${subtitlePrefix}${brief.client ? `${brief.client.company ? brief.client.company + ' · ' : ''}` : ''}Opened ${daysOpen} day${daysOpen !== 1 ? 's' : ''} ago`}
         statusControls={
           <div className="flex items-center space-x-2">
             <CustomSelect
@@ -98,6 +102,30 @@ export function BriefView() {
         }
       leftColumn={
         <div className="space-y-6">
+          {/* Client link */}
+          {brief.client && (
+            <div
+              onClick={() => navigate(`/clients/${brief.client._id}`)}
+              className="flex items-center space-x-3 p-3 rounded-lg border border-brand-500/20 bg-brand-500/5 hover:bg-brand-500/10 cursor-pointer transition-colors group"
+            >
+              <div className="w-8 h-8 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center shrink-0">
+                <span className="text-xs font-semibold text-brand-400">
+                  {brief.client.name?.charAt(0)?.toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-brand-100/40 mb-0.5 flex items-center">
+                  <Users className="w-3 h-3 mr-1" /> Client
+                </p>
+                <p className="text-sm font-medium text-brand-400 group-hover:text-brand-300 truncate">
+                  {brief.client.name}
+                </p>
+                {brief.client.company && (
+                  <p className="text-xs text-brand-100/40 truncate">{brief.client.company}</p>
+                )}
+              </div>
+            </div>
+          )}
           <h2 className="text-sm font-semibold uppercase tracking-wider text-brand-500">Brief Criteria</h2>
           
           <div className="space-y-4">

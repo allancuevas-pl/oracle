@@ -10,6 +10,8 @@ import { Toaster } from 'sonner';
 import { Properties } from './pages/Properties';
 import { PropertyView } from './pages/PropertyView';
 import { Pipeline } from './pages/Pipeline';
+import { Clients } from './pages/Clients';
+import { ClientView } from './pages/ClientView';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Loader2, ShieldAlert } from 'lucide-react';
@@ -80,6 +82,8 @@ function App() {
             <Routes>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/clients/:id" element={<ClientView />} />
                 <Route path="/briefs" element={<Briefs />} />
                 <Route path="/briefs/:id" element={<BriefView />} />
                 <Route path="/properties" element={<Properties />} />

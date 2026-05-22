@@ -17,12 +17,29 @@ export default defineSchema({
     debtStructures: v.array(v.string()),
   }),
 
+  clients: defineTable({
+    name: v.string(),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    company: v.optional(v.string()),
+    role: v.optional(v.union(
+      v.literal("buyer"),
+      v.literal("seller"),
+      v.literal("vendor"),
+      v.literal("other")
+    )),
+    notes: v.optional(v.string()),
+    createdBy: v.string(),
+  }).index("by_name", ["name"]),
+
   briefs: defineTable({
     briefId: v.optional(v.string()), // e.g. "ORC-B0001"
+    clientId: v.optional(v.id("clients")), // Link to clients table
     clientName: v.string(), // Denormalized for fast reads
+    startDate: v.optional(v.number()), // Explicit brief open date (ms timestamp)
     stage: v.string(), // e.g. "Triage", "Feasibility"
     priority: v.optional(v.string()), // "High", "Medium", "Low"
-    
+
     // Structured Brief Fields
     capital: v.optional(v.number()), // e.g. 3500000
     budgetMin: v.optional(v.number()), // e.g. 5000000
@@ -33,22 +50,24 @@ export default defineSchema({
     strategies: v.optional(v.array(v.string())), // e.g. ["Rental Reversion Upside"]
     debtStructure: v.optional(v.array(v.string())), // e.g. ["Cash", "Lease Debt"]
     location: v.optional(v.array(v.string())), // e.g. ["VIC", "QLD"]
-    
+
     // Kept as strings for now
     targets: v.optional(v.string()), // e.g. "Project Margin 17%-20% Net"
     others: v.optional(v.string()), // Notes on contamination, flood risk, etc.
-    
+
     // Deprecated legacy fields
     duration: v.optional(v.string()),
     budget: v.optional(v.string()),
     assetType: v.optional(v.string()),
-    assetTarget: v.optional(v.string()), 
+    assetTarget: v.optional(v.string()),
     estimatedValue: v.optional(v.string()),
     requirements: v.optional(v.string()),
 
     status: v.union(v.literal("active"), v.literal("archived")),
     createdBy: v.string(), // clerkId of the creator
-  }).index("by_status", ["status"]),
+  })
+    .index("by_status", ["status"])
+    .index("by_clientId", ["clientId"]),
   properties: defineTable({
     propertyId: v.optional(v.string()), // e.g. "ORC-P0001"
     address: v.string(),

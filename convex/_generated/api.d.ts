@@ -11,6 +11,7 @@
 import type * as activities from "../activities.js";
 import type * as authz from "../authz.js";
 import type * as briefs from "../briefs.js";
+import type * as clients from "../clients.js";
 import type * as matches from "../matches.js";
 import type * as properties from "../properties.js";
 import type * as settings from "../settings.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   activities: typeof activities;
   authz: typeof authz;
   briefs: typeof briefs;
+  clients: typeof clients;
   matches: typeof matches;
   properties: typeof properties;
   settings: typeof settings;
