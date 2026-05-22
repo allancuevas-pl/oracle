@@ -4,40 +4,52 @@ import path from 'path';
 const CONVEX_DIR = path.join(process.cwd(), 'convex');
 let failed = false;
 
+// Bootstrap endpoints in users.ts that pre-date a user record and therefore
+// can't use requireAuthenticatedUser (which itself requires the user row to
+// exist). They must still do an inline ctx.auth.getUserIdentity() check —
+// the lint enforces that below so this allowlist can't be used to skip auth.
+const USERS_BOOTSTRAP_ALLOWLIST = new Set(['getCurrentUser', 'storeUser']);
+
 function checkFile(filePath) {
   if (!filePath.endsWith('.ts') || filePath.includes('_generated')) return;
 
   const content = fs.readFileSync(filePath, 'utf-8');
-  
-  // Extract all exported queries and mutations
-  const regex = /export const \w+ = (query|mutation)\(\{/g;
+  const fileName = path.basename(filePath);
+
+  // Extract all exported queries and mutations along with their name
+  const regex = /export const (\w+) = (query|mutation)\(\{/g;
   let match;
-  
+
   while ((match = regex.exec(content)) !== null) {
-    // Find the handler block
+    const fnName = match[1];
     const functionStart = match.index;
     const handlerIndex = content.indexOf('handler:', functionStart);
-    
+
     if (handlerIndex !== -1) {
-      // Get the next 100 chars to see if they call an authz helper
-      const handlerSnippet = content.substring(handlerIndex, handlerIndex + 150);
-      
-      let hasAuthz = false;
-      
-      // users.ts is the only file allowed to use requireAuthenticatedUser for now
-      if (path.basename(filePath) === 'users.ts') {
-        hasAuthz = handlerSnippet.includes('requireAuthenticatedUser');
+      // Widen the window — handlers with arg destructuring push the auth
+      // call past the original 150-char cutoff.
+      const handlerSnippet = content.substring(handlerIndex, handlerIndex + 250);
+
+      let hasAuthz;
+      let reason;
+
+      if (fileName === 'users.ts') {
+        if (USERS_BOOTSTRAP_ALLOWLIST.has(fnName)) {
+          // Bootstrap endpoint — must still check identity inline.
+          hasAuthz = handlerSnippet.includes('ctx.auth.getUserIdentity');
+          reason = `Bootstrap endpoint '${fnName}' is missing inline ctx.auth.getUserIdentity() check.`;
+        } else {
+          hasAuthz = handlerSnippet.includes('requireAuthenticatedUser');
+          reason = `'${fnName}' in users.ts is missing requireAuthenticatedUser check. (Add to USERS_BOOTSTRAP_ALLOWLIST in check-authz.js only if it must run before user provisioning.)`;
+        }
       } else {
         hasAuthz = handlerSnippet.includes('requireStaffOrAdmin');
+        reason = `'${fnName}' is missing requireStaffOrAdmin check. (requireAuthenticatedUser is not permitted for CRM files)`;
       }
 
       if (!hasAuthz) {
-        console.error(`❌ SECURITY LINT FAILURE in ${path.basename(filePath)}`);
-        if (path.basename(filePath) === 'users.ts') {
-          console.error(`   Exported public function near index ${functionStart} is missing requireAuthenticatedUser check.`);
-        } else {
-          console.error(`   Exported public function near index ${functionStart} is missing requireStaffOrAdmin check. (requireAuthenticatedUser is not permitted for CRM files)`);
-        }
+        console.error(`❌ SECURITY LINT FAILURE in ${fileName}`);
+        console.error(`   ${reason}`);
         failed = true;
       }
     }
