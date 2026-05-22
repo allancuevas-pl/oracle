@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireStaffOrAdmin } from "./authz";
+import { logSystemActivity } from "./activities";
 
 // Get ALL matches across all briefs — used by the global Pipeline view
 export const getAllMatches = query({
@@ -92,9 +93,45 @@ export const updateMatch = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireStaffOrAdmin(ctx);
+    const { identity } = await requireStaffOrAdmin(ctx);
     const { id, ...updates } = args;
+
+    // Read existing state for diffing before patch
+    const existing = await ctx.db.get(id);
+    if (!existing) {
+      throw new Error("Match not found");
+    }
+
     await ctx.db.patch(id, updates);
+
+    // Audit log: status transitions (e.g. "Shortlisted" → "Under Review")
+    // are written to the activities feed for both the brief and the property,
+    // so either record's Pulse Feed surfaces the change.
+    if (updates.status && updates.status !== existing.status) {
+      const property = await ctx.db.get(existing.propertyId);
+      const propertyLabel = property?.address ?? "Property";
+      const metadata = JSON.stringify({
+        from: existing.status,
+        to: updates.status,
+        matchId: id,
+      });
+
+      await logSystemActivity(ctx, {
+        recordId: existing.briefId,
+        recordType: "brief",
+        content: `Moved ${propertyLabel} from ${existing.status} to ${updates.status}`,
+        metadata,
+        userId: identity.subject,
+      });
+
+      await logSystemActivity(ctx, {
+        recordId: existing.propertyId,
+        recordType: "property",
+        content: `Deal stage changed: ${existing.status} → ${updates.status}`,
+        metadata,
+        userId: identity.subject,
+      });
+    }
   },
 });
 
