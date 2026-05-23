@@ -91,7 +91,7 @@ export function BriefView() {
                 active={showTeam}
               />
               {showTeam && (
-                <div className="absolute right-0 top-full mt-1.5 bg-[#0A0A0A]/98 border border-white/[0.08] rounded-lg p-4 shadow-2xl backdrop-blur-md z-50 w-64">
+                <div className="absolute right-0 top-full mt-1.5 bg-[#161616] border border-white/[0.08] rounded-lg p-4 shadow-2xl z-50 w-64">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold uppercase tracking-wider text-brand-500">Team</span>
                     <button onClick={() => setShowTeam(false)} className="text-brand-100/30 hover:text-brand-100/70 transition-colors">
@@ -120,7 +120,7 @@ export function BriefView() {
                 active={showMore}
               />
               {showMore && (
-                <div className="absolute right-0 top-full mt-1.5 bg-[#0A0A0A]/98 border border-white/[0.08] rounded-lg p-1 shadow-2xl backdrop-blur-md z-50 min-w-[160px]">
+                <div className="absolute right-0 top-full mt-1.5 bg-[#161616] border border-white/[0.08] rounded-lg p-1 shadow-2xl z-50 min-w-[160px]">
                   <button
                     onClick={() => { setShowMore(false); toast.info("Archive coming soon"); }}
                     className="w-full flex items-center px-3 py-2 text-xs text-brand-100/60 hover:bg-white/[0.05] hover:text-white rounded-md transition-colors gap-2.5"
