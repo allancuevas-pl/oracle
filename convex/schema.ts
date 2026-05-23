@@ -63,6 +63,11 @@ export default defineSchema({
     estimatedValue: v.optional(v.string()),
     requirements: v.optional(v.string()),
 
+    assignees: v.optional(v.array(v.object({
+      userId: v.id("users"),
+      role: v.string(), // "Lead Agent" | "Support" | "Admin"
+    }))),
+
     status: v.union(v.literal("active"), v.literal("archived")),
     createdBy: v.string(), // clerkId of the creator
   })

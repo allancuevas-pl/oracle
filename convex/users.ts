@@ -1,5 +1,5 @@
 import { query, mutation } from "./_generated/server";
-import { requireAuthenticatedUser } from "./authz";
+import { requireAuthenticatedUser, requireStaffOrAdmin } from "./authz";
 
 export const getCurrentUser = query({
   args: {},
@@ -13,6 +13,16 @@ export const getCurrentUser = query({
       .first();
 
     return user;
+  },
+});
+
+// Returns all staff and admin users — used for the assignee picker on briefs
+export const getUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireStaffOrAdmin(ctx);
+    const users = await ctx.db.query("users").collect();
+    return users.filter(u => u.role === "staff" || u.role === "admin");
   },
 });
 

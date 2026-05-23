@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Plus, X, Loader2, ArrowUpDown, Search } from 'lucide-react';
@@ -8,6 +8,7 @@ import 'rc-slider/assets/index.css';
 
 import { useNavigate } from 'react-router-dom';
 import { BriefModal } from '../components/briefs/BriefModal';
+import { AvatarStack } from '../components/briefs/AssigneePicker';
 
 // Helper to format numbers to currency ($X.XM or $X,XXX)
 const formatCurrency = (val) => {
@@ -21,6 +22,13 @@ const formatCurrency = (val) => {
 export function Briefs() {
   const navigate = useNavigate();
   const briefs = useQuery(api.briefs.getBriefs, { status: "active" });
+  const allUsers = useQuery(api.users.getUsers);
+
+  // Build userId → user map for avatar stack
+  const usersMap = useMemo(() => {
+    if (!allUsers) return {};
+    return Object.fromEntries(allUsers.map(u => [u._id, u]));
+  }, [allUsers]);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -221,6 +229,7 @@ export function Briefs() {
                     </div>
                   </th>
                   <th className="px-4 py-3 font-medium whitespace-nowrap">Strategies</th>
+                  <th className="px-4 py-3 font-medium whitespace-nowrap">Team</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,6 +276,9 @@ export function Briefs() {
                       </td>
                       <td className="px-4 py-4 text-brand-100/50 truncate max-w-[200px]">
                         {renderTags(brief.strategies || brief.requirements)}
+                      </td>
+                      <td className="px-4 py-4">
+                        <AvatarStack assignees={brief.assignees} usersMap={usersMap} />
                       </td>
                     </motion.tr>
                   )})}

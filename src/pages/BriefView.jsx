@@ -6,6 +6,7 @@ import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { Loader2, Plus, ChevronDown } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
+import { AssigneePicker } from '../components/briefs/AssigneePicker';
 import { Building2, Users } from 'lucide-react';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { PulseFeed } from '../components/ui/PulseFeed';
@@ -191,6 +192,14 @@ export function BriefView() {
                 {brief.others || <span className="text-brand-100/30 italic">No additional notes provided.</span>}
               </p>
             </div>
+          </div>
+
+          {/* Team Assignment */}
+          <div className="pt-5 border-t border-white/5">
+            <AssigneePicker
+              briefId={brief._id}
+              enrichedAssignees={brief.enrichedAssignees ?? []}
+            />
           </div>
         </div>
       }

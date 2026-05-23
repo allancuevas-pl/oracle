@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { AvatarStack } from '../components/briefs/AssigneePicker';
 import {
   DndContext,
   DragOverlay,
@@ -44,7 +45,7 @@ function formatPrice(n) {
 }
 
 // ─── Single Deal Card ────────────────────────────────────────────
-function DealCard({ match, isDragging = false }) {
+function DealCard({ match, isDragging = false, usersMap = {} }) {
   const { property, brief } = match;
   const stage = STAGES.find((s) => s.id === match.status);
 
@@ -115,12 +116,19 @@ function DealCard({ match, isDragging = false }) {
           <ArrowRight size={13} />
         </Link>
       </div>
+
+      {/* Avatar stack */}
+      {brief?.assignees?.length > 0 && (
+        <div className="pt-2 mt-1">
+          <AvatarStack assignees={brief.assignees} usersMap={usersMap} max={4} />
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Sortable wrapper ─────────────────────────────────────────────
-function SortableDealCard({ match }) {
+function SortableDealCard({ match, usersMap }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: match._id });
 
@@ -136,13 +144,13 @@ function SortableDealCard({ match }) {
       {...attributes}
       {...listeners}
     >
-      <DealCard match={match} isDragging={isDragging} />
+      <DealCard match={match} isDragging={isDragging} usersMap={usersMap} />
     </div>
   );
 }
 
 // ─── Column ───────────────────────────────────────────────────────
-function PipelineColumn({ stage, matches }) {
+function PipelineColumn({ stage, matches, usersMap }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
   return (
@@ -199,7 +207,7 @@ function PipelineColumn({ stage, matches }) {
             </div>
           ) : (
             matches.map((match) => (
-              <SortableDealCard key={match._id} match={match} />
+              <SortableDealCard key={match._id} match={match} usersMap={usersMap} />
             ))
           )}
         </SortableContext>
@@ -211,9 +219,15 @@ function PipelineColumn({ stage, matches }) {
 // ─── Pipeline Page ────────────────────────────────────────────────
 export function Pipeline() {
   const allMatches = useQuery(api.matches.getAllMatches);
+  const allUsers = useQuery(api.users.getUsers);
   const updateMatch = useMutation(api.matches.updateMatch);
 
   const [activeId, setActiveId] = useState(null);
+
+  const usersMap = useMemo(() => {
+    if (!allUsers) return {};
+    return Object.fromEntries(allUsers.map(u => [u._id, u]));
+  }, [allUsers]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -347,6 +361,7 @@ export function Pipeline() {
                   key={stage.id}
                   stage={stage}
                   matches={columns[stage.id] || []}
+                  usersMap={usersMap}
                 />
               ))}
             </div>
@@ -354,7 +369,7 @@ export function Pipeline() {
             <DragOverlay dropAnimation={null}>
               {activeMatch ? (
                 <div style={{ width: 280 }}>
-                  <DealCard match={activeMatch} />
+                  <DealCard match={activeMatch} usersMap={usersMap} />
                 </div>
               ) : null}
             </DragOverlay>

@@ -39,8 +39,9 @@ function checkFile(filePath) {
           hasAuthz = handlerSnippet.includes('ctx.auth.getUserIdentity');
           reason = `Bootstrap endpoint '${fnName}' is missing inline ctx.auth.getUserIdentity() check.`;
         } else {
-          hasAuthz = handlerSnippet.includes('requireAuthenticatedUser');
-          reason = `'${fnName}' in users.ts is missing requireAuthenticatedUser check. (Add to USERS_BOOTSTRAP_ALLOWLIST in check-authz.js only if it must run before user provisioning.)`;
+          // requireStaffOrAdmin is a superset of requireAuthenticatedUser — both valid here
+          hasAuthz = handlerSnippet.includes('requireAuthenticatedUser') || handlerSnippet.includes('requireStaffOrAdmin');
+          reason = `'${fnName}' in users.ts is missing requireAuthenticatedUser or requireStaffOrAdmin check. (Add to USERS_BOOTSTRAP_ALLOWLIST only if it must run before user provisioning.)`;
         }
       } else {
         hasAuthz = handlerSnippet.includes('requireStaffOrAdmin');

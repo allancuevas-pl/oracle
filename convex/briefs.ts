@@ -28,7 +28,18 @@ export const getBrief = query({
     const brief = await ctx.db.get(args.id);
     if (!brief) return null;
     const client = brief.clientId ? await ctx.db.get(brief.clientId) : null;
-    return { ...brief, client };
+
+    // Enrich assignees with user records for display
+    const enrichedAssignees = brief.assignees
+      ? await Promise.all(
+          brief.assignees.map(async (a) => {
+            const user = await ctx.db.get(a.userId);
+            return { ...a, user };
+          })
+        )
+      : [];
+
+    return { ...brief, client, enrichedAssignees };
   },
 });
 
@@ -145,5 +156,25 @@ export const updateBrief = mutation({
         userId: identity.subject,
       });
     }
+  },
+});
+
+export const updateAssignees = mutation({
+  args: {
+    id: v.id("briefs"),
+    assignees: v.array(v.object({
+      userId: v.id("users"),
+      role: v.string(),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const { identity } = await requireStaffOrAdmin(ctx);
+    await ctx.db.patch(args.id, { assignees: args.assignees });
+    await logSystemActivity(ctx, {
+      recordId: args.id,
+      recordType: "brief",
+      content: `Team updated (${args.assignees.length} member${args.assignees.length !== 1 ? 's' : ''} assigned)`,
+      userId: identity.subject,
+    });
   },
 });
