@@ -1,6 +1,7 @@
 import React from 'react';
 import { LayoutDashboard, FileText, Building2, Layers, Users, Settings, LogOut } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useClerk } from '@clerk/clerk-react';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -11,6 +12,11 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const { signOut } = useClerk();
+  const navigate = useNavigate();
+
+  const handleSignOut = () => signOut(() => navigate('/'));
+
   return (
     <div className="w-64 bg-[#0A0A0A] border-r border-brand-800/50 flex flex-col h-full">
       {/* Logo Area */}
@@ -52,11 +58,23 @@ export function Sidebar() {
             <p className="text-xs text-brand-400">Director</p>
           </div>
         </div>
-        <button className="flex items-center px-3 py-2 text-sm font-medium text-brand-100/70 hover:text-white w-full rounded-md hover:bg-brand-900/30 transition-colors">
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+              isActive
+                ? 'bg-brand-500/10 text-brand-400'
+                : 'text-brand-100/70 hover:text-white hover:bg-brand-900/30'
+            }`
+          }
+        >
           <Settings className="w-4 h-4 mr-3" />
           Settings
-        </button>
-        <button className="flex items-center px-3 py-2 mt-1 text-sm font-medium text-brand-100/70 hover:text-white w-full rounded-md hover:bg-brand-900/30 transition-colors">
+        </NavLink>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center px-3 py-2 mt-1 text-sm font-medium text-brand-100/70 hover:text-white w-full rounded-md hover:bg-brand-900/30 transition-colors"
+        >
           <LogOut className="w-4 h-4 mr-3" />
           Sign Out
         </button>

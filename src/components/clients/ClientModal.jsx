@@ -13,17 +13,8 @@ const clientSchema = z.object({
   company: z.string().optional(),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   phone: z.string().optional(),
-  role: z.string().optional(),
   notes: z.string().optional(),
 });
-
-const ROLE_OPTIONS = [
-  { value: "", label: "Select role..." },
-  { value: "buyer", label: "Buyer" },
-  { value: "seller", label: "Seller" },
-  { value: "vendor", label: "Vendor" },
-  { value: "other", label: "Other" },
-];
 
 export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
   const createClient = useMutation(api.clients.createClient);
@@ -37,7 +28,6 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
       company: '',
       email: '',
       phone: '',
-      role: '',
       notes: '',
     },
   });
@@ -50,11 +40,10 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
           company: editingClient.company || '',
           email: editingClient.email || '',
           phone: editingClient.phone || '',
-          role: editingClient.role || '',
           notes: editingClient.notes || '',
         });
       } else {
-        reset({ name: '', company: '', email: '', phone: '', role: '', notes: '' });
+        reset({ name: '', company: '', email: '', phone: '', notes: '' });
       }
     }
   }, [isOpen, editingClient, reset]);
@@ -66,7 +55,6 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
       company: data.company || undefined,
       email: data.email || undefined,
       phone: data.phone || undefined,
-      role: data.role || undefined,
       notes: data.notes || undefined,
     };
 
@@ -168,21 +156,6 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
                     className="w-full bg-[#111] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20"
                   />
                 </div>
-              </div>
-
-              {/* Role */}
-              <div>
-                <label className="block text-sm font-medium text-brand-100/70 mb-1">Role</label>
-                <select
-                  {...register("role")}
-                  className="w-full bg-[#111] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20 appearance-none"
-                >
-                  {ROLE_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value} className="bg-[#111]">
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Notes */}

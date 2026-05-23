@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { X, Building } from 'lucide-react';
+import { X, Building, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { CustomSelect } from '../ui/CustomSelect';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -25,8 +26,13 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
   const createProperty = useMutation(api.properties.createProperty);
   const updateProperty = useMutation(api.properties.updateProperty);
   const settings = useQuery(api.settings.getSettings);
+  const { isLoaded: mapsLoaded, hasKey: mapsHasKey } = useGoogleMaps();
 
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm({
+  // Ref for the address <input> — shared between RHF and Google Places Autocomplete
+  const addressInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
+
+  const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       address: '',
@@ -68,6 +74,43 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
       });
     }
   }, [editingProperty, isOpen, reset]);
+
+  // Attach Google Places Autocomplete once the Maps SDK is ready and modal is open
+  useEffect(() => {
+    if (!isOpen || !mapsLoaded || !addressInputRef.current) return;
+    if (autocompleteRef.current) return; // already attached
+
+    const ac = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+      types: ['address'],
+      componentRestrictions: { country: 'au' },
+      fields: ['formatted_address', 'address_components'],
+    });
+
+    ac.addListener('place_changed', () => {
+      const place = ac.getPlace();
+      if (!place?.formatted_address) return;
+
+      setValue('address', place.formatted_address, { shouldValidate: true });
+
+      // Auto-populate location (state) from address components if the field exists
+      const stateComp = place.address_components?.find((c) =>
+        c.types.includes('administrative_area_level_1')
+      );
+      if (stateComp) {
+        setValue('location', stateComp.short_name, { shouldValidate: false });
+      }
+    });
+
+    autocompleteRef.current = ac;
+
+    return () => {
+      // Clean up when modal closes
+      if (autocompleteRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+    };
+  }, [isOpen, mapsLoaded, setValue]);
 
   const onSubmit = async (data) => {
     try {
@@ -124,11 +167,31 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
                 
                 {/* Address */}
                 <div>
-                  <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Address *</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider">Address *</label>
+                    {mapsHasKey && !mapsLoaded && (
+                      <span className="text-[10px] text-brand-100/25">Loading autocomplete…</span>
+                    )}
+                    {mapsLoaded && (
+                      <span className="flex items-center gap-1 text-[10px] text-brand-100/30">
+                        <MapPin className="w-3 h-3 text-brand-500/50" />
+                        Autocomplete active
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
-                    {...register("address")}
-                    placeholder="123 Example Street, City, State"
+                    {...(({ ref: rhfRef, ...rest }) => {
+                      return {
+                        ...rest,
+                        ref: (el) => {
+                          rhfRef(el);
+                          addressInputRef.current = el;
+                        },
+                      };
+                    })(register('address'))}
+                    placeholder={mapsLoaded ? 'Start typing an address…' : '123 Example Street, City, State'}
+                    autoComplete="off"
                     className={`w-full bg-[#111] border ${errors.address ? 'border-red-500/50' : 'border-brand-800/50'} rounded-md px-4 py-2 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors`}
                   />
                   {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address.message}</p>}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
-import { Plus, Building, Search, Building2 } from 'lucide-react';
+import { Plus, Building, Search, Building2, Loader2 } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -59,36 +59,36 @@ export function Properties() {
           </div>
         </div>
 
-        {/* Table View */}
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-brand-100/50 uppercase bg-[#0A0A0A]/50 sticky top-0 border-b border-brand-800/30 z-10">
-              <tr>
-                <th className="px-6 py-4 font-semibold tracking-wider">Property ID</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Address</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Asset Type</th>
-                <th className="px-6 py-4 font-semibold tracking-wider text-right">Asking Price</th>
-                <th className="px-6 py-4 font-semibold tracking-wider text-right">Est. Yield</th>
-                <th className="px-6 py-4 font-semibold tracking-wider text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-brand-800/20">
-              <AnimatePresence>
-                {properties === undefined ? (
-                  <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <td colSpan="6" className="px-6 py-12 text-center text-brand-100/30">Loading inventory...</td>
-                  </motion.tr>
-                ) : properties.length === 0 ? (
-                  <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <td colSpan="6" className="px-6 py-12 text-center text-brand-100/30">
-                      <Building className="w-8 h-8 mx-auto mb-3 opacity-50 text-brand-500" />
-                      No properties in inventory. Click "Add Property" to start.
-                    </td>
-                  </motion.tr>
-                ) : (
-                  properties.map((prop, index) => (
-                    <motion.tr 
-                      key={prop._id} 
+        {/* Table View — loading/empty states live OUTSIDE AnimatePresence
+            so the stagger animation fires correctly when rows mount. */}
+        {properties === undefined ? (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <Loader2 className="w-7 h-7 text-brand-500 animate-spin" />
+          </div>
+        ) : properties.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
+            <Building className="w-10 h-10 mb-4 text-brand-500 opacity-30" />
+            <p className="text-brand-100/40 text-sm">No properties in inventory.</p>
+            <p className="text-brand-100/25 text-xs mt-1">Click "Add Property" to start.</p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-brand-100/50 uppercase bg-[#0A0A0A]/50 sticky top-0 border-b border-brand-800/30 z-10">
+                <tr>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Property ID</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Address</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Asset Type</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider text-right">Asking Price</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider text-right">Est. Yield</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-800/20">
+                <AnimatePresence>
+                  {properties.map((prop, index) => (
+                    <motion.tr
+                      key={prop._id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
@@ -113,22 +113,22 @@ export function Properties() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                          prop.status === 'On Market' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                          prop.status === 'Off Market' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                          prop.status === 'On Market'   ? 'bg-green-500/10  text-green-400  border-green-500/20'  :
+                          prop.status === 'Off Market'  ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
                           prop.status === 'Under Offer' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                          prop.status === 'Sold' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                          prop.status === 'Sold'        ? 'bg-blue-500/10   text-blue-400   border-blue-500/20'   :
                           'bg-brand-800/10 text-brand-100/50 border-brand-800/20'
                         }`}>
                           {prop.status}
                         </span>
                       </td>
                     </motion.tr>
-                  ))
-                )}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <PropertyModal 

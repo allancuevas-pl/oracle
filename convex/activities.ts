@@ -36,7 +36,7 @@ export const getActivities = query({
 export const addNote = mutation({
   args: {
     recordId: v.string(),
-    recordType: v.union(v.literal("brief"), v.literal("property")),
+    recordType: v.union(v.literal("brief"), v.literal("property"), v.literal("client")),
     content: v.string(),
   },
   handler: async (ctx, args) => {
@@ -55,8 +55,8 @@ export const addNote = mutation({
 // Helper for internal use by other mutations (not exported as an API endpoint)
 export async function logSystemActivity(
   ctx: any, 
-  { recordId, recordType, content, metadata, userId }: 
-  { recordId: string, recordType: "brief" | "property", content: string, metadata?: string, userId: string }
+  { recordId, recordType, content, metadata, userId }:
+  { recordId: string, recordType: "brief" | "property" | "client", content: string, metadata?: string, userId: string }
 ) {
   await ctx.db.insert("activities", {
     recordId,

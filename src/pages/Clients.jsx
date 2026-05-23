@@ -2,23 +2,9 @@ import React, { useState } from 'react';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
-import { Plus, Users, Search, Mail, Phone, Building } from 'lucide-react';
+import { Plus, Users, Search, Mail, Phone, Building, Loader2 } from 'lucide-react';
 import { ClientModal } from '../components/clients/ClientModal';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const ROLE_LABELS = {
-  buyer: 'Buyer',
-  seller: 'Seller',
-  vendor: 'Vendor',
-  other: 'Other',
-};
-
-const ROLE_COLOURS = {
-  buyer: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  seller: 'bg-green-500/10 text-green-400 border-green-500/20',
-  vendor: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  other: 'bg-brand-800/10 text-brand-100/50 border-brand-800/20',
-};
 
 export function Clients() {
   const navigate = useNavigate();
@@ -77,40 +63,38 @@ export function Clients() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-brand-100/50 uppercase bg-[#0A0A0A]/50 sticky top-0 border-b border-brand-800/30 z-10">
-              <tr>
-                <th className="px-6 py-4 font-semibold tracking-wider">Name</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Company</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Role</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Contact</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-brand-800/20">
-              <AnimatePresence>
-                {clients === undefined ? (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-brand-100/30">
-                      Loading clients...
-                    </td>
-                  </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-brand-100/30">
-                      <Users className="w-8 h-8 mx-auto mb-3 opacity-40 text-brand-500" />
-                      {searchTerm ? 'No clients match your search.' : 'No clients yet. Add one to get started.'}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((client, index) => (
+        {/* Table — loading/empty states live OUTSIDE AnimatePresence
+            so the stagger animation fires correctly when rows mount. */}
+        {clients === undefined ? (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <Loader2 className="w-7 h-7 text-brand-500 animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
+            <Users className="w-10 h-10 mb-4 text-brand-500 opacity-30" />
+            <p className="text-brand-100/40 text-sm">
+              {searchTerm ? 'No clients match your search.' : 'No clients yet. Add one to get started.'}
+            </p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-brand-100/50 uppercase bg-[#0A0A0A]/50 sticky top-0 border-b border-brand-800/30 z-10">
+                <tr>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Name</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Company</th>
+                  <th className="px-6 py-4 font-semibold tracking-wider">Contact</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brand-800/20">
+                <AnimatePresence>
+                  {filtered.map((client, index) => (
                     <motion.tr
                       key={client._id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: index * 0.04, type: 'spring', bounce: 0, duration: 0.35 }}
+                      transition={{ delay: index * 0.05, type: 'spring', bounce: 0, duration: 0.4 }}
                       onClick={() => navigate(`/clients/${client._id}`)}
                       className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
                     >
@@ -137,15 +121,6 @@ export function Clients() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        {client.role ? (
-                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${ROLE_COLOURS[client.role] ?? ROLE_COLOURS.other}`}>
-                            {ROLE_LABELS[client.role] ?? client.role}
-                          </span>
-                        ) : (
-                          <span className="text-brand-100/30 italic text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
                         <div className="flex flex-col space-y-1">
                           {client.email && (
                             <span className="flex items-center text-xs text-brand-100/60">
@@ -165,12 +140,12 @@ export function Clients() {
                         </div>
                       </td>
                     </motion.tr>
-                  ))
-                )}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
+                  ))}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <ClientModal

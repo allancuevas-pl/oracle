@@ -92,14 +92,53 @@ export default defineSchema({
     buildingArea: v.optional(v.number()), // in sqm
     wales: v.optional(v.number()), // Weighted Average Lease Expiry (years)
     createdBy: v.string(), // clerkId
+
+    // Tenancy Schedule
+    tenants: v.optional(v.array(v.object({
+      id: v.string(),
+      tenantName: v.string(),
+      suite: v.optional(v.string()),
+      lettableArea: v.optional(v.number()),      // sqm
+      leaseStart: v.optional(v.string()),        // "YYYY-MM-DD"
+      leaseEnd: v.optional(v.string()),          // "YYYY-MM-DD"
+      netFaceRent: v.optional(v.number()),       // $/pa
+      leaseType: v.optional(v.string()),         // "Net" | "Gross" | "Semi-Gross"
+      reviewType: v.optional(v.string()),        // "CPI" | "Fixed %" | "Market"
+      reviewRate: v.optional(v.number()),        // e.g. 3.5 for 3.5%
+      nextReviewDate: v.optional(v.string()),    // "YYYY-MM-DD"
+      options: v.optional(v.string()),           // e.g. "2 x 3yr"
+    }))),
+
+    // Outgoings Schedule
+    outgoings: v.optional(v.array(v.object({
+      id: v.string(),
+      category: v.string(),   // e.g. "Land Tax", "Council Rates"
+      amount: v.number(),     // $/pa
+      notes: v.optional(v.string()),
+    }))),
   }).index("by_status", ["status"]),
 
   matches: defineTable({
     briefId: v.id("briefs"),
     propertyId: v.id("properties"),
+    // Full commercial deal lifecycle — 11 stages
     status: v.union(
-      v.literal("Shortlisted"),
-      v.literal("Under Review"),
+      v.literal("Shortlisted"),        // 1.  Initial match shortlist
+      v.literal("Prepping"),           // 2.  Team preparing analysis / IM
+      v.literal("Report Ready"),       // 3.  Report ready to present to client
+      v.literal("Under Review"),       // 4.  Client reviewing
+      v.literal("Client Approved"),    // 3.  Client green-lit for pursuit
+      v.literal("Offer Submitted"),    // 4.  Offer submitted to vendor
+      v.literal("Under Offer"),        // 5.  Property under offer (vendor side)
+      v.literal("Negotiating"),        // 6.  Active commercial negotiation
+      v.literal("Offer Accepted"),     // 7.  Vendor accepted offer
+      v.literal("Contract Execution"), // 8.  Contracts being executed
+      v.literal("Due Diligence"),      // 9.  DD period underway
+      v.literal("Unconditional"),      // 10. Conditions satisfied
+      v.literal("Settlement"),         // 11. Deal settled (terminal win)
+      v.literal("Client Rejected"),    // 11. Client passed (terminal loss)
+      // Legacy — kept for backward compat with existing records
+      v.literal("Client Accepted"),
       v.literal("Rejected"),
       v.literal("Offered"),
       v.literal("Accepted")
@@ -113,7 +152,7 @@ export default defineSchema({
 
   activities: defineTable({
     recordId: v.string(), // ID of the brief or property
-    recordType: v.union(v.literal("brief"), v.literal("property")),
+    recordType: v.union(v.literal("brief"), v.literal("property"), v.literal("client")),
     type: v.union(v.literal("note"), v.literal("system")),
     content: v.string(), // e.g. "Changed stage to Due Diligence" or the user note text
     metadata: v.optional(v.string()), // Optional JSON string for tracking previous/new states

@@ -62,6 +62,52 @@ export const createProperty = mutation({
   },
 });
 
+const tenantObject = v.object({
+  id: v.string(),
+  tenantName: v.string(),
+  suite: v.optional(v.string()),
+  lettableArea: v.optional(v.number()),
+  leaseStart: v.optional(v.string()),
+  leaseEnd: v.optional(v.string()),
+  netFaceRent: v.optional(v.number()),
+  leaseType: v.optional(v.string()),
+  reviewType: v.optional(v.string()),
+  reviewRate: v.optional(v.number()),
+  nextReviewDate: v.optional(v.string()),
+  options: v.optional(v.string()),
+});
+
+const outgoingObject = v.object({
+  id: v.string(),
+  category: v.string(),
+  amount: v.number(),
+  notes: v.optional(v.string()),
+});
+
+export const updatePropertyTenants = mutation({
+  args: {
+    id: v.id("properties"),
+    tenants: v.array(tenantObject),
+  },
+  handler: async (ctx, args) => {
+    await requireStaffOrAdmin(ctx);
+    const { id, tenants } = args;
+    await ctx.db.patch(id, { tenants });
+  },
+});
+
+export const updatePropertyOutgoings = mutation({
+  args: {
+    id: v.id("properties"),
+    outgoings: v.array(outgoingObject),
+  },
+  handler: async (ctx, args) => {
+    await requireStaffOrAdmin(ctx);
+    const { id, outgoings } = args;
+    await ctx.db.patch(id, { outgoings });
+  },
+});
+
 export const updateProperty = mutation({
   args: {
     id: v.id("properties"),

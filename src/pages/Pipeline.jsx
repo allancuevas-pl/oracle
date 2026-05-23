@@ -26,16 +26,66 @@ import {
   MapPin,
   Layers,
   ArrowRight,
+  TrendingUp,
+  Scale,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// ─── Stage Definitions ────────────────────────────────────────────
+// Neutral treatment for all 8 progression stages — one consistent visual
+// language. Only two semantic exceptions carry their own color:
+//   Client Rejected  → red  (terminal loss)
+//   Settlement       → gold (terminal win, matches Oracle brand)
+
+const NEUTRAL = {
+  color:  'rgba(249,249,249,0.55)',
+  bg:     'rgba(255,255,255,0.025)',
+  border: 'rgba(255,255,255,0.07)',
+};
+
 const STAGES = [
-  { id: 'Shortlisted', label: 'Shortlisted', color: '#6B7280', bg: 'rgba(107,114,128,0.1)', border: 'rgba(107,114,128,0.3)' },
-  { id: 'Under Review', label: 'Under Review', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.3)' },
-  { id: 'Offered',      label: 'Offered',      color: '#3B82F6', bg: 'rgba(59,130,246,0.1)', border: 'rgba(59,130,246,0.3)' },
-  { id: 'Accepted',     label: 'Accepted',     color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.3)' },
-  { id: 'Rejected',     label: 'Rejected',     color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.3)' },
+  { id: 'Shortlisted',        label: 'Shortlisted',        group: 'early',      ...NEUTRAL },
+  { id: 'Prepping',           label: 'Prepping',           group: 'early',      ...NEUTRAL },
+  { id: 'Report Ready',       label: 'Report Ready',       group: 'early',      ...NEUTRAL },
+  { id: 'Under Review',       label: 'Under Review',       group: 'early',      ...NEUTRAL },
+  { id: 'Client Approved',    label: 'Client Approved',    group: 'early',      ...NEUTRAL },
+  { id: 'Offer Submitted',    label: 'Offer Submitted',    group: 'commercial', ...NEUTRAL },
+  { id: 'Under Offer',        label: 'Under Offer',        group: 'commercial', ...NEUTRAL },
+  { id: 'Negotiating',        label: 'Negotiating',        group: 'commercial', ...NEUTRAL },
+  { id: 'Offer Accepted',     label: 'Offer Accepted',     group: 'commercial', ...NEUTRAL },
+  { id: 'Contract Execution', label: 'Contract Execution', group: 'closing',    ...NEUTRAL },
+  { id: 'Due Diligence',      label: 'Due Diligence',      group: 'closing',    ...NEUTRAL },
+  { id: 'Unconditional',      label: 'Unconditional',      group: 'closing',    ...NEUTRAL },
+  {
+    id: 'Settlement', label: 'Settlement', group: 'won', terminal: true,
+    color:  '#D4AF37',
+    bg:     'rgba(212,175,55,0.06)',
+    border: 'rgba(212,175,55,0.18)',
+  },
+  {
+    id: 'Client Rejected', label: 'Client Rejected', group: 'dead', terminal: true,
+    color:  '#F87171',
+    bg:     'rgba(248,113,113,0.04)',
+    border: 'rgba(248,113,113,0.15)',
+  },
 ];
+
+const STAGE_IDS = STAGES.map((s) => s.id);
+
+// Legacy stage name map — existing records with old stage names render in
+// the correct new column rather than disappearing from the board.
+const LEGACY_MAP = {
+  'Client Accepted': 'Client Approved',
+  Rejected:          'Client Rejected',
+  Offered:           'Under Offer',
+  Accepted:          'Offer Accepted',
+};
+
+function resolveStage(status) {
+  return LEGACY_MAP[status] || status;
+}
 
 function formatPrice(n) {
   if (!n) return null;
@@ -44,82 +94,82 @@ function formatPrice(n) {
   return `$${n}`;
 }
 
-// ─── Single Deal Card ────────────────────────────────────────────
+// ─── Deal Card ────────────────────────────────────────────────────
 function DealCard({ match, isDragging = false, usersMap = {} }) {
   const { property, brief } = match;
-  const stage = STAGES.find((s) => s.id === match.status);
+  const resolvedId = resolveStage(match.status);
+  const stage = STAGES.find((s) => s.id === resolvedId);
 
   return (
     <div
       style={{
-        opacity: isDragging ? 0.5 : 1,
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        opacity: isDragging ? 0.45 : 1,
+        background: 'rgba(255,255,255,0.025)',
+        border: `1px solid rgba(255,255,255,0.07)`,
         borderRadius: 10,
-        padding: '14px 16px',
-        cursor: 'grab',
+        padding: '13px 14px',
+        cursor: isDragging ? 'grabbing' : 'grab',
         transition: 'box-shadow 0.15s, border-color 0.15s',
       }}
-      className="hover:border-brand-500/30 hover:shadow-lg"
+      className="hover:border-white/[0.14] hover:bg-white/[0.04] hover:shadow-md"
     >
       {/* Property */}
-      <div className="flex items-start gap-2 mb-3">
-        <Building2 size={13} className="text-brand-400 mt-0.5 shrink-0" />
+      <div className="flex items-start gap-2 mb-2.5">
+        <Building2 size={12} className="text-brand-400 mt-0.5 shrink-0" />
         <div className="min-w-0">
-          <p className="text-brand-50 text-sm font-medium leading-tight truncate">
+          <p className="text-brand-50 text-[13px] font-medium leading-snug truncate">
             {property?.address || 'Unknown Property'}
           </p>
           {property?.location && (
-            <p className="text-brand-400 text-xs mt-0.5 flex items-center gap-1">
-              <MapPin size={10} />
+            <p className="text-brand-400/70 text-[10px] mt-0.5 flex items-center gap-1">
+              <MapPin size={9} />
               {property.location}
             </p>
           )}
         </div>
       </div>
 
-      {/* Chips row */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
+      {/* Chips */}
+      <div className="flex flex-wrap gap-1 mb-2.5">
         {property?.assetType && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-800/60 text-brand-300 border border-brand-700/40">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-800/50 text-brand-300/80 border border-brand-700/30">
             {property.assetType}
           </span>
         )}
         {property?.askingPrice && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-800/60 text-brand-300 border border-brand-700/40 flex items-center gap-1">
-            <DollarSign size={8} />{formatPrice(property.askingPrice)}
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-800/50 text-brand-300/80 border border-brand-700/30 flex items-center gap-0.5">
+            <DollarSign size={7} />{formatPrice(property.askingPrice)}
           </span>
         )}
         {property?.status && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-800/60 text-brand-300 border border-brand-700/40">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-800/50 text-brand-300/80 border border-brand-700/30">
             {property.status}
           </span>
         )}
       </div>
 
-      {/* Brief link */}
-      <div className="flex items-center justify-between pt-2.5 border-t border-white/5">
+      {/* Brief footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]">
         <div className="flex items-center gap-1.5 min-w-0">
-          <FileText size={11} className="text-brand-500 shrink-0" />
-          <span className="text-brand-400 text-xs truncate">
+          <FileText size={10} className="text-brand-500 shrink-0" />
+          <span className="text-brand-400/80 text-[11px] truncate">
             {brief?.clientName || 'Unknown Brief'}
           </span>
           {brief?.briefId && (
-            <span className="text-brand-600 text-[10px]">#{brief.briefId}</span>
+            <span className="text-brand-600 text-[10px] shrink-0">#{brief.briefId}</span>
           )}
         </div>
         <Link
           to={`/briefs/${match.briefId}`}
           onClick={(e) => e.stopPropagation()}
-          className="text-brand-500 hover:text-brand-300 transition-colors"
+          className="text-brand-500/60 hover:text-brand-400 transition-colors shrink-0 ml-2"
         >
-          <ArrowRight size={13} />
+          <ArrowRight size={12} />
         </Link>
       </div>
 
-      {/* Avatar stack */}
       {brief?.assignees?.length > 0 && (
-        <div className="pt-2 mt-1">
+        <div className="pt-1.5 mt-0.5">
           <AvatarStack assignees={brief.assignees} usersMap={usersMap} max={4} />
         </div>
       )}
@@ -132,15 +182,10 @@ function SortableDealCard({ match, usersMap }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: match._id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, cursor: isDragging ? 'grabbing' : 'grab' }}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
       {...attributes}
       {...listeners}
     >
@@ -154,39 +199,33 @@ function PipelineColumn({ stage, matches, usersMap }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
 
   return (
-    <div
-      style={{ minWidth: 280, maxWidth: 300 }}
-      className="flex flex-col h-full"
-    >
-      {/* Header */}
+    <div style={{ minWidth: 252, maxWidth: 268 }} className="flex flex-col h-full shrink-0">
+      {/* Column header */}
       <div
-        className="flex items-center justify-between px-3 py-2.5 rounded-lg mb-3"
+        className="flex items-center justify-between px-3 py-2 rounded-lg mb-3"
         style={{ background: stage.bg, border: `1px solid ${stage.border}` }}
       >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ background: stage.color }}
-          />
-          <span className="text-sm font-semibold" style={{ color: stage.color }}>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: stage.color }} />
+          <span className="text-xs font-semibold truncate" style={{ color: stage.color }}>
             {stage.label}
           </span>
         </div>
         <span
-          className="text-xs font-bold px-2 py-0.5 rounded-full"
-          style={{ background: stage.border, color: stage.color }}
+          className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ml-2"
+          style={{ background: `${stage.color}22`, color: stage.color }}
         >
           {matches.length}
         </span>
       </div>
 
-      {/* Cards drop zone */}
+      {/* Drop zone */}
       <div
         ref={setNodeRef}
-        className="flex flex-col gap-3 flex-1 min-h-[120px] rounded-lg transition-colors"
+        className="flex flex-col gap-2.5 flex-1 min-h-[100px] rounded-lg transition-all"
         style={{
-          background: isOver ? stage.bg : 'transparent',
-          outline: isOver ? `2px dashed ${stage.border}` : '2px dashed transparent',
+          background: isOver ? 'rgba(212,175,55,0.05)' : 'transparent',
+          outline: isOver ? '2px dashed rgba(212,175,55,0.25)' : '2px dashed transparent',
           padding: isOver ? 6 : 0,
           transition: 'all 0.15s',
         }}
@@ -198,12 +237,9 @@ function PipelineColumn({ stage, matches, usersMap }) {
           {matches.length === 0 ? (
             <div
               className="flex-1 rounded-lg flex items-center justify-center"
-              style={{
-                border: `1px dashed ${stage.border}`,
-                minHeight: 80,
-              }}
+              style={{ border: `1px dashed ${stage.border}`, minHeight: 72, opacity: 0.6 }}
             >
-              <p className="text-brand-600 text-xs">Drop here</p>
+              <p className="text-[10px]" style={{ color: stage.color, opacity: 0.5 }}>Drop here</p>
             </div>
           ) : (
             matches.map((match) => (
@@ -219,54 +255,58 @@ function PipelineColumn({ stage, matches, usersMap }) {
 // ─── Pipeline Page ────────────────────────────────────────────────
 export function Pipeline() {
   const allMatches = useQuery(api.matches.getAllMatches);
-  const allUsers = useQuery(api.users.getUsers);
+  const allUsers   = useQuery(api.users.getUsers);
   const updateMatch = useMutation(api.matches.updateMatch);
 
   const [activeId, setActiveId] = useState(null);
 
   const usersMap = useMemo(() => {
     if (!allUsers) return {};
-    return Object.fromEntries(allUsers.map(u => [u._id, u]));
+    return Object.fromEntries(allUsers.map((u) => [u._id, u]));
   }, [allUsers]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Group matches by stage
+  // Group matches by resolved stage (handles legacy names)
   const columns = useMemo(() => {
     if (!allMatches) return {};
     return STAGES.reduce((acc, stage) => {
-      acc[stage.id] = allMatches.filter((m) => m.status === stage.id);
+      acc[stage.id] = allMatches.filter((m) => resolveStage(m.status) === stage.id);
       return acc;
     }, {});
   }, [allMatches]);
+
+  // Aggregate stats for the header
+  const stats = useMemo(() => {
+    if (!allMatches) return null;
+    const commercial = ['Under Offer', 'Negotiating', 'Offer Accepted']
+      .reduce((n, id) => n + (columns[id]?.length || 0), 0);
+    const closing = ['Contract Execution', 'Due Diligence']
+      .reduce((n, id) => n + (columns[id]?.length || 0), 0);
+    const won      = columns['Settlement']?.length || 0;
+    const rejected = columns['Client Rejected']?.length || 0;
+    return { commercial, closing, won, rejected };
+  }, [columns, allMatches]);
 
   const activeMatch = useMemo(
     () => allMatches?.find((m) => m._id === activeId),
     [activeId, allMatches]
   );
 
-  const STAGE_IDS = useMemo(() => STAGES.map(s => s.id), []);
-
-  // Custom collision detection: prefer pointer-within for cross-column accuracy
-  const collisionDetection = useMemo(() => (args) => {
-    // First check if pointer is directly inside a column droppable
-    const pointerCollisions = pointerWithin(args);
-    const columnCollisions = pointerCollisions.filter(c => STAGE_IDS.includes(c.id));
-    if (columnCollisions.length > 0) return columnCollisions;
-
-    // Fall back to rect intersection for card-over-card within same column
-    return rectIntersection(args);
-  }, [STAGE_IDS]);
+  const collisionDetection = useMemo(
+    () => (args) => {
+      const pointerHits = pointerWithin(args).filter((c) => STAGE_IDS.includes(c.id));
+      return pointerHits.length > 0 ? pointerHits : rectIntersection(args);
+    },
+    []
+  );
 
   function findStageForMatch(id) {
-    // Is the id itself a stage?
     if (STAGE_IDS.includes(id)) return id;
-    // Otherwise look up which stage the card belongs to
-    return STAGES.find((stage) =>
-      columns[stage.id]?.some((m) => m._id === id)
-    )?.id;
+    const match = allMatches?.find((m) => m._id === id);
+    return match ? resolveStage(match.status) : null;
   }
 
   async function handleDragEnd(event) {
@@ -275,14 +315,13 @@ export function Pipeline() {
     if (!over) return;
 
     const fromStage = findStageForMatch(active.id);
-    const toStage = findStageForMatch(over.id);
-
+    const toStage   = findStageForMatch(over.id);
     if (!fromStage || !toStage || fromStage === toStage) return;
 
     try {
       await updateMatch({ id: active.id, status: toStage });
       toast.success(`Moved to ${toStage}`);
-    } catch (e) {
+    } catch {
       toast.error('Failed to update deal stage');
     }
   }
@@ -298,47 +337,44 @@ export function Pipeline() {
     );
   }
 
-  const totalDeals = allMatches.length;
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Page Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-brand-800/50 shrink-0">
-        <div className="flex items-center justify-between">
+
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <div className="px-8 pt-7 pb-5 border-b border-white/[0.06] shrink-0">
+        <div className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="text-2xl font-semibold text-brand-50 tracking-tight flex items-center gap-3">
-              <Layers className="w-6 h-6 text-brand-500" />
+            <h1 className="text-2xl font-semibold text-brand-50 tracking-tight flex items-center gap-2.5">
+              <Layers className="w-5 h-5 text-brand-500 shrink-0" />
               Deal Pipeline
             </h1>
-            <p className="text-brand-400 text-sm mt-1">
-              {totalDeals} active deal{totalDeals !== 1 ? 's' : ''} across all client briefs
+            <p className="text-brand-400/60 text-sm mt-1">
+              {allMatches.length} deal{allMatches.length !== 1 ? 's' : ''} across {
+                new Set(allMatches.map(m => m.briefId)).size
+              } brief{new Set(allMatches.map(m => m.briefId)).size !== 1 ? 's' : ''}
             </p>
           </div>
 
-          {/* Stage summary pills */}
-          <div className="flex items-center gap-2">
-            {STAGES.map((stage) => (
-              <div
-                key={stage.id}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{ background: stage.bg, border: `1px solid ${stage.border}`, color: stage.color }}
-              >
-                <span>{stage.label}</span>
-                <span className="font-bold">{columns[stage.id]?.length ?? 0}</span>
-              </div>
-            ))}
-          </div>
+          {/* Aggregate stat pills */}
+          {stats && allMatches.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <StatPill icon={TrendingUp}   label="Commercial" count={stats.commercial} color="rgba(249,249,249,0.45)" />
+              <StatPill icon={Scale}        label="Closing"    count={stats.closing}    color="rgba(249,249,249,0.45)" />
+              <StatPill icon={CheckCircle2} label="Settled"    count={stats.won}        color="#D4AF37" />
+              <StatPill icon={XCircle}      label="Rejected"   count={stats.rejected}   color="#F87171" />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Board */}
+      {/* ── Board ────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-x-auto px-8 py-6">
         {allMatches.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-            <Layers className="w-16 h-16 text-brand-700" />
-            <h2 className="text-xl font-semibold text-brand-200">No deals in the pipeline yet</h2>
-            <p className="text-brand-500 text-sm max-w-sm">
-              Start by opening a Client Brief and matching a property to it. It will appear here automatically.
+            <Layers className="w-14 h-14 text-brand-800" />
+            <h2 className="text-lg font-semibold text-brand-200">No deals in the pipeline yet</h2>
+            <p className="text-brand-500/70 text-sm max-w-xs">
+              Open a Client Brief, match a property to it, and it will appear here automatically.
             </p>
             <Link
               to="/briefs"
@@ -355,7 +391,7 @@ export function Pipeline() {
             onDragEnd={handleDragEnd}
             onDragCancel={() => setActiveId(null)}
           >
-            <div className="flex gap-5 h-full items-start">
+            <div className="flex gap-4 h-full items-start">
               {STAGES.map((stage) => (
                 <PipelineColumn
                   key={stage.id}
@@ -368,7 +404,7 @@ export function Pipeline() {
 
             <DragOverlay dropAnimation={null}>
               {activeMatch ? (
-                <div style={{ width: 280 }}>
+                <div style={{ width: 252 }}>
                   <DealCard match={activeMatch} usersMap={usersMap} />
                 </div>
               ) : null}
@@ -376,6 +412,24 @@ export function Pipeline() {
           </DndContext>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Header stat pill ─────────────────────────────────────────────
+function StatPill({ icon: Icon, label, count, color }) {
+  return (
+    <div
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+      style={{
+        background: `${color}12`,
+        border: `1px solid ${color}30`,
+        color,
+      }}
+    >
+      <Icon size={12} />
+      <span className="text-white/40 font-normal">{label}</span>
+      <span className="font-bold">{count}</span>
     </div>
   );
 }

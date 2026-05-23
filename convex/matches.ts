@@ -23,6 +23,26 @@ export const getAllMatches = query({
   },
 });
 
+// Get all matches for a specific property, joined with brief details
+export const getMatchesForProperty = query({
+  args: { propertyId: v.id("properties") },
+  handler: async (ctx, args) => {
+    await requireStaffOrAdmin(ctx);
+    const matches = await ctx.db
+      .query("matches")
+      .withIndex("by_property", (q) => q.eq("propertyId", args.propertyId))
+      .collect();
+
+    const enriched = await Promise.all(
+      matches.map(async (match) => {
+        const brief = await ctx.db.get(match.briefId);
+        return { ...match, brief };
+      })
+    );
+    return enriched;
+  },
+});
+
 // Get all matches for a specific brief, joined with the property details
 export const getMatchesForBrief = query({
   args: { briefId: v.id("briefs") },
@@ -85,7 +105,21 @@ export const updateMatch = mutation({
     id: v.id("matches"),
     status: v.optional(v.union(
       v.literal("Shortlisted"),
+      v.literal("Prepping"),
+      v.literal("Report Ready"),
       v.literal("Under Review"),
+      v.literal("Client Approved"),
+      v.literal("Offer Submitted"),
+      v.literal("Under Offer"),
+      v.literal("Negotiating"),
+      v.literal("Offer Accepted"),
+      v.literal("Contract Execution"),
+      v.literal("Due Diligence"),
+      v.literal("Unconditional"),
+      v.literal("Settlement"),
+      v.literal("Client Rejected"),
+      // Legacy — backward compat
+      v.literal("Client Accepted"),
       v.literal("Rejected"),
       v.literal("Offered"),
       v.literal("Accepted"),

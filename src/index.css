@@ -7,3 +7,68 @@
     @apply bg-brand-black text-white antialiased;
   }
 }
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ─── Google Places Autocomplete dark theme ─────────────────────────────── */
+/* The .pac-container is injected directly into <body> by the Maps SDK,
+   so it can't be scoped to a component — global overrides are intentional. */
+.pac-container {
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  margin-top: 5px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  font-family: inherit;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.pac-item {
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgba(249, 249, 249, 0.6);
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  transition: background 120ms;
+}
+
+.pac-item:first-child {
+  border-top: none;
+}
+
+.pac-item:hover,
+.pac-item-selected {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(249, 249, 249, 0.9);
+}
+
+.pac-item-query {
+  color: #D4AF37;
+  font-size: 12px;
+}
+
+.pac-matched {
+  color: #D4AF37;
+  font-weight: 600;
+}
+
+/* Hide the Google "powered by" logo and map pin icon */
+.pac-icon {
+  display: none;
+}
+
+.pac-logo::after {
+  display: none;
+}

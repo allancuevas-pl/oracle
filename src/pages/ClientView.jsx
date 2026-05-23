@@ -4,7 +4,8 @@ import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { ClientModal } from '../components/clients/ClientModal';
-import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil, MoreHorizontal, Trash2 } from 'lucide-react';
+import { PulseFeed } from '../components/ui/PulseFeed';
+import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil } from 'lucide-react';
 import { IconButton } from '../components/ui/IconButton';
 
 const formatCurrency = (val) => {
@@ -13,19 +14,6 @@ const formatCurrency = (val) => {
   return "$" + val.toLocaleString();
 };
 
-const ROLE_LABELS = {
-  buyer: 'Buyer',
-  seller: 'Seller',
-  vendor: 'Vendor',
-  other: 'Other',
-};
-
-const ROLE_COLOURS = {
-  buyer: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  seller: 'bg-green-500/10 text-green-400 border-green-500/20',
-  vendor: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  other: 'bg-brand-800/10 text-brand-100/50 border-brand-800/20',
-};
 
 export function ClientView() {
   const { id } = useParams();
@@ -65,7 +53,7 @@ export function ClientView() {
     <>
       <RecordWorkspace
         title={client.name}
-        subtitle={[client.company, client.role ? ROLE_LABELS[client.role] : null].filter(Boolean).join(' · ')}
+        subtitle={client.company || undefined}
         onBack={() => navigate('/clients')}
         actions={
           <IconButton icon={Pencil} label="Edit Client" onClick={() => setIsEditModalOpen(true)} />
@@ -79,10 +67,8 @@ export function ClientView() {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-brand-50">{client.name}</h2>
-                {client.role && (
-                  <span className={`mt-1 inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${ROLE_COLOURS[client.role] ?? ROLE_COLOURS.other}`}>
-                    {ROLE_LABELS[client.role] ?? client.role}
-                  </span>
+                {client.company && (
+                  <p className="mt-0.5 text-xs text-brand-100/40">{client.company}</p>
                 )}
               </div>
             </div>
@@ -221,34 +207,7 @@ export function ClientView() {
           </div>
         }
         rightColumn={
-          <div className="space-y-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-brand-500">Summary</h2>
-            <div className="space-y-4">
-              <div className="bg-[#111] border border-brand-800/30 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-brand-100/50">Total Briefs</span>
-                  <span className="text-lg font-semibold text-brand-50">{briefs?.length ?? '—'}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-brand-100/50">Active</span>
-                  <span className="text-sm font-medium text-brand-50">
-                    {briefs?.filter(b => b.status === 'active').length ?? '—'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-brand-100/50">Archived</span>
-                  <span className="text-sm font-medium text-brand-100/50">
-                    {briefs?.filter(b => b.status === 'archived').length ?? '—'}
-                  </span>
-                </div>
-              </div>
-              <div className="bg-[#111] border border-brand-800/30 rounded-lg p-4">
-                <p className="text-xs text-brand-100/30 italic text-center">
-                  Contact history coming soon.
-                </p>
-              </div>
-            </div>
-          </div>
+          <PulseFeed recordId={client._id} recordType="client" />
         }
       />
       <ClientModal
