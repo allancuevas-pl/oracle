@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
-import { Loader2, Plus, Pencil, Building2, Users, MoreHorizontal, Archive, Link2 } from 'lucide-react';
+import { Loader2, Plus, Pencil, Building2, Users, MoreHorizontal, Archive, Link2, X } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
 import { AssigneePicker } from '../components/briefs/AssigneePicker';
@@ -24,7 +24,9 @@ export function BriefView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [showTeam, setShowTeam] = useState(false);
   const moreRef = useRef(null);
+  const teamRef = useRef(null);
 
   const updateBrief = useMutation(api.briefs.updateBrief);
   const updateMatch = useMutation(api.matches.updateMatch);
@@ -32,15 +34,16 @@ export function BriefView() {
   const brief = useQuery(api.briefs.getBrief, id ? { id } : "skip");
   const matches = useQuery(api.matches.getMatchesForBrief, id ? { briefId: id } : "skip");
 
-  // Close More dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
-    if (!showMore) return;
+    if (!showMore && !showTeam) return;
     function handler(e) {
       if (moreRef.current && !moreRef.current.contains(e.target)) setShowMore(false);
+      if (teamRef.current && !teamRef.current.contains(e.target)) setShowTeam(false);
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [showMore]);
+  }, [showMore, showTeam]);
 
   if (brief === undefined) {
     return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>;
@@ -71,7 +74,7 @@ export function BriefView() {
         onBack={() => navigate('/briefs')}
         actions={
           <>
-            {/* Match Property — primary action, slightly highlighted */}
+            {/* Match Property — primary action */}
             <IconButton
               icon={Link2}
               label="Match Property"
@@ -79,6 +82,29 @@ export function BriefView() {
               variant="primary"
             />
             <ToolbarDivider />
+            {/* Team panel */}
+            <div className="relative" ref={teamRef}>
+              <IconButton
+                icon={Users}
+                label="Team"
+                onClick={() => { setShowTeam(v => !v); setShowMore(false); }}
+                active={showTeam}
+              />
+              {showTeam && (
+                <div className="absolute right-0 top-full mt-1.5 bg-[#0A0A0A]/98 border border-white/[0.08] rounded-lg p-4 shadow-2xl backdrop-blur-md z-50 w-64">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-brand-500">Team</span>
+                    <button onClick={() => setShowTeam(false)} className="text-brand-100/30 hover:text-brand-100/70 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <AssigneePicker
+                    briefId={brief._id}
+                    enrichedAssignees={brief.enrichedAssignees ?? []}
+                  />
+                </div>
+              )}
+            </div>
             {/* Edit */}
             <IconButton
               icon={Pencil}
@@ -90,7 +116,7 @@ export function BriefView() {
               <IconButton
                 icon={MoreHorizontal}
                 label="More actions"
-                onClick={() => setShowMore(v => !v)}
+                onClick={() => { setShowMore(v => !v); setShowTeam(false); }}
                 active={showMore}
               />
               {showMore && (
@@ -216,11 +242,6 @@ export function BriefView() {
                   {brief.others || <span className="text-brand-100/30 italic">No additional notes provided.</span>}
                 </p>
               </div>
-            </div>
-
-            {/* Team */}
-            <div className="pt-5 border-t border-white/[0.04]">
-              <AssigneePicker briefId={brief._id} enrichedAssignees={brief.enrichedAssignees ?? []} />
             </div>
 
           </div>
