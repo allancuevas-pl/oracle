@@ -4,7 +4,8 @@ import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { ClientModal } from '../components/clients/ClientModal';
-import { Loader2, Mail, Phone, Building, FileText, Plus, Tag } from 'lucide-react';
+import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil, MoreHorizontal, Trash2 } from 'lucide-react';
+import { IconButton } from '../components/ui/IconButton';
 
 const formatCurrency = (val) => {
   if (!val) return null;
@@ -67,12 +68,7 @@ export function ClientView() {
         subtitle={[client.company, client.role ? ROLE_LABELS[client.role] : null].filter(Boolean).join(' · ')}
         onBack={() => navigate('/clients')}
         actions={
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="px-4 py-2 border border-brand-800/50 hover:bg-brand-900/30 text-brand-100 rounded-md text-sm font-medium transition-colors"
-          >
-            Edit
-          </button>
+          <IconButton icon={Pencil} label="Edit Client" onClick={() => setIsEditModalOpen(true)} />
         }
         leftColumn={
           <div className="space-y-6">

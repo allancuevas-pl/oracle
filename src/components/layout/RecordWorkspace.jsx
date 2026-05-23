@@ -50,16 +50,23 @@ export function RecordWorkspace({
         </div>
         
         {/* Top Right Action Bar */}
-        <div className="flex items-center space-x-4 shrink-0 pl-4">
-          {statusControls && (
-            <div className="flex items-center space-x-2 border-r border-white/5 pr-4 mr-1">
-              {statusControls}
-            </div>
-          )}
-          <div className="flex items-center space-x-3">
-            {actions}
+        {(statusControls || actions) && (
+          <div className="flex items-center gap-2 shrink-0 pl-4">
+            {statusControls && (
+              <>
+                <div className="flex items-center gap-2">
+                  {statusControls}
+                </div>
+                {actions && <div className="w-px h-4 bg-white/[0.06]" />}
+              </>
+            )}
+            {actions && (
+              <div className="flex items-center gap-1.5">
+                {actions}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* 2. Scrollable 3-Column Canvas (with Rounded Shells) */}
