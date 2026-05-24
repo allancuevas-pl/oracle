@@ -38,13 +38,29 @@ export const storeUser = mutation({
       .first();
 
     if (!existingUser) {
+      const email = (identity.email || "").toLowerCase();
+
+      // Check for a pending invitation — lets invited users get the correct role
+      const pendingInvite = email
+        ? await ctx.db
+            .query("pendingInvitations")
+            .withIndex("by_email", (q) => q.eq("email", email))
+            .first()
+        : null;
+
       await ctx.db.insert("users", {
         clerkId: identity.subject,
-        email: identity.email || "",
+        email,
         firstName: identity.givenName || "",
         lastName: identity.familyName || "",
-        role: "admin", // Auto-admin for local dev
+        // Use invited role when present; fallback to admin while single-user (change to "staff" once invite-only enrollment is enforced)
+        role: pendingInvite?.role ?? "admin",
       });
+
+      // Consume the invitation record — it's single-use
+      if (pendingInvite) {
+        await ctx.db.delete(pendingInvite._id);
+      }
     }
   },
 });

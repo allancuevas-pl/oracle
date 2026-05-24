@@ -28,6 +28,32 @@ export async function requireStaffOrAdmin(ctx: QueryCtx | MutationCtx) {
 }
 
 /**
+ * Ensures the caller is authenticated and has 'admin' role.
+ * Throws if not authorized. Returns the verified user record and identity.
+ */
+export async function requireAdmin(ctx: QueryCtx | MutationCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Unauthenticated call");
+  }
+
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+    .first();
+
+  if (!user) {
+    throw new Error("User record not found");
+  }
+
+  if (user.role !== "admin") {
+    throw new Error("Unauthorized: Admin access required");
+  }
+
+  return { identity, user };
+}
+
+/**
  * Ensures the caller is authenticated.
  * Returns the verified user record and their identity.
  */

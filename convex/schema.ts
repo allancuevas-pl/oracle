@@ -163,4 +163,11 @@ export default defineSchema({
     prefix: v.string(), // e.g. "B" for Briefs, "P" for Properties
     count: v.number(),
   }).index("by_prefix", ["prefix"]),
+
+  pendingInvitations: defineTable({
+    email: v.string(),
+    role: v.union(v.literal("admin"), v.literal("staff")),
+    invitedBy: v.string(), // clerkId of the inviting admin
+    clerkInvitationId: v.optional(v.string()), // Clerk's invitation ID for revocation
+  }).index("by_email", ["email"]),
 });
