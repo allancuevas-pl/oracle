@@ -6,15 +6,14 @@ import { useNavigate } from 'react-router-dom';
  * Universal 3-Column Workspace Shell (HubSpot Style)
  * Standardizes the view for Briefs, Properties, Contacts, etc.
  */
-export function RecordWorkspace({ 
-  onBack, 
-  title, 
-  subtitle, 
-  statusControls, 
-  actions, 
-  leftColumn, 
-  centerColumn, 
-  rightColumn 
+export function RecordWorkspace({
+  onBack,
+  title,
+  subtitle,
+  actions,
+  leftColumn,
+  centerColumn,
+  rightColumn
 }) {
   const navigate = useNavigate();
   
@@ -50,21 +49,9 @@ export function RecordWorkspace({
         </div>
         
         {/* Top Right Action Bar */}
-        {(statusControls || actions) && (
-          <div className="flex items-center gap-2 shrink-0 pl-4">
-            {statusControls && (
-              <>
-                <div className="flex items-center gap-2">
-                  {statusControls}
-                </div>
-                {actions && <div className="w-px h-4 bg-white/[0.06]" />}
-              </>
-            )}
-            {actions && (
-              <div className="flex items-center gap-1.5">
-                {actions}
-              </div>
-            )}
+        {actions && (
+          <div className="flex items-center gap-1.5 shrink-0 pl-4">
+            {actions}
           </div>
         )}
       </div>

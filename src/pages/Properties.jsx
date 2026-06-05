@@ -6,18 +6,23 @@ import { Plus, Building, Search, Building2, Loader2 } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const formatCurrency = (val) => {
-  if (!val) return "-";
-  if (val >= 1000000) {
-    return "$" + (val / 1000000).toFixed(1).replace(/\.0$/, '') + "M";
-  }
-  return "$" + val.toLocaleString();
-};
+import { formatCurrency } from '../utils/format';
 
 export function Properties() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const properties = useQuery(api.properties.getProperties, {});
+
+  const filtered = properties?.filter((p) => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      p.address.toLowerCase().includes(q) ||
+      (p.propertyId && p.propertyId.toLowerCase().includes(q)) ||
+      p.assetType.toLowerCase().includes(q)
+    );
+  }) ?? [];
 
   return (
     <div className="p-6 lg:p-8 space-y-6 h-full flex flex-col">
@@ -48,14 +53,20 @@ export function Properties() {
         <div className="p-4 border-b border-brand-800/30 bg-[#111] flex items-center justify-between">
           <div className="relative w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/30" />
-            <input 
-              type="text" 
-              placeholder="Search address or ID..." 
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search address, ID or type..."
               className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md pl-9 pr-3 py-1.5 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"
             />
           </div>
           <div className="text-sm text-brand-100/50">
-            {properties ? `${properties.length} Properties` : 'Loading...'}
+            {properties === undefined
+              ? 'Loading...'
+              : searchTerm && filtered.length !== properties.length
+                ? `${filtered.length} of ${properties.length} properties`
+                : `${properties.length} ${properties.length === 1 ? 'property' : 'properties'}`}
           </div>
         </div>
 
@@ -65,11 +76,25 @@ export function Properties() {
           <div className="flex-1 flex items-center justify-center py-16">
             <Loader2 className="w-7 h-7 text-brand-500 animate-spin" />
           </div>
-        ) : properties.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
             <Building className="w-10 h-10 mb-4 text-brand-500 opacity-30" />
-            <p className="text-brand-100/40 text-sm">No properties in inventory.</p>
-            <p className="text-brand-100/25 text-xs mt-1">Click "Add Property" to start.</p>
+            {searchTerm ? (
+              <>
+                <p className="text-brand-100/40 text-sm">No properties match "{searchTerm}".</p>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="mt-2 text-xs text-brand-400 hover:text-brand-300 underline transition-colors"
+                >
+                  Clear search
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-brand-100/40 text-sm">No properties in inventory.</p>
+                <p className="text-brand-100/25 text-xs mt-1">Click "Add Property" to start.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex-1 overflow-auto">
@@ -86,7 +111,7 @@ export function Properties() {
               </thead>
               <tbody className="divide-y divide-brand-800/20">
                 <AnimatePresence>
-                  {properties.map((prop, index) => (
+                  {filtered.map((prop, index) => (
                     <motion.tr
                       key={prop._id}
                       initial={{ opacity: 0, y: 10 }}

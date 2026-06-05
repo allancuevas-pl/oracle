@@ -10,14 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { AvatarStack } from '../components/briefs/AssigneePicker';
 
-// Helper to format numbers to currency ($X.XM or $X,XXX)
-const formatCurrency = (val) => {
-  if (!val) return "$0";
-  if (val >= 1000000) {
-    return "$" + (val / 1000000).toFixed(1).replace(/\.0$/, '') + "M";
-  }
-  return "$" + val.toLocaleString();
-};
+import { formatCurrency } from '../utils/format';
 
 export function Briefs() {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { X, Building, MapPin } from 'lucide-react';
+import { X, Building, MapPin, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { CustomSelect } from '../ui/CustomSelect';
@@ -32,7 +32,7 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
   const addressInputRef = useRef(null);
   const autocompleteRef = useRef(null);
 
-  const { register, handleSubmit, control, reset, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, control, reset, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       address: '',
@@ -310,9 +310,11 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
               <button
                 type="submit"
                 form="property-form"
-                className="px-6 py-2 text-sm font-bold text-brand-950 bg-brand-500 hover:bg-brand-400 rounded-md transition-colors shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+                disabled={isSubmitting}
+                className="px-6 py-2 text-sm font-bold text-brand-950 bg-brand-500 hover:bg-brand-400 rounded-md transition-colors shadow-[0_0_15px_rgba(212,175,55,0.2)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {editingProperty ? 'Save Changes' : 'Create Property'}
+                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isSubmitting ? 'Saving…' : editingProperty ? 'Save Changes' : 'Create Property'}
               </button>
             </div>
 

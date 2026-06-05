@@ -7,29 +7,37 @@ export const getActivities = query({
   handler: async (ctx, args) => {
     await requireStaffOrAdmin(ctx);
 
+    // Cap at 100 — newest first. More than enough for any active record's feed.
     const activities = await ctx.db
       .query("activities")
       .withIndex("by_recordId", (q) => q.eq("recordId", args.recordId))
-      .order("desc") // newest first
-      .collect();
+      .order("desc")
+      .take(100);
 
-    const enrichedActivities = await Promise.all(
-      activities.map(async (activity) => {
-        const user = await ctx.db
+    if (activities.length === 0) return [];
+
+    // Deduplicate user lookups — an active brief could have 50+ entries from
+    // only 2-3 people; no reason to hit the DB once per row.
+    const uniqueClerkIds = [...new Set(activities.map((a) => a.createdBy))];
+    const users = await Promise.all(
+      uniqueClerkIds.map((clerkId) =>
+        ctx.db
           .query("users")
-          .withIndex("by_clerkId", (q) => q.eq("clerkId", activity.createdBy))
-          .first();
-        
-        return {
-          ...activity,
-          creatorName: user 
-            ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email 
-            : "Unknown User"
-        };
-      })
+          .withIndex("by_clerkId", (q) => q.eq("clerkId", clerkId))
+          .first()
+      )
+    );
+    const userMap = new Map(
+      users.filter(Boolean).map((u) => [
+        u!.clerkId,
+        `${u!.firstName || ""} ${u!.lastName || ""}`.trim() || u!.email || "Unknown",
+      ])
     );
 
-    return enrichedActivities;
+    return activities.map((activity) => ({
+      ...activity,
+      creatorName: userMap.get(activity.createdBy) ?? "Unknown User",
+    }));
   },
 });
 

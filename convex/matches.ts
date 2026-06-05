@@ -3,23 +3,35 @@ import { v } from "convex/values";
 import { requireStaffOrAdmin } from "./authz";
 import { logSystemActivity } from "./activities";
 
-// Get ALL matches across all briefs — used by the global Pipeline view
+// Get ALL matches across all briefs — used by the global Pipeline view.
+// Hard cap at 500: generous for any CRE firm; add cursor pagination if approached.
+// Reads are deduplicated: many matches share the same brief/property, so we
+// batch by unique ID and join in memory rather than doing 2 reads per match.
 export const getAllMatches = query({
   args: {},
   handler: async (ctx) => {
     await requireStaffOrAdmin(ctx);
-    const matches = await ctx.db.query("matches").collect();
 
-    const enriched = await Promise.all(
-      matches.map(async (match) => {
-        const [brief, property] = await Promise.all([
-          ctx.db.get(match.briefId),
-          ctx.db.get(match.propertyId),
-        ]);
-        return { ...match, brief, property };
-      })
-    );
-    return enriched;
+    const matches = await ctx.db.query("matches").order("desc").take(500);
+    if (matches.length === 0) return [];
+
+    // Collect unique IDs — avoids re-fetching the same brief or property N times
+    const briefIds    = [...new Set(matches.map((m) => m.briefId))];
+    const propertyIds = [...new Set(matches.map((m) => m.propertyId))];
+
+    const [briefs, properties] = await Promise.all([
+      Promise.all(briefIds.map((id) => ctx.db.get(id))),
+      Promise.all(propertyIds.map((id) => ctx.db.get(id))),
+    ]);
+
+    const briefMap    = new Map(briefs.filter(Boolean).map((b) => [b!._id, b]));
+    const propertyMap = new Map(properties.filter(Boolean).map((p) => [p!._id, p]));
+
+    return matches.map((match) => ({
+      ...match,
+      brief:    briefMap.get(match.briefId)    ?? null,
+      property: propertyMap.get(match.propertyId) ?? null,
+    }));
   },
 });
 
@@ -31,7 +43,7 @@ export const getMatchesForProperty = query({
     const matches = await ctx.db
       .query("matches")
       .withIndex("by_property", (q) => q.eq("propertyId", args.propertyId))
-      .collect();
+      .take(100);
 
     const enriched = await Promise.all(
       matches.map(async (match) => {
@@ -43,7 +55,9 @@ export const getMatchesForProperty = query({
   },
 });
 
-// Get all matches for a specific brief, joined with the property details
+// Get all matches for a specific brief, joined with the property details.
+// Each (briefId, propertyId) pair is unique (enforced in createMatch), so
+// propertyIds are already distinct — no dedup needed, just a parallel fetch.
 export const getMatchesForBrief = query({
   args: { briefId: v.id("briefs") },
   handler: async (ctx, args) => {
@@ -51,16 +65,12 @@ export const getMatchesForBrief = query({
     const matches = await ctx.db
       .query("matches")
       .withIndex("by_brief", (q) => q.eq("briefId", args.briefId))
-      .collect();
+      .take(100);
 
-    // Join with property data
     const matchesWithProperties = await Promise.all(
       matches.map(async (match) => {
         const property = await ctx.db.get(match.propertyId);
-        return {
-          ...match,
-          property,
-        };
+        return { ...match, property };
       })
     );
 

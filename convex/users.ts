@@ -1,5 +1,5 @@
 import { query, mutation } from "./_generated/server";
-import { requireAuthenticatedUser, requireStaffOrAdmin } from "./authz";
+import { requireStaffOrAdmin } from "./authz";
 
 export const getCurrentUser = query({
   args: {},
@@ -16,13 +16,17 @@ export const getCurrentUser = query({
   },
 });
 
-// Returns all staff and admin users — used for the assignee picker on briefs
+// Returns all staff and admin users — used for the assignee picker on briefs.
+// Two index scans (one per role) instead of a full table scan + filter.
 export const getUsers = query({
   args: {},
   handler: async (ctx) => {
     await requireStaffOrAdmin(ctx);
-    const users = await ctx.db.query("users").collect();
-    return users.filter(u => u.role === "staff" || u.role === "admin");
+    const [admins, staff] = await Promise.all([
+      ctx.db.query("users").withIndex("by_role", (q) => q.eq("role", "admin")).take(100),
+      ctx.db.query("users").withIndex("by_role", (q) => q.eq("role", "staff")).take(100),
+    ]);
+    return [...admins, ...staff];
   },
 });
 
@@ -53,8 +57,9 @@ export const storeUser = mutation({
         email,
         firstName: identity.givenName || "",
         lastName: identity.familyName || "",
-        // Use invited role when present; fallback to admin while single-user (change to "staff" once invite-only enrollment is enforced)
-        role: pendingInvite?.role ?? "admin",
+        // Use invited role when present; fallback to "client" (no access) for
+        // any unanticipated sign-up. Admins must explicitly invite with a role.
+        role: pendingInvite?.role ?? "client",
       });
 
       // Consume the invitation record — it's single-use

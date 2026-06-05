@@ -50,7 +50,7 @@ export const getBriefsByClient = query({
     return await ctx.db
       .query("briefs")
       .withIndex("by_clientId", (q) => q.eq("clientId", args.clientId))
-      .collect();
+      .take(50);
   },
 });
 

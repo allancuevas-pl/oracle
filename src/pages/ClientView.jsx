@@ -4,21 +4,19 @@ import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { ClientModal } from '../components/clients/ClientModal';
+import { BriefModal } from '../components/briefs/BriefModal';
 import { PulseFeed } from '../components/ui/PulseFeed';
 import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil } from 'lucide-react';
 import { IconButton } from '../components/ui/IconButton';
 
-const formatCurrency = (val) => {
-  if (!val) return null;
-  if (val >= 1000000) return "$" + (val / 1000000).toFixed(1).replace(/\.0$/, '') + "M";
-  return "$" + val.toLocaleString();
-};
+import { formatCurrency } from '../utils/format';
 
 
 export function ClientView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isBriefModalOpen, setIsBriefModalOpen] = useState(false);
 
   const client = useQuery(api.clients.getClient, id ? { id } : "skip");
   const briefs = useQuery(api.briefs.getBriefsByClient, id ? { clientId: id } : "skip");
@@ -129,9 +127,9 @@ export function ClientView() {
                   {briefs?.length ?? 0} BRIEF{briefs?.length !== 1 ? 'S' : ''}
                 </span>
                 <button
-                  onClick={() => navigate('/briefs')}
+                  onClick={() => setIsBriefModalOpen(true)}
                   className="p-1.5 rounded-md hover:bg-brand-900/30 text-brand-100/50 hover:text-brand-400 transition-colors border border-white/5"
-                  title="Create new brief"
+                  title="Create brief for this client"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -214,6 +212,11 @@ export function ClientView() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         editingClient={client}
+      />
+      <BriefModal
+        isOpen={isBriefModalOpen}
+        onClose={() => setIsBriefModalOpen(false)}
+        preselectedClient={{ id: client._id, name: client.name }}
       />
     </>
   );

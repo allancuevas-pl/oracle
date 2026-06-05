@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
-import { Loader2, Plus, Pencil, Building2, Users, MoreHorizontal, Archive, Link2, X } from 'lucide-react';
+import { Loader2, Pencil, Building2, Users, MoreHorizontal, Archive, Link2, X } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
 import { AssigneePicker } from '../components/briefs/AssigneePicker';
@@ -11,12 +11,7 @@ import { CustomSelect } from '../components/ui/CustomSelect';
 import { IconButton, ToolbarDivider } from '../components/ui/IconButton';
 import { PulseFeed } from '../components/ui/PulseFeed';
 import { toast } from 'sonner';
-
-const formatCurrency = (val) => {
-  if (!val) return "$0";
-  if (val >= 1000000) return "$" + (val / 1000000).toFixed(1).replace(/\.0$/, '') + "M";
-  return "$" + val.toLocaleString();
-};
+import { formatCurrency } from '../utils/format';
 
 export function BriefView() {
   const { id } = useParams();
@@ -163,7 +158,13 @@ export function BriefView() {
                   <p className="text-[10px] text-brand-100/40 mb-1.5 uppercase tracking-wider">Stage</p>
                   <CustomSelect
                     value={brief.stage}
-                    onChange={(value) => updateBrief({ id: brief._id, stage: value })}
+                    onChange={async (value) => {
+                      try {
+                        await updateBrief({ id: brief._id, stage: value });
+                      } catch {
+                        toast.error("Failed to update stage.");
+                      }
+                    }}
                     options={['Triage', 'Active Search', 'Offer Submitted', 'Due Diligence']}
                     variant="pill"
                   />
@@ -172,7 +173,13 @@ export function BriefView() {
                   <p className="text-[10px] text-brand-100/40 mb-1.5 uppercase tracking-wider">Priority</p>
                   <CustomSelect
                     value={brief.priority || 'Low'}
-                    onChange={(value) => updateBrief({ id: brief._id, priority: value })}
+                    onChange={async (value) => {
+                      try {
+                        await updateBrief({ id: brief._id, priority: value });
+                      } catch {
+                        toast.error("Failed to update priority.");
+                      }
+                    }}
                     options={['High', 'Medium', 'Low']}
                     variant="priority"
                   />
@@ -294,10 +301,31 @@ export function BriefView() {
                       <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <CustomSelect
                           value={match.status}
-                          onChange={(value) => updateMatch({ id: match._id, status: value })}
-                          options={['Shortlisted', 'Under Review', 'Offered', 'Accepted', 'Rejected']}
+                          onChange={async (value) => {
+                            try {
+                              await updateMatch({ id: match._id, status: value });
+                            } catch {
+                              toast.error("Failed to update deal stage.");
+                            }
+                          }}
+                          options={[
+                            'Shortlisted',
+                            'Prepping',
+                            'Report Ready',
+                            'Under Review',
+                            'Client Approved',
+                            'Offer Submitted',
+                            'Under Offer',
+                            'Negotiating',
+                            'Offer Accepted',
+                            'Contract Execution',
+                            'Due Diligence',
+                            'Unconditional',
+                            'Settlement',
+                            'Client Rejected',
+                          ]}
                           variant="pill"
-                          className="w-32"
+                          className="w-40"
                         />
                       </div>
                     </div>

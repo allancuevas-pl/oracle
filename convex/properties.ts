@@ -4,15 +4,23 @@ import { logSystemActivity } from "./activities";
 import { requireStaffOrAdmin } from "./authz";
 import { generateId } from "./utils";
 
+const PROPERTY_STATUS = v.union(
+  v.literal("On Market"),
+  v.literal("Off Market"),
+  v.literal("Under Offer"),
+  v.literal("Sold"),
+  v.literal("Archived"),
+);
+
 export const getProperties = query({
   args: {
-    status: v.optional(v.string()),
+    status: v.optional(PROPERTY_STATUS),
   },
   handler: async (ctx, args) => {
     await requireStaffOrAdmin(ctx);
     let q = ctx.db.query("properties");
     if (args.status) {
-      q = q.withIndex("by_status", (q) => q.eq("status", args.status as any));
+      q = q.withIndex("by_status", (q) => q.eq("status", args.status!));
     }
     return await q.order("desc").take(100);
   },
@@ -30,7 +38,7 @@ export const createProperty = mutation({
   args: {
     address: v.string(),
     assetType: v.string(),
-    status: v.string(),
+    status: PROPERTY_STATUS,
     askingPrice: v.optional(v.number()),
     estimatedYield: v.optional(v.number()),
     location: v.optional(v.string()),
@@ -46,7 +54,6 @@ export const createProperty = mutation({
     
     const newId = await ctx.db.insert("properties", {
       ...args,
-      status: args.status as any,
       propertyId,
       createdBy: identity.subject,
     });
@@ -92,6 +99,9 @@ export const updatePropertyTenants = mutation({
   handler: async (ctx, args) => {
     await requireStaffOrAdmin(ctx);
     const { id, tenants } = args;
+    if (tenants.length > 100) {
+      throw new Error("A property cannot have more than 100 tenants.");
+    }
     await ctx.db.patch(id, { tenants });
   },
 });
@@ -104,6 +114,9 @@ export const updatePropertyOutgoings = mutation({
   handler: async (ctx, args) => {
     await requireStaffOrAdmin(ctx);
     const { id, outgoings } = args;
+    if (outgoings.length > 100) {
+      throw new Error("A property cannot have more than 100 outgoing line items.");
+    }
     await ctx.db.patch(id, { outgoings });
   },
 });
@@ -113,7 +126,7 @@ export const updateProperty = mutation({
     id: v.id("properties"),
     address: v.optional(v.string()),
     assetType: v.optional(v.string()),
-    status: v.optional(v.string()),
+    status: v.optional(PROPERTY_STATUS),
     askingPrice: v.optional(v.number()),
     estimatedYield: v.optional(v.number()),
     location: v.optional(v.string()),

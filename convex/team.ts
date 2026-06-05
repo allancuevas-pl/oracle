@@ -10,8 +10,11 @@ export const getTeamMembers = query({
   args: {},
   handler: async (ctx) => {
     await requireStaffOrAdmin(ctx);
-    const users = await ctx.db.query("users").collect();
-    return users.filter((u) => u.role === "admin" || u.role === "staff");
+    const [admins, staff] = await Promise.all([
+      ctx.db.query("users").withIndex("by_role", (q) => q.eq("role", "admin")).take(100),
+      ctx.db.query("users").withIndex("by_role", (q) => q.eq("role", "staff")).take(100),
+    ]);
+    return [...admins, ...staff];
   },
 });
 
@@ -20,7 +23,7 @@ export const getPendingInvitations = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    return await ctx.db.query("pendingInvitations").collect();
+    return await ctx.db.query("pendingInvitations").take(100);
   },
 });
 

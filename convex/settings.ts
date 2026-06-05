@@ -1,4 +1,4 @@
-import { query, internalMutation } from "./_generated/server";
+import { query } from "./_generated/server";
 import { requireStaffOrAdmin } from "./authz";
 
 export const getSettings = query({
@@ -26,14 +26,3 @@ export const getSettings = query({
   },
 });
 
-export const updateDebtStructures = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    let settings = await ctx.db.query("settings").first();
-    if (settings) {
-      await ctx.db.patch(settings._id, {
-        debtStructures: ["Lease Doc", "Full Doc", "Cash", "Other"]
-      });
-    }
-  }
-});

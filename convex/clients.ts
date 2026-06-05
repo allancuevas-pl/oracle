@@ -6,7 +6,21 @@ export const getClients = query({
   args: {},
   handler: async (ctx) => {
     await requireStaffOrAdmin(ctx);
-    return await ctx.db.query("clients").order("asc").collect();
+    // 500 is a generous cap for a CRE firm's client roster.
+    // If this ceiling is ever approached, move to cursor-based pagination
+    // and a server-side search index on the client picker.
+    return await ctx.db.query("clients").order("asc").take(500);
+  },
+});
+
+// Lightweight projection for pickers — returns only the fields needed to
+// populate a dropdown. Avoids sending phone, email, notes, etc. over the wire.
+export const getClientSummaries = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireStaffOrAdmin(ctx);
+    const clients = await ctx.db.query("clients").order("asc").take(500);
+    return clients.map((c) => ({ _id: c._id, name: c.name, company: c.company }));
   },
 });
 

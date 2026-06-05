@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Pencil, Trash2, Check, X, Users, DollarSign, TrendingUp, Building } from 'lucide-react';
 import { toast } from 'sonner';
+import { CustomSelect } from '../../ui/CustomSelect';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -179,28 +180,21 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
         </div>
         <div>
           <label className={LABEL_CLS}>Lease Type</label>
-          <select
+          <CustomSelect
             value={data.leaseType || 'Net'}
-            onChange={(e) => onChange({ leaseType: e.target.value })}
-            className={INPUT_CLS}
-          >
-            <option value="Net">Net</option>
-            <option value="Gross">Gross</option>
-            <option value="Semi-Gross">Semi-Gross</option>
-          </select>
+            onChange={(v) => onChange({ leaseType: v })}
+            options={['Net', 'Gross', 'Semi-Gross']}
+            variant="compact"
+          />
         </div>
         <div>
           <label className={LABEL_CLS}>Review Type</label>
-          <select
+          <CustomSelect
             value={data.reviewType || 'CPI'}
-            onChange={(e) => onChange({ reviewType: e.target.value })}
-            className={INPUT_CLS}
-          >
-            <option value="CPI">CPI</option>
-            <option value="Fixed %">Fixed %</option>
-            <option value="Market">Market</option>
-            <option value="None">None</option>
-          </select>
+            onChange={(v) => onChange({ reviewType: v })}
+            options={['CPI', 'Fixed %', 'Market', 'None']}
+            variant="compact"
+          />
         </div>
         {data.reviewType === 'Fixed %' && (
           <div>

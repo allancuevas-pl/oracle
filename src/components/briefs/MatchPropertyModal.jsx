@@ -5,15 +5,11 @@ import { X, Building2, Search, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-const formatCurrency = (val) => {
-  if (!val) return "$0";
-  if (val >= 1000000) return "$" + (val / 1000000).toFixed(1).replace(/\.0$/, '') + "M";
-  return "$" + val.toLocaleString();
-};
+import { formatCurrency } from '../../utils/format';
 
 export function MatchPropertyModal({ isOpen, onClose, briefId }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const properties = useQuery(api.properties.getProperties);
+  const properties = useQuery(api.properties.getProperties, isOpen ? {} : 'skip');
   const createMatch = useMutation(api.matches.createMatch);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

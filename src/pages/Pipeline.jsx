@@ -30,6 +30,8 @@ import {
   Scale,
   CheckCircle2,
   XCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -256,9 +258,25 @@ function PipelineColumn({ stage, matches, usersMap }) {
 export function Pipeline() {
   const allMatches = useQuery(api.matches.getAllMatches);
   const allUsers   = useQuery(api.users.getUsers);
-  const updateMatch = useMutation(api.matches.updateMatch);
+
+  // Optimistic update: move the card to the target column in the local cache
+  // immediately on drop — no round-trip snap-back. Convex auto-reverts on failure.
+  const updateMatch = useMutation(api.matches.updateMatch).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.matches.getAllMatches, {});
+      if (current === undefined) return;
+      localStore.setQuery(
+        api.matches.getAllMatches,
+        {},
+        current.map((m) =>
+          m._id === args.id ? { ...m, status: args.status } : m
+        )
+      );
+    }
+  );
 
   const [activeId, setActiveId] = useState(null);
+  const [showTerminal, setShowTerminal] = useState(false);
 
   const usersMap = useMemo(() => {
     if (!allUsers) return {};
@@ -269,6 +287,13 @@ export function Pipeline() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  // Stages visible on the board — terminal columns hidden by default to keep
+  // the board uncluttered; toggled back in via the "Show closed" button.
+  const visibleStages = useMemo(
+    () => (showTerminal ? STAGES : STAGES.filter((s) => !s.terminal)),
+    [showTerminal]
+  );
+
   // Group matches by resolved stage (handles legacy names)
   const columns = useMemo(() => {
     if (!allMatches) return {};
@@ -276,6 +301,15 @@ export function Pipeline() {
       acc[stage.id] = allMatches.filter((m) => resolveStage(m.status) === stage.id);
       return acc;
     }, {});
+  }, [allMatches]);
+
+  // Active (non-terminal) deal count for the header subtitle
+  const activeMatchCount = useMemo(() => {
+    if (!allMatches) return 0;
+    return allMatches.filter((m) => {
+      const stage = STAGES.find((s) => s.id === resolveStage(m.status));
+      return !stage?.terminal;
+    }).length;
   }, [allMatches]);
 
   // Aggregate stats for the header
@@ -349,21 +383,48 @@ export function Pipeline() {
               Deal Pipeline
             </h1>
             <p className="text-brand-400/60 text-sm mt-1">
-              {allMatches.length} deal{allMatches.length !== 1 ? 's' : ''} across {
-                new Set(allMatches.map(m => m.briefId)).size
-              } brief{new Set(allMatches.map(m => m.briefId)).size !== 1 ? 's' : ''}
+              {activeMatchCount} active deal{activeMatchCount !== 1 ? 's' : ''} across {
+                new Set(
+                  allMatches
+                    .filter(m => !STAGES.find(s => s.id === resolveStage(m.status))?.terminal)
+                    .map(m => m.briefId)
+                ).size
+              } brief{
+                new Set(
+                  allMatches
+                    .filter(m => !STAGES.find(s => s.id === resolveStage(m.status))?.terminal)
+                    .map(m => m.briefId)
+                ).size !== 1 ? 's' : ''
+              }
+              {!showTerminal && (stats?.won || stats?.rejected)
+                ? ` · ${(stats.won || 0) + (stats.rejected || 0)} closed`
+                : ''}
             </p>
           </div>
 
-          {/* Aggregate stat pills */}
-          {stats && allMatches.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <StatPill icon={TrendingUp}   label="Commercial" count={stats.commercial} color="rgba(249,249,249,0.45)" />
-              <StatPill icon={Scale}        label="Closing"    count={stats.closing}    color="rgba(249,249,249,0.45)" />
-              <StatPill icon={CheckCircle2} label="Settled"    count={stats.won}        color="#D4AF37" />
-              <StatPill icon={XCircle}      label="Rejected"   count={stats.rejected}   color="#F87171" />
-            </div>
-          )}
+          {/* Aggregate stat pills + terminal toggle */}
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            {stats && allMatches.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <StatPill icon={TrendingUp}   label="Commercial" count={stats.commercial} color="rgba(249,249,249,0.45)" />
+                <StatPill icon={Scale}        label="Closing"    count={stats.closing}    color="rgba(249,249,249,0.45)" />
+                <StatPill icon={CheckCircle2} label="Settled"    count={stats.won}        color="#D4AF37" />
+                <StatPill icon={XCircle}      label="Rejected"   count={stats.rejected}   color="#F87171" />
+              </div>
+            )}
+            <button
+              onClick={() => setShowTerminal(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+              style={{
+                background: showTerminal ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)',
+                border: showTerminal ? '1px solid rgba(212,175,55,0.25)' : '1px solid rgba(255,255,255,0.08)',
+                color: showTerminal ? '#D4AF37' : 'rgba(249,249,249,0.4)',
+              }}
+            >
+              {showTerminal ? <EyeOff size={11} /> : <Eye size={11} />}
+              {showTerminal ? 'Hide closed' : 'Show closed'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -392,7 +453,7 @@ export function Pipeline() {
             onDragCancel={() => setActiveId(null)}
           >
             <div className="flex gap-4 h-full items-start">
-              {STAGES.map((stage) => (
+              {visibleStages.map((stage) => (
                 <PipelineColumn
                   key={stage.id}
                   stage={stage}

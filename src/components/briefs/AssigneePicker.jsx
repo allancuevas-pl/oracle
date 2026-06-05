@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { Plus, X, ChevronDown, Users } from 'lucide-react';
+import { Plus, X, Users } from 'lucide-react';
+import { CustomSelect } from '../ui/CustomSelect';
 import { toast } from 'sonner';
 
 const ROLE_OPTIONS = ['Lead Agent', 'Support', 'Admin'];
@@ -139,21 +140,13 @@ export function AssigneePicker({ briefId, enrichedAssignees = [] }) {
           {/* User select */}
           <div>
             <label className="block text-[10px] text-brand-100/40 mb-1 uppercase tracking-wider">Staff Member</label>
-            <div className="relative">
-              <select
-                value={selectedUserId}
-                onChange={e => setSelectedUserId(e.target.value)}
-                className="w-full appearance-none bg-[#0A0A0A] border border-brand-800/50 rounded-md pl-3 pr-7 py-1.5 text-xs text-brand-50 focus:outline-none focus:border-brand-500/50"
-              >
-                <option value="" className="bg-[#111]">Select person...</option>
-                {available.map(u => (
-                  <option key={u._id} value={u._id} className="bg-[#111]">
-                    {userName(u)}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-100/30 pointer-events-none" />
-            </div>
+            <CustomSelect
+              value={selectedUserId}
+              onChange={setSelectedUserId}
+              options={available.map(u => ({ value: u._id, label: userName(u) }))}
+              placeholder="Select person..."
+              variant="compact"
+            />
             {available.length === 0 && (
               <p className="text-[10px] text-brand-100/30 mt-1 italic">All staff members already assigned.</p>
             )}
@@ -162,18 +155,12 @@ export function AssigneePicker({ briefId, enrichedAssignees = [] }) {
           {/* Role select */}
           <div>
             <label className="block text-[10px] text-brand-100/40 mb-1 uppercase tracking-wider">Role</label>
-            <div className="relative">
-              <select
-                value={selectedRole}
-                onChange={e => setSelectedRole(e.target.value)}
-                className="w-full appearance-none bg-[#0A0A0A] border border-brand-800/50 rounded-md pl-3 pr-7 py-1.5 text-xs text-brand-50 focus:outline-none focus:border-brand-500/50"
-              >
-                {ROLE_OPTIONS.map(r => (
-                  <option key={r} value={r} className="bg-[#111]">{r}</option>
-                ))}
-              </select>
-              <ChevronDown className="w-3 h-3 absolute right-2.5 top-1/2 -translate-y-1/2 text-brand-100/30 pointer-events-none" />
-            </div>
+            <CustomSelect
+              value={selectedRole}
+              onChange={setSelectedRole}
+              options={ROLE_OPTIONS}
+              variant="compact"
+            />
           </div>
 
           {/* Actions */}

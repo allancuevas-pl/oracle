@@ -53,24 +53,3 @@ export async function requireAdmin(ctx: QueryCtx | MutationCtx) {
   return { identity, user };
 }
 
-/**
- * Ensures the caller is authenticated.
- * Returns the verified user record and their identity.
- */
-export async function requireAuthenticatedUser(ctx: QueryCtx | MutationCtx) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Unauthenticated call");
-  }
-
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
-    .first();
-
-  if (!user) {
-    throw new Error("User record not found");
-  }
-
-  return { identity, user };
-}
