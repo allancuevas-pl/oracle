@@ -44,8 +44,9 @@ function checkFile(filePath) {
           reason = `'${fnName}' in users.ts is missing requireAuthenticatedUser or requireStaffOrAdmin check. (Add to USERS_BOOTSTRAP_ALLOWLIST only if it must run before user provisioning.)`;
         }
       } else {
-        hasAuthz = handlerSnippet.includes('requireStaffOrAdmin');
-        reason = `'${fnName}' is missing requireStaffOrAdmin check. (requireAuthenticatedUser is not permitted for CRM files)`;
+        // requireAdmin is a superset restriction of requireStaffOrAdmin — both are valid.
+        hasAuthz = handlerSnippet.includes('requireStaffOrAdmin') || handlerSnippet.includes('requireAdmin');
+        reason = `'${fnName}' is missing requireStaffOrAdmin (or requireAdmin) check. (requireAuthenticatedUser is not permitted for CRM files)`;
       }
 
       if (!hasAuthz) {
