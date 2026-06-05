@@ -14,6 +14,7 @@ import { RentReviewsTab } from '../components/properties/tabs/RentReviewsTab';
 import { FeasoTab }       from '../components/properties/tabs/FeasoTab';
 import { ReportsTab }     from '../components/properties/tabs/ReportsTab';
 import { FilesTab }       from '../components/properties/tabs/FilesTab';
+import { PulseFeed }      from '../components/ui/PulseFeed';
 
 const TABS = [
   { id: 'details',      label: 'Details' },
@@ -143,15 +144,27 @@ export function PropertyView() {
           </div>
         </div>
 
-        {/* Tab content */}
-        <div className="flex-1 px-6 lg:px-8 py-7">
-          {activeTab === 'details'      && <DetailsTab     property={property} updateProperty={updateProperty} />}
-          {activeTab === 'tenancy'      && <TenancyTab     property={property} updateTenants={updateTenants} />}
-          {activeTab === 'outgoings'    && <OutgoingsTab   property={property} updateOutgoings={updateOutgoings} />}
-          {activeTab === 'rent-reviews' && <RentReviewsTab property={property} />}
-          {activeTab === 'feaso'        && <FeasoTab />}
-          {activeTab === 'reports'      && <ReportsTab />}
-          {activeTab === 'files'        && <FilesTab />}
+        {/* Tab content + Activity panel */}
+        <div className="flex-1 flex gap-6 px-6 lg:px-8 py-7 min-h-0">
+
+          {/* Main tab content */}
+          <div className="flex-1 min-w-0">
+            {activeTab === 'details'      && <DetailsTab     property={property} updateProperty={updateProperty} />}
+            {activeTab === 'tenancy'      && <TenancyTab     property={property} updateTenants={updateTenants} />}
+            {activeTab === 'outgoings'    && <OutgoingsTab   property={property} updateOutgoings={updateOutgoings} />}
+            {activeTab === 'rent-reviews' && <RentReviewsTab property={property} />}
+            {activeTab === 'feaso'        && <FeasoTab />}
+            {activeTab === 'reports'      && <ReportsTab />}
+            {activeTab === 'files'        && <FilesTab />}
+          </div>
+
+          {/* Activity panel — fixed width, sticks below header + tab bar */}
+          <div className="hidden lg:block w-72 shrink-0">
+            <div className="bg-[#0A0A0A] border border-white/5 rounded-xl p-6 sticky top-[140px] max-h-[calc(100vh-160px)] flex flex-col overflow-hidden">
+              <PulseFeed recordId={property._id} recordType="property" />
+            </div>
+          </div>
+
         </div>
       </div>
 
