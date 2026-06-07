@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, Building2, Layers, Users, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Building2, Layers, Users, Settings, LogOut, ScanSearch } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 
@@ -9,6 +9,7 @@ const navItems = [
   { icon: FileText, label: 'Client Briefs', path: '/briefs' },
   { icon: Building2, label: 'Properties', path: '/properties' },
   { icon: Layers, label: 'Pipeline', path: '/pipeline' },
+  { icon: ScanSearch, label: 'Oracle', path: '/oracle' },
 ];
 
 export function Sidebar() {

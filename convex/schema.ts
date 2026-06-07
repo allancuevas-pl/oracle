@@ -172,4 +172,23 @@ export default defineSchema({
     invitedBy: v.string(), // clerkId of the inviting admin
     clerkInvitationId: v.optional(v.string()), // Clerk's invitation ID for revocation
   }).index("by_email", ["email"]),
+
+  // IM extractions — one record per PDF upload, result stored as JSON string
+  imExtractions: defineTable({
+    propertyId: v.optional(v.id("properties")), // optional link to a property record
+    storageId: v.optional(v.string()),           // Convex file storage ID
+    filename: v.string(),
+    status: v.union(
+      v.literal("processing"),
+      v.literal("complete"),
+      v.literal("failed")
+    ),
+    result: v.optional(v.string()),  // JSON-stringified extraction payload
+    error: v.optional(v.string()),
+    model: v.optional(v.string()),
+    latencyMs: v.optional(v.number()),
+    createdBy: v.string(),
+  })
+    .index("by_propertyId", ["propertyId"])
+    .index("by_status", ["status"]),
 });

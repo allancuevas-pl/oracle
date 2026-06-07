@@ -13,6 +13,7 @@ import { Pipeline } from './pages/Pipeline';
 import { Clients } from './pages/Clients';
 import { ClientView } from './pages/ClientView';
 import { Settings } from './pages/Settings';
+import { OracleScanner } from './pages/OracleScanner';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Loader2, ShieldAlert } from 'lucide-react';
@@ -90,6 +91,7 @@ function App() {
                 <Route path="/properties" element={<Properties />} />
                 <Route path="/properties/:id" element={<PropertyView />} />
                 <Route path="/pipeline" element={<Pipeline />} />
+                <Route path="/oracle" element={<OracleScanner />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/tasks" element={<div className="p-4 text-brand-400">Tasks View (Mock)</div>} />
               </Route>
