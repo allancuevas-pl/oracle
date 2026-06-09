@@ -2,9 +2,10 @@
 
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { internal, api } from "./_generated/api";
 import Anthropic from "@anthropic-ai/sdk";
 import { EXTRACTION_SYSTEM, EXTRACTION_USER } from "./extractionPrompt";
+import { DEFAULT_ORACLE_MODEL } from "./settings";
 
 /**
  * Fetch the uploaded PDF from Convex storage, call the Claude extraction API,
@@ -41,10 +42,14 @@ export const extractIM = action({
       const buffer = await fileResponse.arrayBuffer();
       const base64 = Buffer.from(buffer).toString("base64");
 
+      // Read model preference from DB settings, fall back to env var then default
+      const modelFromDb = await ctx.runQuery(api.settings.getOracleModel, {});
+      const model = modelFromDb || process.env.CLAUDE_MODEL || DEFAULT_ORACLE_MODEL;
+
       // Call Claude
       const anthropic = new Anthropic({ apiKey });
       const response = await anthropic.messages.create({
-        model: process.env.CLAUDE_MODEL || "claude-sonnet-4-5",
+        model,
         max_tokens: 8192,
         system: EXTRACTION_SYSTEM,
         messages: [

@@ -37,6 +37,7 @@ export const getProperty = query({
 export const createProperty = mutation({
   args: {
     address: v.string(),
+    suburb: v.optional(v.string()),
     assetType: v.string(),
     status: PROPERTY_STATUS,
     askingPrice: v.optional(v.number()),
@@ -49,9 +50,9 @@ export const createProperty = mutation({
   },
   handler: async (ctx, args) => {
     const { identity } = await requireStaffOrAdmin(ctx);
-    
+
     const propertyId = await generateId(ctx, "P");
-    
+
     const newId = await ctx.db.insert("properties", {
       ...args,
       propertyId,

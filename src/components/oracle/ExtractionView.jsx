@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
 import { useMutation } from 'convex/react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../../convex/_generated/api';
 import { toast } from 'sonner';
-import { Plus, Trash2, Save, Copy, RotateCcw, Clock, Cpu } from 'lucide-react';
+import { Plus, Trash2, Save, Copy, RotateCcw, Clock, Cpu, Database, Building2, Loader2 } from 'lucide-react';
+import { SaveCompsModal } from './SaveCompsModal';
+
+// ─── Asset class mapping (extraction → properties schema) ────────────────────
+const ASSET_CLASS_MAP = {
+  industrial: 'Industrial', retail: 'Retail', office: 'Office',
+  'mixed-use': 'Mixed Use', medical: 'Office', hospitality: 'Other', other: 'Other',
+};
+const mapAssetClass = (s) => s ? (ASSET_CLASS_MAP[s.toLowerCase()] ?? 'Other') : 'Other';
+
+const LEASE_TYPE_MAP = { net: 'Net', gross: 'Gross', 'semi-gross': 'Semi-Gross' };
+const mapLeaseType = (s) => s ? (LEASE_TYPE_MAP[s.toLowerCase()] ?? s) : undefined;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -123,16 +135,17 @@ function SectionCard({ title, badge, children }) {
 // ─── Tenancy table ────────────────────────────────────────────────────────────
 
 const TENANCY_COLS = [
-  { key: 'unit_label', label: 'Unit', w: 'w-20' },
-  { key: 'tenant_name', label: 'Tenant', w: 'w-44' },
-  { key: 'size_sqm', label: 'Size m²', w: 'w-20', type: 'number', align: 'right' },
-  { key: 'lease_start', label: 'Lease start', w: 'w-28' },
-  { key: 'lease_expiry', label: 'Lease expiry', w: 'w-28' },
-  { key: 'options', label: 'Options', w: 'w-24' },
-  { key: 'review_mechanism', label: 'Review', w: 'w-32' },
-  { key: 'current_rent_pa', label: 'Rent pa', w: 'w-28', type: 'number', align: 'right' },
-  { key: 'rent_basis', label: 'Basis', w: 'w-16' },
-  { key: 'permitted_use', label: 'Use', w: 'w-36' },
+  { key: 'unit_label',        label: 'Unit',         w: 'min-w-[5rem]' },
+  { key: 'tenant_name',       label: 'Tenant',       w: 'min-w-[11rem]' },
+  { key: 'size_sqm',          label: 'Size m²',      w: 'min-w-[5.5rem]',  type: 'number', align: 'right' },
+  { key: '_rent_per_sqm',     label: '$/m²',         w: 'min-w-[5rem]',    computed: true, align: 'right' },
+  { key: 'current_rent_pa',   label: 'Rent pa',      w: 'min-w-[7rem]',    type: 'number', align: 'right' },
+  { key: 'rent_basis',        label: 'Basis',        w: 'min-w-[4.5rem]' },
+  { key: 'lease_start',       label: 'Lease start',  w: 'min-w-[7rem]' },
+  { key: 'lease_expiry',      label: 'Expiry',       w: 'min-w-[7rem]' },
+  { key: 'options',           label: 'Options',      w: 'min-w-[8rem]' },
+  { key: 'review_mechanism',  label: 'Review',       w: 'min-w-[9rem]' },
+  { key: 'permitted_use',     label: 'Use',          w: 'min-w-[10rem]' },
 ];
 
 function TenancyTable({ tenancies, onChange }) {
@@ -159,39 +172,53 @@ function TenancyTable({ tenancies, onChange }) {
 
   return (
     <div>
-      <div className="overflow-x-auto -mx-5 px-5">
-        <table className="text-xs min-w-full">
-          <thead>
-            <tr className="border-b border-white/[0.06]">
-              {TENANCY_COLS.map((c) => (
-                <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>
-                  {c.label}
-                </th>
-              ))}
-              <th className="w-8" />
-            </tr>
-          </thead>
-          <tbody>
-            {tenancies.map((t, i) => (
-              <tr key={i} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+      {/* Negative margins break out of SectionCard padding so the table scrolls edge-to-edge */}
+      <div className="overflow-x-auto -mx-5">
+        <div className="px-5 min-w-max">
+          <table className="text-xs w-full">
+            <thead>
+              <tr className="border-b border-white/[0.06]">
                 {TENANCY_COLS.map((c) => (
-                  <td key={c.key} className={`py-1 px-1 ${c.align === 'right' ? 'text-right' : ''}`}>
-                    <input
-                      className={`w-full bg-transparent py-1 px-1.5 rounded text-brand-50 focus:bg-white/[0.04] focus:outline-none transition-colors ${c.align === 'right' ? 'text-right' : ''}`}
-                      value={t[c.key] ?? ''}
-                      onChange={(e) => update(i, c.key, c.type === 'number' ? numberOrNull(e.target.value) : (e.target.value || null))}
-                    />
-                  </td>
+                  <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium whitespace-nowrap ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>
+                    {c.label}
+                  </th>
                 ))}
-                <td>
-                  <button onClick={() => removeRow(i)} className="p-1 text-brand-100/20 hover:text-red-400 transition-colors">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </td>
+                <th className="w-8" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tenancies.map((t, i) => {
+                const rentPerSqm = (t.current_rent_pa && t.size_sqm && t.size_sqm > 0)
+                  ? Math.round(t.current_rent_pa / t.size_sqm)
+                  : null;
+                return (
+                  <tr key={i} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                    {TENANCY_COLS.map((c) => (
+                      <td key={c.key} className={`py-1 px-1 ${c.align === 'right' ? 'text-right' : ''}`}>
+                        {c.computed ? (
+                          <span className={`block py-1 px-1.5 text-brand-400/70 font-medium tabular-nums ${c.align === 'right' ? 'text-right' : ''}`}>
+                            {rentPerSqm != null ? `$${rentPerSqm}` : '—'}
+                          </span>
+                        ) : (
+                          <input
+                            className={`w-full bg-transparent py-1 px-1.5 rounded text-brand-50 focus:bg-white/[0.04] focus:outline-none transition-colors ${c.align === 'right' ? 'text-right' : ''}`}
+                            value={t[c.key] ?? ''}
+                            onChange={(e) => update(i, c.key, c.type === 'number' ? numberOrNull(e.target.value) : (e.target.value || null))}
+                          />
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-1">
+                      <button onClick={() => removeRow(i)} className="p-1 text-brand-100/20 hover:text-red-400 transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
       <button onClick={addRow} className="text-xs text-brand-500 hover:text-brand-400 transition-colors mt-3 flex items-center gap-1">
         <Plus className="w-3 h-3" /> Add row
@@ -400,15 +427,91 @@ function LeasingCompsTable({ comps, onChange }) {
   );
 }
 
+// ─── KPI summary bar ─────────────────────────────────────────────────────────
+
+function calcWale(tenancies) {
+  // WALE by area: Σ(area × years_remaining) / Σ(area)
+  // Uses lease_expiry relative to today
+  const today = new Date();
+  let weightedSum = 0, totalArea = 0;
+  for (const t of tenancies) {
+    if (!t.lease_expiry || !t.size_sqm) continue;
+    const expiry = new Date(t.lease_expiry);
+    const yearsLeft = Math.max(0, (expiry - today) / (1000 * 60 * 60 * 24 * 365.25));
+    weightedSum += t.size_sqm * yearsLeft;
+    totalArea   += t.size_sqm;
+  }
+  return totalArea > 0 ? weightedSum / totalArea : null;
+}
+
+function KpiBar({ data }) {
+  const sp  = data.subject_property || {};
+  const fin = data.financial || {};
+  const ten = data.tenancies || [];
+
+  const nla            = sp.nla_sqm;
+  const landArea       = sp.land_size_sqm;
+  const askingPrice    = fin.asking_price;
+  const passingRent    = fin.passing_rent_total_pa;
+  const nonRecoverable = fin.non_recoverable_total_pa || 0;
+  const noi            = passingRent != null ? passingRent - nonRecoverable : null;
+
+  // Upside indicators
+  const pricePerSqmBuild = askingPrice != null && nla     ? Math.round(askingPrice / nla)     : null;
+  const pricePerSqmLand  = askingPrice != null && landArea ? Math.round(askingPrice / landArea) : null;
+  const rentPerSqm       = passingRent != null && nla     ? Math.round(passingRent / nla)     : null;
+  const netPerSqm        = noi != null && nla             ? Math.round(noi / nla)             : null;
+
+  const wale          = calcWale(ten);
+  const capStated     = fin.cap_rate_stated_pct;
+  const capCalc       = fin.cap_rate_calculated_pct;
+  const occupiedArea  = ten.reduce((s, t) => s + (t.size_sqm || 0), 0);
+  const occupancy     = nla && occupiedArea ? Math.round((occupiedArea / nla) * 100) : null;
+
+  const kpis = [
+    { label: 'Asking price',     value: askingPrice       != null ? `$${Math.round(askingPrice).toLocaleString()}` : null },
+    { label: 'Price/m² (build)', value: pricePerSqmBuild  != null ? `$${pricePerSqmBuild.toLocaleString()}`        : null },
+    { label: 'Price/m² (land)',  value: pricePerSqmLand   != null ? `$${pricePerSqmLand.toLocaleString()}`         : null },
+    { label: 'Rent/m²',          value: rentPerSqm        != null ? `$${rentPerSqm}`                               : null },
+    { label: 'Net $/m²',         value: netPerSqm         != null ? `$${netPerSqm}`                                : null },
+    { label: 'NOI',              value: noi               != null ? `$${Math.round(noi).toLocaleString()}`          : null },
+    { label: 'Cap rate',         value: (capStated != null || capCalc != null)
+        ? `${(capStated ?? capCalc).toFixed(2)}%${capStated ? ' (stated)' : ' (calc)'}`
+        : null },
+    { label: 'WALE',             value: wale              != null ? `${wale.toFixed(1)} yrs`                        : null },
+    { label: 'Occupancy',        value: occupancy         != null ? `${occupancy}%`                                 : null },
+    { label: 'Tenants',          value: ten.length > 0    ? String(ten.length)                                      : null },
+  ].filter(k => k.value != null);
+
+  if (kpis.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-px mb-6 rounded-xl overflow-hidden border border-white/[0.06]">
+      {kpis.map((k, i) => (
+        <div key={i} className="flex-1 min-w-[100px] bg-white/[0.02] px-4 py-3">
+          <p className="text-[9px] uppercase tracking-widest text-brand-100/30 mb-1">{k.label}</p>
+          <p className="text-sm font-semibold text-brand-300 tabular-nums">{k.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── ExtractionView ───────────────────────────────────────────────────────────
 
 export function ExtractionView({ extraction, onReset }) {
-  const saveEdits = useMutation(api.imExtraction.saveEdits);
+  const navigate        = useNavigate();
+  const saveEdits       = useMutation(api.imExtraction.saveEdits);
   const deleteExtraction = useMutation(api.imExtraction.deleteExtraction);
+  const createProperty  = useMutation(api.properties.createProperty);
+  const linkToProperty  = useMutation(api.imExtraction.linkToProperty);
+  const updateTenants   = useMutation(api.properties.updatePropertyTenants);
 
   // Draft = working copy of parsed result. null means unmodified.
-  const [draft, setDraft] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [draft, setDraft]           = useState(null);
+  const [saving, setSaving]         = useState(false);
+  const [creating, setCreating]     = useState(false);
+  const [saveCompsOpen, setSaveCompsOpen] = useState(false);
 
   const base = extraction?.result ? JSON.parse(extraction.result) : null;
   const data = draft ?? base;
@@ -454,6 +557,64 @@ export function ExtractionView({ extraction, onReset }) {
     navigator.clipboard.writeText(text).then(() =>
       toast.success(kind === 'row' ? 'Sheet row copied' : 'JSON copied')
     );
+  };
+
+  const handleCreateProperty = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      // Auto-save any unsaved edits first so the property gets the latest data
+      if (isDirty) {
+        await saveEdits({ id: extraction._id, result: JSON.stringify(draft) });
+        setDraft(null);
+      }
+
+      const wale = calcWale(data.tenancies || []);
+
+      // 1. Create the property record
+      const newPropertyId = await createProperty({
+        address:            sp.address?.full || sp.address?.street || '',
+        suburb:             sp.address?.suburb ?? undefined,
+        assetType:          mapAssetClass(sp.asset_class),
+        status:             'On Market',
+        askingPrice:        fin.asking_price ?? undefined,
+        estimatedYield:     (fin.cap_rate_stated_pct ?? fin.cap_rate_calculated_pct) ?? undefined,
+        location:           sp.address?.state ?? undefined,
+        description:        data.other_useful_info ?? undefined,
+        landArea:           sp.land_size_sqm ?? undefined,
+        buildingArea:       sp.nla_sqm ?? undefined,
+        wales:              wale ?? undefined,
+      });
+
+      // 2. Link extraction back to the new property
+      await linkToProperty({ id: extraction._id, propertyId: newPropertyId });
+
+      // 3. Populate tenancy schedule if tenancies exist
+      const tenants = (data.tenancies || [])
+        .filter(t => t.tenant_name || t.permitted_use)
+        .map((t, i) => ({
+          id:           `t-${i}`,
+          tenantName:   t.tenant_name || t.permitted_use || `Tenant ${i + 1}`,
+          suite:        t.unit_label ?? undefined,
+          lettableArea: t.size_sqm ?? undefined,
+          leaseStart:   t.lease_start ?? undefined,
+          leaseEnd:     t.lease_expiry ?? undefined,
+          netFaceRent:  t.current_rent_pa ?? undefined,
+          leaseType:    mapLeaseType(t.rent_basis),
+          options:      t.options ?? undefined,
+          reviewType:   t.review_mechanism ?? undefined,
+        }));
+
+      if (tenants.length > 0) {
+        await updateTenants({ id: newPropertyId, tenants });
+      }
+
+      toast.success('Property created — opening now');
+      navigate(`/properties/${newPropertyId}`);
+    } catch (e) {
+      toast.error('Failed to create property', { description: e.message });
+      setCreating(false);
+    }
   };
 
   return (
@@ -513,6 +674,37 @@ export function ExtractionView({ extraction, onReset }) {
             <Copy className="w-3.5 h-3.5" />Sheet row
           </button>
           <button
+            onClick={() => setSaveCompsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-100/60 hover:text-brand-100/90 border border-white/[0.08] hover:border-white/[0.14] rounded-md transition-colors"
+          >
+            <Database className="w-3.5 h-3.5" />
+            Save comps
+          </button>
+
+          {/* Primary CTA — Create Property or navigate to linked one */}
+          {extraction.propertyId ? (
+            <button
+              onClick={() => navigate(`/properties/${extraction.propertyId}`)}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-brand-950 bg-brand-500 hover:bg-brand-400 rounded-md transition-all hover:scale-[1.02] active:scale-95"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              View Property
+            </button>
+          ) : (
+            <button
+              onClick={handleCreateProperty}
+              disabled={creating || !sp.address?.full}
+              title={!sp.address?.full ? 'Address required before creating property' : undefined}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-brand-950 bg-brand-500 hover:bg-brand-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-md transition-all hover:scale-[1.02] active:scale-95"
+            >
+              {creating
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating…</>
+                : <><Building2 className="w-3.5 h-3.5" /> Create Property</>
+              }
+            </button>
+          )}
+
+          <button
             onClick={onReset}
             className="px-3 py-1.5 text-xs text-brand-100/50 hover:text-brand-100/80 border border-white/[0.08] rounded-md transition-colors"
           >
@@ -523,6 +715,9 @@ export function ExtractionView({ extraction, onReset }) {
 
       {/* Content */}
       <div className="flex-1 px-6 lg:px-8 py-6 max-w-5xl">
+
+        {/* KPI summary bar */}
+        <KpiBar data={data} />
 
         {/* Subject property */}
         <SectionCard title="Subject Property" badge={conf.address ? `address: ${conf.address}` : null}>
@@ -643,6 +838,13 @@ export function ExtractionView({ extraction, onReset }) {
           </button>
         </div>
       </div>
+
+      <SaveCompsModal
+        isOpen={saveCompsOpen}
+        onClose={() => setSaveCompsOpen(false)}
+        data={data}
+        extractionId={extraction._id}
+      />
     </div>
   );
 }

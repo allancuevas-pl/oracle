@@ -11,6 +11,7 @@ import { DetailsTab }     from '../components/properties/tabs/DetailsTab';
 import { TenancyTab }     from '../components/properties/tabs/TenancyTab';
 import { OutgoingsTab }   from '../components/properties/tabs/OutgoingsTab';
 import { RentReviewsTab } from '../components/properties/tabs/RentReviewsTab';
+import { CompsTab }       from '../components/properties/tabs/CompsTab';
 import { FeasoTab }       from '../components/properties/tabs/FeasoTab';
 import { ReportsTab }     from '../components/properties/tabs/ReportsTab';
 import { FilesTab }       from '../components/properties/tabs/FilesTab';
@@ -21,6 +22,7 @@ const TABS = [
   { id: 'tenancy',      label: 'Tenancy Schedule' },
   { id: 'outgoings',    label: 'Outgoings' },
   { id: 'rent-reviews', label: 'Rent Reviews' },
+  { id: 'comps',        label: 'Comps' },
   { id: 'feaso',        label: 'Feaso' },
   { id: 'reports',      label: 'Reports' },
   { id: 'files',        label: 'Files' },
@@ -153,7 +155,8 @@ export function PropertyView() {
             {activeTab === 'tenancy'      && <TenancyTab     property={property} updateTenants={updateTenants} />}
             {activeTab === 'outgoings'    && <OutgoingsTab   property={property} updateOutgoings={updateOutgoings} />}
             {activeTab === 'rent-reviews' && <RentReviewsTab property={property} />}
-            {activeTab === 'feaso'        && <FeasoTab />}
+            {activeTab === 'comps'        && <CompsTab       property={property} />}
+            {activeTab === 'feaso'        && <FeasoTab       property={property} />}
             {activeTab === 'reports'      && <ReportsTab />}
             {activeTab === 'files'        && <FilesTab />}
           </div>

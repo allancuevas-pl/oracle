@@ -17,6 +17,7 @@ export default defineSchema({
     strategies: v.array(v.string()),
     locations: v.array(v.string()),
     debtStructures: v.array(v.string()),
+    oracleModel: v.optional(v.string()),
   }),
 
   clients: defineTable({
@@ -78,9 +79,10 @@ export default defineSchema({
   properties: defineTable({
     propertyId: v.optional(v.string()), // e.g. "ORC-P0001"
     address: v.string(),
-    assetType: v.string(), // e.g. "Retail", "Industrial"
-    askingPrice: v.optional(v.number()), // e.g. 5000000
-    estimatedYield: v.optional(v.number()), // e.g. 5.5
+    suburb: v.optional(v.string()),     // stored separately for comp recommendations
+    assetType: v.string(),              // e.g. "Retail", "Industrial"
+    askingPrice: v.optional(v.number()),
+    estimatedYield: v.optional(v.number()),
     status: v.union(
       v.literal("On Market"),
       v.literal("Off Market"),
@@ -88,11 +90,20 @@ export default defineSchema({
       v.literal("Sold"),
       v.literal("Archived")
     ),
-    location: v.optional(v.string()), // e.g. "VIC"
+    location: v.optional(v.string()),   // e.g. "VIC"
     description: v.optional(v.string()),
-    landArea: v.optional(v.number()), // in sqm
-    buildingArea: v.optional(v.number()), // in sqm
-    wales: v.optional(v.number()), // Weighted Average Lease Expiry (years)
+    landArea: v.optional(v.number()),   // sqm
+    buildingArea: v.optional(v.number()), // sqm (NLA)
+    wales: v.optional(v.number()),      // Weighted Average Lease Expiry (years)
+
+    // Market benchmarks (from feaso / manual)
+    vacancyRate: v.optional(v.number()),     // current vacancy %
+    marketRentLow: v.optional(v.number()),  // $/sqm low estimate
+    marketRentHigh: v.optional(v.number()), // $/sqm high estimate
+    strategy: v.optional(v.string()),       // e.g. "Rental Reversion Upside"
+
+    // Provenance
+    sourceExtractionId: v.optional(v.id("imExtractions")), // IM scan this came from
     createdBy: v.string(), // clerkId
 
     // Tenancy Schedule
@@ -116,9 +127,74 @@ export default defineSchema({
       id: v.string(),
       category: v.string(),   // e.g. "Land Tax", "Council Rates"
       amount: v.number(),     // $/pa
+      recoverable: v.optional(v.boolean()),
       notes: v.optional(v.string()),
     }))),
-  }).index("by_status", ["status"]),
+  })
+    .index("by_status", ["status"])
+    .index("by_suburb", ["suburb"]),
+
+  // ─── Comps Database ───────────────────────────────────────────────────────
+  // Independent comp records — lease and sale evidence.
+  // Populated from IM scans or quick manual entry (e.g. agent phone calls).
+  // Core vectors for AI recommendations: suburb + assetType + nlaSqm + type.
+  comps: defineTable({
+    type: v.union(v.literal("lease"), v.literal("sale")),
+
+    // Location (suburb indexed for geo-filtering in recommendations)
+    address: v.string(),
+    suburb: v.string(),
+    state: v.optional(v.string()),
+
+    // Property characteristics (key for smart matching)
+    assetType: v.optional(v.string()),  // Industrial / Retail / Office / Hybrid / Other
+    nlaSqm: v.optional(v.number()),     // Net Lettable Area
+    landAreaSqm: v.optional(v.number()),
+
+    // ── Lease fields (type = "lease") ──
+    rentPa: v.optional(v.number()),          // always stored as $/pa
+    rentInputFormat: v.optional(v.union(     // what the user typed in
+      v.literal("annual"),
+      v.literal("monthly")
+    )),
+    rentPerSqm: v.optional(v.number()),      // auto-calc: rentPa / nlaSqm
+    leaseType: v.optional(v.string()),       // Net | Gross | Semi-Gross
+    leaseDate: v.optional(v.string()),       // "YYYY-MM-DD"
+    leaseTerm: v.optional(v.string()),       // e.g. "3yr", "5 + 5yr"
+    reviewType: v.optional(v.string()),      // CPI | Fixed % | Market
+    reviewRate: v.optional(v.number()),      // e.g. 3.5
+
+    // ── Sale fields (type = "sale") ──
+    salePrice: v.optional(v.number()),
+    pricePerSqmBuild: v.optional(v.number()), // auto-calc
+    pricePerSqmLand: v.optional(v.number()),
+    capRate: v.optional(v.number()),
+    saleDate: v.optional(v.string()),        // "YYYY-MM-DD"
+
+    // ── Source & trust ──
+    source: v.optional(v.union(
+      v.literal("agent_call"),
+      v.literal("real_commercial"),
+      v.literal("loopnet"),
+      v.literal("im_scan"),
+      v.literal("other")
+    )),
+    verified: v.optional(v.boolean()),       // verbally confirmed
+    agentName: v.optional(v.string()),
+    agentPhone: v.optional(v.string()),
+    agentCompany: v.optional(v.string()),
+    notes: v.optional(v.string()),
+
+    // ── Links ──
+    linkedPropertyId: v.optional(v.id("properties")),
+    linkedExtractionId: v.optional(v.id("imExtractions")),
+    createdBy: v.string(), // clerkId
+  })
+    .index("by_type", ["type"])
+    .index("by_suburb", ["suburb"])
+    .index("by_suburb_and_type", ["suburb", "type"])
+    .index("by_suburb_assetType_type", ["suburb", "assetType", "type"])
+    .index("by_linkedProperty", ["linkedPropertyId"]),
 
   matches: defineTable({
     briefId: v.id("briefs"),
@@ -191,4 +267,42 @@ export default defineSchema({
   })
     .index("by_propertyId", ["propertyId"])
     .index("by_status", ["status"]),
+
+  // ─── Feasibility Analysis ─────────────────────────────────────────────────
+  // One feaso record per property — stores analyst inputs.
+  // Evidence (linked comps) lives on the comps table via linkedPropertyId.
+  // All outputs (new value, ROI, IRR) are calculated client-side from these inputs.
+  feasos: defineTable({
+    propertyId: v.id("properties"),
+
+    // Market benchmarks (analyst-adopted ranges from evidence)
+    marketRentLow: v.optional(v.number()),          // $/sqm
+    marketRentHigh: v.optional(v.number()),         // $/sqm
+    salePricePerSqmBuildLow: v.optional(v.number()),
+    salePricePerSqmBuildHigh: v.optional(v.number()),
+    salePricePerSqmLandLow: v.optional(v.number()),
+    salePricePerSqmLandHigh: v.optional(v.number()),
+    adoptedCapRate: v.optional(v.number()),         // % e.g. 5.5 — drives new value calc
+
+    // Project inputs
+    offerPrice: v.optional(v.number()),
+    projectDurationYears: v.optional(v.number()),   // e.g. 1.5
+
+    // Acquisition costs
+    stampDutyPct: v.optional(v.number()),           // % e.g. 5.5 (0 for SA via scheme)
+    closingCosts: v.optional(v.number()),           // $ flat
+    baFeePct: v.optional(v.number()),               // % of offer price e.g. 2.5
+
+    // Project costs
+    leasingCostsPct: v.optional(v.number()),        // % of market rent e.g. 11
+    incentivesPct: v.optional(v.number()),          // % of market rent e.g. 15
+    incentiveTermYears: v.optional(v.number()),     // lease term for incentive calc e.g. 5
+    interestRatePct: v.optional(v.number()),        // % p.a. e.g. 6.5
+    ltvRatio: v.optional(v.number()),               // loan-to-value e.g. 0.5
+    works: v.optional(v.number()),                  // $ makegood / capex works
+    vacancyMonths: v.optional(v.number()),          // months of vacancy allowance
+
+    notes: v.optional(v.string()),
+    createdBy: v.string(),
+  }).index("by_propertyId", ["propertyId"]),
 });
