@@ -24,7 +24,7 @@ function fmtCurrency(val) {
 }
 
 const INPUT_CLS =
-  'w-full bg-[#111] border border-brand-800/50 rounded px-2.5 py-1.5 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500/10 placeholder:text-brand-100/20';
+  'w-full bg-[#111] border border-brand-800/50 rounded px-2.5 py-1.5 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500/10 placeholder:text-brand-100/40';
 
 export function OutgoingsTab({ property, updateOutgoings }) {
   const [items, setItems] = useState([]);
@@ -115,9 +115,9 @@ export function OutgoingsTab({ property, updateOutgoings }) {
         <div className="divide-y divide-white/[0.04]">
           {items.length === 0 ? (
             <div className="py-16 text-center">
-              <Receipt className="w-8 h-8 text-brand-100/20 mx-auto mb-3" />
+              <Receipt className="w-8 h-8 text-brand-100/40 mx-auto mb-3" />
               <p className="text-sm text-brand-100/40 mb-1">No outgoings recorded</p>
-              <p className="text-xs text-brand-100/25">
+              <p className="text-xs text-brand-100/40">
                 Add annual outgoing line items to build the expense schedule.
               </p>
               <button
@@ -171,7 +171,7 @@ export function OutgoingsTab({ property, updateOutgoings }) {
                 <div className="px-3 py-2.5 flex justify-center">
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="p-1.5 rounded hover:bg-red-500/10 text-brand-100/30 hover:text-red-400 transition-colors"
+                    className="p-1.5 rounded hover:bg-red-500/10 text-brand-100/45 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

@@ -1,9 +1,10 @@
 import React from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { MapPin, Users, KeyRound, Loader2, ScanSearch, Check } from 'lucide-react';
+import { MapPin, Users, KeyRound, ScanSearch, Check } from 'lucide-react';
 import { TeamSection } from '../components/settings/TeamSection';
 import { ApiKeyCard } from '../components/settings/ApiKeyCard';
+import { Spinner } from '../components/ui/Loading';
 import { toast } from 'sonner';
 
 const ORACLE_MODELS = [
@@ -46,7 +47,7 @@ export function Settings() {
       <section className="space-y-4 mb-10">
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
-            <Users className="w-4 h-4 text-brand-100/30" />
+            <Users className="w-4 h-4 text-brand-100/45" />
             <h2 className="text-sm font-semibold text-brand-50">Team</h2>
           </div>
           <p className="text-xs text-brand-100/35 ml-6">
@@ -55,9 +56,7 @@ export function Settings() {
         </div>
 
         {currentUser === undefined ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="w-5 h-5 text-brand-500 animate-spin" />
-          </div>
+          <div className="flex justify-center py-12"><Spinner /></div>
         ) : (
           <TeamSection currentUser={currentUser} />
         )}
@@ -70,7 +69,7 @@ export function Settings() {
       <section className="space-y-4">
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
-            <KeyRound className="w-4 h-4 text-brand-100/30" />
+            <KeyRound className="w-4 h-4 text-brand-100/45" />
             <h2 className="text-sm font-semibold text-brand-50">Integrations</h2>
           </div>
           <p className="text-xs text-brand-100/35 ml-6">
@@ -94,7 +93,7 @@ export function Settings() {
       <section className="space-y-4">
         <div className="mb-5">
           <div className="flex items-center gap-2 mb-1">
-            <ScanSearch className="w-4 h-4 text-brand-100/30" />
+            <ScanSearch className="w-4 h-4 text-brand-100/45" />
             <h2 className="text-sm font-semibold text-brand-50">Oracle Scanner</h2>
           </div>
           <p className="text-xs text-brand-100/35 ml-6">
@@ -121,7 +120,7 @@ export function Settings() {
                   <p className={`text-sm font-medium ${active ? 'text-brand-400' : 'text-brand-100/70'}`}>
                     {m.label}
                   </p>
-                  <p className="text-xs text-brand-100/30 mt-0.5">{m.note}</p>
+                  <p className="text-xs text-brand-100/45 mt-0.5">{m.note}</p>
                 </div>
                 {active && <Check className="w-4 h-4 text-brand-500 shrink-0" />}
               </button>

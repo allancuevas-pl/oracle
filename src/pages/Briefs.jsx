@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Plus, X, Loader2, ArrowUpDown, Search } from 'lucide-react';
+import { Plus, X, ArrowUpDown, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
@@ -9,6 +9,8 @@ import 'rc-slider/assets/index.css';
 import { useNavigate } from 'react-router-dom';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { AvatarStack } from '../components/briefs/AssigneePicker';
+import { SkeletonTable } from '../components/ui/Loading';
+import { rowEntrance } from '../components/ui/motion';
 
 import { formatCurrency } from '../utils/format';
 
@@ -132,7 +134,7 @@ export function Briefs() {
         {/* Toolbar */}
         <div className="p-4 border-b border-brand-800/30 bg-[#111] flex items-center justify-between">
           <div className="relative w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/30" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/45" />
             <input 
               type="text" 
               placeholder="Search client or brief ID..." 
@@ -146,16 +148,14 @@ export function Briefs() {
           </div>
         </div>
         {briefs === undefined ? (
-          <div className="p-12 flex justify-center">
-            <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
-          </div>
+          <SkeletonTable rows={8} cols={9} />
         ) : briefs.length === 0 ? (
           <div className="p-12 text-center">
             <p className="text-brand-100/50">No active briefs found. Create one to get started.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left tabular-nums">
               <thead className="text-xs text-brand-100/50 bg-[#0A0A0A]/50 uppercase border-b border-brand-800/40">
                 <tr>
                   <th 
@@ -164,7 +164,7 @@ export function Briefs() {
                   >
                     <div className="flex items-center justify-center space-x-1">
                       <span>Priority</span>
-                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'priority' ? 'text-brand-500' : 'text-brand-100/30 group-hover:text-brand-100/70'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'priority' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
                   <th 
@@ -173,7 +173,7 @@ export function Briefs() {
                   >
                     <div className="flex items-center space-x-1">
                       <span>Client</span>
-                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'clientName' ? 'text-brand-500' : 'text-brand-100/30 group-hover:text-brand-100/70'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'clientName' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
                   <th 
@@ -182,7 +182,7 @@ export function Briefs() {
                   >
                     <div className="flex items-center space-x-1">
                       <span>Stage</span>
-                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'stage' ? 'text-brand-500' : 'text-brand-100/30 group-hover:text-brand-100/70'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'stage' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
                   <th 
@@ -191,7 +191,7 @@ export function Briefs() {
                   >
                     <div className="flex items-center space-x-1">
                       <span>Days Open</span>
-                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'daysOpen' ? 'text-brand-500' : 'text-brand-100/30 group-hover:text-brand-100/70'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'daysOpen' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
                   <th 
@@ -200,7 +200,7 @@ export function Briefs() {
                   >
                     <div className="flex items-center space-x-1">
                       <span>Asset Types</span>
-                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'assetType' ? 'text-brand-500' : 'text-brand-100/30 group-hover:text-brand-100/70'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'assetType' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
                   <th 
@@ -209,7 +209,7 @@ export function Briefs() {
                   >
                     <div className="flex items-center space-x-1">
                       <span>Budget Range</span>
-                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'budget' ? 'text-brand-500' : 'text-brand-100/30 group-hover:text-brand-100/70'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'budget' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
                   <th 
@@ -218,7 +218,7 @@ export function Briefs() {
                   >
                     <div className="flex items-center space-x-1">
                       <span>Location</span>
-                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'location' ? 'text-brand-500' : 'text-brand-100/30 group-hover:text-brand-100/70'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortField === 'location' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
                   <th className="px-4 py-3 font-medium whitespace-nowrap">Strategies</th>
@@ -231,12 +231,10 @@ export function Briefs() {
                     const daysOpen = Math.floor((Date.now() - (brief._creationTime || Date.now())) / (1000 * 60 * 60 * 24));
                     
                     return (
-                    <motion.tr 
-                      key={brief._id} 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                    <motion.tr
+                      key={brief._id}
+                      {...rowEntrance(index)}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: index * 0.05, type: 'spring', bounce: 0, duration: 0.4 }}
                       onClick={() => navigate('/briefs/' + brief._id)}
                       className="border-b border-brand-800/20 hover:bg-brand-900/10 transition-colors cursor-pointer group"
                     >

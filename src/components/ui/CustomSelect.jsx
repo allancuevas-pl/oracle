@@ -89,7 +89,7 @@ export function CustomSelect({
               )}
 
               {/* Label / placeholder */}
-              <span className={`block truncate ${isFlexVariant ? 'flex-1 text-left' : ''} ${showPlaceholder ? 'text-brand-100/30' : ''}`}>
+              <span className={`block truncate ${isFlexVariant ? 'flex-1 text-left' : ''} ${showPlaceholder ? 'text-brand-100/45' : ''}`}>
                 {showPlaceholder ? placeholder : displayLabel}
               </span>
 

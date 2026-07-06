@@ -32,7 +32,7 @@ function ActivityRow({ activity }) {
           </div>
         ) : (
           <div className="w-6 h-6 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
-            <Zap className="w-3 h-3 text-brand-100/30" />
+            <Zap className="w-3 h-3 text-brand-100/45" />
           </div>
         )}
       </div>
@@ -44,7 +44,7 @@ function ActivityRow({ activity }) {
         }`}>
           {activity.content}
         </p>
-        <p className="text-[10px] text-brand-100/25 mt-1">
+        <p className="text-[10px] text-brand-100/40 mt-1">
           {activity.creatorName} · {timeAgo(activity._creationTime)}
         </p>
       </div>
@@ -102,7 +102,7 @@ export function PulseFeed({ recordId, recordType }) {
             onKeyDown={handleKeyDown}
             placeholder="Leave a private note…"
             rows={3}
-            className="w-full bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2.5 text-sm text-brand-50 placeholder:text-brand-100/20 focus:outline-none focus:border-brand-500/30 resize-none transition-colors leading-relaxed"
+            className="w-full bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 py-2.5 text-sm text-brand-50 placeholder:text-brand-100/40 focus:outline-none focus:border-brand-500/30 resize-none transition-colors leading-relaxed"
           />
           <button
             onClick={handleSave}
@@ -116,7 +116,7 @@ export function PulseFeed({ recordId, recordType }) {
             Save
           </button>
         </div>
-        <p className="text-[10px] text-brand-100/20 mt-1.5 ml-0.5">⌘ Enter to save</p>
+        <p className="text-[10px] text-brand-100/40 mt-1.5 ml-0.5">⌘ Enter to save</p>
       </div>
 
       {/* Divider */}
@@ -131,7 +131,7 @@ export function PulseFeed({ recordId, recordType }) {
         ) : activities.length === 0 ? (
           <div className="flex flex-col items-center pt-8 text-center">
             <Zap className="w-6 h-6 text-brand-100/10 mb-2" />
-            <p className="text-xs text-brand-100/25">No activity yet.</p>
+            <p className="text-xs text-brand-100/40">No activity yet.</p>
             <p className="text-[10px] text-brand-100/15 mt-1">Notes and stage changes will appear here.</p>
           </div>
         ) : (

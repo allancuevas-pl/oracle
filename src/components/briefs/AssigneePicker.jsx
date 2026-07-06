@@ -100,7 +100,7 @@ export function AssigneePicker({ briefId, enrichedAssignees = [] }) {
 
       {/* Current assignees */}
       {enrichedAssignees.length === 0 && !isAdding ? (
-        <p className="text-xs text-brand-100/30 italic">No team members assigned.</p>
+        <p className="text-xs text-brand-100/45 italic">No team members assigned.</p>
       ) : (
         <div className="space-y-2">
           {enrichedAssignees.map((a) => (
@@ -122,7 +122,7 @@ export function AssigneePicker({ briefId, enrichedAssignees = [] }) {
               <button
                 onClick={() => handleRemove(a.userId)}
                 disabled={saving === a.userId}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-500/10 text-brand-100/30 hover:text-red-400"
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-500/10 text-brand-100/45 hover:text-red-400"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -148,7 +148,7 @@ export function AssigneePicker({ briefId, enrichedAssignees = [] }) {
               variant="compact"
             />
             {available.length === 0 && (
-              <p className="text-[10px] text-brand-100/30 mt-1 italic">All staff members already assigned.</p>
+              <p className="text-[10px] text-brand-100/45 mt-1 italic">All staff members already assigned.</p>
             )}
           </div>
 
@@ -206,14 +206,14 @@ export function AvatarStack({ assignees, usersMap, max = 3 }) {
           <div
             key={a.userId}
             title={fullName ? `${fullName} · ${a.role}` : a.role}
-            className="w-6 h-6 rounded-full bg-brand-500/15 border border-[#0A0A0A] flex items-center justify-center text-[9px] font-bold text-brand-400 shrink-0"
+            className="w-6 h-6 rounded-full bg-brand-500/15 border border-[#0A0A0A] flex items-center justify-center text-[10px] font-bold text-brand-400 shrink-0"
           >
             {initials}
           </div>
         );
       })}
       {overflow > 0 && (
-        <div className="w-6 h-6 rounded-full bg-brand-800/50 border border-[#0A0A0A] flex items-center justify-center text-[9px] font-bold text-brand-500 shrink-0">
+        <div className="w-6 h-6 rounded-full bg-brand-800/50 border border-[#0A0A0A] flex items-center justify-center text-[10px] font-bold text-brand-500 shrink-0">
           +{overflow}
         </div>
       )}

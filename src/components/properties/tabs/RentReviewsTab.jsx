@@ -59,7 +59,7 @@ const statusConfig = {
   },
   unknown: {
     icon: CalendarClock,
-    badge: 'text-brand-100/30 bg-transparent border-transparent',
+    badge: 'text-brand-100/45 bg-transparent border-transparent',
     row: '',
     dot: 'bg-brand-100/20',
     label: '—',
@@ -121,9 +121,9 @@ export function RentReviewsTab({ property }) {
 
         {reviewRows.length === 0 ? (
           <div className="py-20 text-center">
-            <CalendarClock className="w-10 h-10 text-brand-100/20 mx-auto mb-3" />
+            <CalendarClock className="w-10 h-10 text-brand-100/40 mx-auto mb-3" />
             <p className="text-sm text-brand-100/40 mb-1">No rent reviews scheduled</p>
-            <p className="text-xs text-brand-100/25 max-w-sm mx-auto">
+            <p className="text-xs text-brand-100/40 max-w-sm mx-auto">
               Add tenants with review type and next review dates in the Tenancy Schedule tab to see them here.
             </p>
           </div>
@@ -193,7 +193,7 @@ export function RentReviewsTab({ property }) {
                             {days}
                           </span>
                         ) : (
-                          <span className="text-brand-100/25">—</span>
+                          <span className="text-brand-100/40">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-xs whitespace-nowrap">
@@ -262,7 +262,7 @@ export function RentReviewsTab({ property }) {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-xs text-brand-100/50 whitespace-nowrap">
-                            {tenant.options || <span className="text-brand-100/25">—</span>}
+                            {tenant.options || <span className="text-brand-100/40">—</span>}
                           </td>
                         </tr>
                       );

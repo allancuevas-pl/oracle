@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
-import { Plus, Users, Search, Mail, Phone, Building, Loader2 } from 'lucide-react';
+import { Plus, Users, Search, Mail, Phone, Building } from 'lucide-react';
 import { ClientModal } from '../components/clients/ClientModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SkeletonTable } from '../components/ui/Loading';
+import { rowEntrance } from '../components/ui/motion';
 
 export function Clients() {
   const navigate = useNavigate();
@@ -49,7 +51,7 @@ export function Clients() {
         {/* Toolbar */}
         <div className="p-4 border-b border-brand-800/30 bg-[#111] flex items-center justify-between">
           <div className="relative w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/30" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/45" />
             <input
               type="text"
               placeholder="Search name, company, email..."
@@ -66,9 +68,7 @@ export function Clients() {
         {/* Table — loading/empty states live OUTSIDE AnimatePresence
             so the stagger animation fires correctly when rows mount. */}
         {clients === undefined ? (
-          <div className="flex-1 flex items-center justify-center py-16">
-            <Loader2 className="w-7 h-7 text-brand-500 animate-spin" />
-          </div>
+          <SkeletonTable rows={8} cols={3} />
         ) : filtered.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
             <Users className="w-10 h-10 mb-4 text-brand-500 opacity-30" />
@@ -91,10 +91,8 @@ export function Clients() {
                   {filtered.map((client, index) => (
                     <motion.tr
                       key={client._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      {...rowEntrance(index)}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: index * 0.05, type: 'spring', bounce: 0, duration: 0.4 }}
                       onClick={() => navigate(`/clients/${client._id}`)}
                       className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
                     >
@@ -113,29 +111,29 @@ export function Clients() {
                       <td className="px-6 py-4 text-brand-100/70">
                         {client.company ? (
                           <span className="flex items-center">
-                            <Building className="w-3.5 h-3.5 mr-1.5 text-brand-100/30" />
+                            <Building className="w-3.5 h-3.5 mr-1.5 text-brand-100/45" />
                             {client.company}
                           </span>
                         ) : (
-                          <span className="text-brand-100/30 italic">—</span>
+                          <span className="text-brand-100/45 italic">—</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col space-y-1">
                           {client.email && (
                             <span className="flex items-center text-xs text-brand-100/60">
-                              <Mail className="w-3 h-3 mr-1.5 text-brand-100/30" />
+                              <Mail className="w-3 h-3 mr-1.5 text-brand-100/45" />
                               {client.email}
                             </span>
                           )}
                           {client.phone && (
                             <span className="flex items-center text-xs text-brand-100/60">
-                              <Phone className="w-3 h-3 mr-1.5 text-brand-100/30" />
+                              <Phone className="w-3 h-3 mr-1.5 text-brand-100/45" />
                               {client.phone}
                             </span>
                           )}
                           {!client.email && !client.phone && (
-                            <span className="text-brand-100/30 italic text-xs">No contact info</span>
+                            <span className="text-brand-100/45 italic text-xs">No contact info</span>
                           )}
                         </div>
                       </td>

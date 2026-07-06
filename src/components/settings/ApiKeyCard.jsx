@@ -47,7 +47,7 @@ export function ApiKeyCard({ title, icon: Icon, description, docsUrl, placeholde
             href={docsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[10px] text-brand-100/30 hover:text-brand-100/60 transition-colors"
+            className="flex items-center gap-1 text-[10px] text-brand-100/45 hover:text-brand-100/60 transition-colors"
           >
             Docs
             <ExternalLink className="w-3 h-3" />
@@ -67,14 +67,14 @@ export function ApiKeyCard({ title, icon: Icon, description, docsUrl, placeholde
             </p>
             <button
               onClick={() => setShow((v) => !v)}
-              className="text-brand-100/25 hover:text-brand-100/60 transition-colors shrink-0"
+              className="text-brand-100/40 hover:text-brand-100/60 transition-colors shrink-0"
               aria-label={show ? 'Hide key' : 'Reveal key'}
             >
               {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={handleRemove}
-              className="text-brand-100/20 hover:text-red-400 transition-colors shrink-0"
+              className="text-brand-100/40 hover:text-red-400 transition-colors shrink-0"
               aria-label="Remove key"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -82,8 +82,8 @@ export function ApiKeyCard({ title, icon: Icon, description, docsUrl, placeholde
           </div>
         ) : (
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-            <AlertCircle className="w-3.5 h-3.5 text-brand-100/20 shrink-0" />
-            <p className="text-xs text-brand-100/30">Not configured — feature is disabled.</p>
+            <AlertCircle className="w-3.5 h-3.5 text-brand-100/40 shrink-0" />
+            <p className="text-xs text-brand-100/45">Not configured — feature is disabled.</p>
           </div>
         )}
 
@@ -96,7 +96,7 @@ export function ApiKeyCard({ title, icon: Icon, description, docsUrl, placeholde
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               placeholder={placeholder || 'Paste your API key…'}
-              className="flex-1 bg-[#111] border border-brand-800/40 rounded-md px-3 py-2 text-xs text-brand-50 placeholder:text-brand-100/20 font-mono focus:border-brand-500/50 focus:outline-none transition-colors"
+              className="flex-1 bg-[#111] border border-brand-800/40 rounded-md px-3 py-2 text-xs text-brand-50 placeholder:text-brand-100/40 font-mono focus:border-brand-500/50 focus:outline-none transition-colors"
               autoComplete="off"
               spellCheck={false}
             />
@@ -108,7 +108,7 @@ export function ApiKeyCard({ title, icon: Icon, description, docsUrl, placeholde
               Save Key
             </button>
           </div>
-          <p className="text-[10px] text-brand-100/20 mt-2.5">
+          <p className="text-[10px] text-brand-100/40 mt-2.5">
             Stored in your browser only — never sent to any server.
           </p>
         </div>

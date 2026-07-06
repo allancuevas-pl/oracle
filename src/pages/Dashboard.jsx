@@ -2,7 +2,8 @@ import React from 'react';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
-import { ArrowUpRight, TrendingUp, Users, Building2, Loader2 } from 'lucide-react';
+import { ArrowUpRight, TrendingUp, Users, Building2 } from 'lucide-react';
+import { Spinner } from '../components/ui/Loading';
 import { formatCurrency } from '../utils/format';
 
 export function Dashboard() {
@@ -82,7 +83,7 @@ export function Dashboard() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
+            <Spinner />
           </div>
         ) : stats.recentBriefs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">

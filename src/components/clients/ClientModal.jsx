@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useMutation } from 'convex/react';
+import { useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,7 @@ const clientSchema = z.object({
 export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
   const createClient = useMutation(api.clients.createClient);
   const updateClient = useMutation(api.clients.updateClient);
+  const sendPortalInvite = useAction(api.team.inviteTeamMember);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
@@ -68,6 +69,19 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
         toast.success("Client created");
         if (onCreated) onCreated({ _id: newId, ...payload });
         onClose();
+        // Auto-send portal invite if email provided — fire-and-forget
+        if (payload.email) {
+          sendPortalInvite({ email: payload.email, role: 'client', clientRecordId: newId })
+            .then(() => toast.success(`Portal invite sent to ${payload.email}`))
+            .catch((err) => {
+              const msg = err.message || '';
+              if (msg.includes('email address is taken') || msg.includes('already')) {
+                toast.success(`${payload.email} already has an account — role updated, they can sign in now`);
+              } else {
+                toast.error(`Client saved but invite failed: ${msg}`);
+              }
+            });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -113,10 +127,11 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
               {/* Name + Company */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-brand-100/70 mb-1">
+                  <label htmlFor="client-name" className="block text-sm font-medium text-brand-100/70 mb-1">
                     Full Name *
                   </label>
                   <input
+                    id="client-name"
                     {...register("name")}
                     type="text"
                     placeholder="e.g. James Smith"
@@ -125,8 +140,9 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
                   {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-brand-100/70 mb-1">Company</label>
+                  <label htmlFor="client-company" className="block text-sm font-medium text-brand-100/70 mb-1">Company</label>
                   <input
+                    id="client-company"
                     {...register("company")}
                     type="text"
                     placeholder="e.g. Smith Family Office"
@@ -138,8 +154,9 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
               {/* Email + Phone */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-brand-100/70 mb-1">Email</label>
+                  <label htmlFor="client-email" className="block text-sm font-medium text-brand-100/70 mb-1">Email</label>
                   <input
+                    id="client-email"
                     {...register("email")}
                     type="email"
                     placeholder="james@example.com"
@@ -148,8 +165,9 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
                   {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-brand-100/70 mb-1">Phone</label>
+                  <label htmlFor="client-phone" className="block text-sm font-medium text-brand-100/70 mb-1">Phone</label>
                   <input
+                    id="client-phone"
                     {...register("phone")}
                     type="tel"
                     placeholder="04XX XXX XXX"
@@ -160,8 +178,9 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-brand-100/70 mb-1">Notes</label>
+                <label htmlFor="client-notes" className="block text-sm font-medium text-brand-100/70 mb-1">Notes</label>
                 <textarea
+                  id="client-notes"
                   {...register("notes")}
                   rows={3}
                   placeholder="Any relevant background on this client..."

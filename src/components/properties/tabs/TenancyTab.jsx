@@ -45,7 +45,7 @@ const urgencyClass = {
   urgent: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
   warning: 'text-yellow-500/80 bg-yellow-500/10 border-yellow-500/20',
   ok: 'text-brand-100/50 bg-white/[0.03] border-white/[0.06]',
-  none: 'text-brand-100/30 bg-transparent border-transparent',
+  none: 'text-brand-100/45 bg-transparent border-transparent',
 };
 
 const EMPTY_TENANT = {
@@ -62,7 +62,7 @@ const EMPTY_TENANT = {
   options: '',
 };
 
-const INPUT_CLS = 'w-full bg-[#1a1a1a] border border-brand-800/60 rounded px-2 py-1.5 text-sm text-brand-50 focus:border-brand-500/60 focus:outline-none focus:ring-1 focus:ring-brand-500/10 placeholder:text-brand-100/20';
+const INPUT_CLS = 'w-full bg-[#1a1a1a] border border-brand-800/60 rounded px-2 py-1.5 text-sm text-brand-50 focus:border-brand-500/60 focus:outline-none focus:ring-1 focus:ring-brand-500/10 placeholder:text-brand-100/40';
 const LABEL_CLS = 'block text-[10px] uppercase tracking-wider text-brand-100/40 mb-1';
 
 // ─── Summary strip ────────────────────────────────────────────────────────────
@@ -120,8 +120,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-4">
         <div className="lg:col-span-2">
-          <label className={LABEL_CLS}>Tenant Name *</label>
+          <label htmlFor="tenant-name" className={LABEL_CLS}>Tenant Name *</label>
           <input
+            id="tenant-name"
             type="text"
             value={data.tenantName || ''}
             onChange={(e) => onChange({ tenantName: e.target.value })}
@@ -131,8 +132,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
           />
         </div>
         <div>
-          <label className={LABEL_CLS}>Suite / Level</label>
+          <label htmlFor="tenant-suite" className={LABEL_CLS}>Suite / Level</label>
           <input
+            id="tenant-suite"
             type="text"
             value={data.suite || ''}
             onChange={(e) => onChange({ suite: e.target.value })}
@@ -141,8 +143,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
           />
         </div>
         <div>
-          <label className={LABEL_CLS}>Area (sqm)</label>
+          <label htmlFor="tenant-area" className={LABEL_CLS}>Area (sqm)</label>
           <input
+            id="tenant-area"
             type="number"
             value={data.lettableArea || ''}
             onChange={(e) => onChange({ lettableArea: e.target.value })}
@@ -151,8 +154,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
           />
         </div>
         <div>
-          <label className={LABEL_CLS}>Lease Start</label>
+          <label htmlFor="tenant-lease-start" className={LABEL_CLS}>Lease Start</label>
           <input
+            id="tenant-lease-start"
             type="date"
             value={data.leaseStart || ''}
             onChange={(e) => onChange({ leaseStart: e.target.value })}
@@ -160,8 +164,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
           />
         </div>
         <div>
-          <label className={LABEL_CLS}>Lease End</label>
+          <label htmlFor="tenant-lease-end" className={LABEL_CLS}>Lease End</label>
           <input
+            id="tenant-lease-end"
             type="date"
             value={data.leaseEnd || ''}
             onChange={(e) => onChange({ leaseEnd: e.target.value })}
@@ -169,8 +174,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
           />
         </div>
         <div>
-          <label className={LABEL_CLS}>Net Rent $/pa</label>
+          <label htmlFor="tenant-net-rent" className={LABEL_CLS}>Net Rent $/pa</label>
           <input
+            id="tenant-net-rent"
             type="number"
             value={data.netFaceRent || ''}
             onChange={(e) => onChange({ netFaceRent: e.target.value })}
@@ -198,8 +204,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
         </div>
         {data.reviewType === 'Fixed %' && (
           <div>
-            <label className={LABEL_CLS}>Fixed Rate %</label>
+            <label htmlFor="tenant-review-rate" className={LABEL_CLS}>Fixed Rate %</label>
             <input
+              id="tenant-review-rate"
               type="number"
               step="0.1"
               value={data.reviewRate || ''}
@@ -210,8 +217,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
           </div>
         )}
         <div>
-          <label className={LABEL_CLS}>Next Review</label>
+          <label htmlFor="tenant-next-review" className={LABEL_CLS}>Next Review</label>
           <input
+            id="tenant-next-review"
             type="date"
             value={data.nextReviewDate || ''}
             onChange={(e) => onChange({ nextReviewDate: e.target.value })}
@@ -219,8 +227,9 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
           />
         </div>
         <div className="sm:col-span-2">
-          <label className={LABEL_CLS}>Options</label>
+          <label htmlFor="tenant-options" className={LABEL_CLS}>Options</label>
           <input
+            id="tenant-options"
             type="text"
             value={data.options || ''}
             onChange={(e) => onChange({ options: e.target.value })}
@@ -348,7 +357,7 @@ export function TenancyTab({ property, updateTenants }) {
             <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-500">
               Tenancy Schedule
             </p>
-            <span className="ml-3 text-[10px] text-brand-100/30">
+            <span className="ml-3 text-[10px] text-brand-100/45">
               {tenants.length} tenant{tenants.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -378,7 +387,7 @@ export function TenancyTab({ property, updateTenants }) {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-brand-100/50 mb-1">No tenants recorded</p>
-                        <p className="text-xs text-brand-100/30">
+                        <p className="text-xs text-brand-100/45">
                           Add tenants to build out the rent roll and see occupancy metrics.
                         </p>
                       </div>
@@ -412,7 +421,7 @@ export function TenancyTab({ property, updateTenants }) {
                       >
                         <td className="px-4 py-3 font-medium text-brand-50 whitespace-nowrap">
                           {isNew ? (
-                            <span className="text-brand-100/30 italic text-xs">New tenant...</span>
+                            <span className="text-brand-100/45 italic text-xs">New tenant...</span>
                           ) : (
                             tenant.tenantName
                           )}
@@ -453,7 +462,7 @@ export function TenancyTab({ property, updateTenants }) {
                               {exp.label}
                             </span>
                           ) : (
-                            <span className="text-brand-100/25">—</span>
+                            <span className="text-brand-100/40">—</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">

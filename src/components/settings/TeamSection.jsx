@@ -74,7 +74,7 @@ function MemberRow({ member, isSelf, isAdmin, onRoleChange, onRemove }) {
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium text-brand-50 truncate">{fullName}</p>
           {isSelf && (
-            <span className="text-[10px] text-brand-100/30 font-medium">(you)</span>
+            <span className="text-[10px] text-brand-100/45 font-medium">(you)</span>
           )}
         </div>
         <p className="text-xs text-brand-100/35 truncate">{member.email}</p>
@@ -98,7 +98,7 @@ function MemberRow({ member, isSelf, isAdmin, onRoleChange, onRemove }) {
         <button
           onClick={handleRemove}
           disabled={removing}
-          className="text-brand-100/20 hover:text-red-400 transition-colors shrink-0 disabled:opacity-40"
+          className="text-brand-100/40 hover:text-red-400 transition-colors shrink-0 disabled:opacity-40"
           title="Remove from team"
         >
           {removing
@@ -176,7 +176,7 @@ export function TeamSection({ currentUser }) {
         </div>
       ) : members.length === 0 ? (
         <div className="px-5 py-8 text-center">
-          <p className="text-xs text-brand-100/30">No team members found.</p>
+          <p className="text-xs text-brand-100/45">No team members found.</p>
         </div>
       ) : (
         <div className="divide-y divide-white/[0.04]">
@@ -197,7 +197,7 @@ export function TeamSection({ currentUser }) {
       {isAdmin && pendingInvites && pendingInvites.length > 0 && (
         <div className="border-t border-white/[0.06]">
           <div className="px-5 pt-4 pb-2">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">
               Pending Invitations
             </p>
           </div>
@@ -205,16 +205,16 @@ export function TeamSection({ currentUser }) {
             {pendingInvites.map((invite) => (
               <div key={invite._id} className="flex items-center gap-3 px-4 py-3">
                 <div className="w-8 h-8 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0">
-                  <MailOpen className="w-3.5 h-3.5 text-brand-100/30" />
+                  <MailOpen className="w-3.5 h-3.5 text-brand-100/45" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-brand-100/60 truncate">{invite.email}</p>
-                  <p className="text-xs text-brand-100/25">Invite pending</p>
+                  <p className="text-xs text-brand-100/40">Invite pending</p>
                 </div>
                 <RoleBadge role={invite.role} />
                 <button
                   onClick={() => handleRevoke(invite)}
-                  className="text-brand-100/20 hover:text-red-400 transition-colors shrink-0"
+                  className="text-brand-100/40 hover:text-red-400 transition-colors shrink-0"
                   title="Revoke invitation"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -239,7 +239,7 @@ export function TeamSection({ currentUser }) {
               onChange={(e) => setInviteEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleInvite()}
               placeholder="colleague@example.com"
-              className="flex-1 bg-[#111] border border-brand-800/40 rounded-md px-3 py-2 text-xs text-brand-50 placeholder:text-brand-100/20 focus:border-brand-500/50 focus:outline-none transition-colors"
+              className="flex-1 bg-[#111] border border-brand-800/40 rounded-md px-3 py-2 text-xs text-brand-50 placeholder:text-brand-100/40 focus:border-brand-500/50 focus:outline-none transition-colors"
               autoComplete="off"
             />
             <CustomSelect
@@ -265,7 +265,7 @@ export function TeamSection({ currentUser }) {
               Send Invite
             </button>
           </div>
-          <p className="text-[10px] text-brand-100/20">
+          <p className="text-[10px] text-brand-100/40">
             Clerk sends the invite email. Requires{' '}
             <code className="font-mono">CLERK_SECRET_KEY</code> in Convex environment variables.
           </p>

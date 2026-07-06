@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
-import { Loader2, Pencil, Building2, Users, MoreHorizontal, Archive, Link2, X } from 'lucide-react';
+import { Pencil, Building2, Users, MoreHorizontal, Archive, Link2, X } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
 import { AssigneePicker } from '../components/briefs/AssigneePicker';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { IconButton, ToolbarDivider } from '../components/ui/IconButton';
 import { PulseFeed } from '../components/ui/PulseFeed';
+import { PageLoader, Spinner } from '../components/ui/Loading';
 import { toast } from 'sonner';
 import { formatCurrency } from '../utils/format';
 
@@ -41,7 +42,7 @@ export function BriefView() {
   }, [showMore, showTeam]);
 
   if (brief === undefined) {
-    return <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>;
+    return <PageLoader />;
   }
   if (brief === null) {
     return (
@@ -53,7 +54,7 @@ export function BriefView() {
   }
 
   const renderTags = (v) => {
-    if (!v || v.length === 0) return <span className="text-brand-100/30 italic">Not specified</span>;
+    if (!v || v.length === 0) return <span className="text-brand-100/45 italic">Not specified</span>;
     return Array.isArray(v) ? v.join(", ") : v;
   };
 
@@ -89,7 +90,7 @@ export function BriefView() {
                 <div className="absolute right-0 top-full mt-1.5 bg-[#161616] border border-white/[0.08] rounded-lg p-4 shadow-2xl z-50 w-64">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold uppercase tracking-wider text-brand-500">Team</span>
-                    <button onClick={() => setShowTeam(false)} className="text-brand-100/30 hover:text-brand-100/70 transition-colors">
+                    <button onClick={() => setShowTeam(false)} className="text-brand-100/45 hover:text-brand-100/70 transition-colors">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -120,7 +121,7 @@ export function BriefView() {
                     onClick={() => { setShowMore(false); toast.info("Archive coming soon"); }}
                     className="w-full flex items-center px-3 py-2 text-xs text-brand-100/60 hover:bg-white/[0.05] hover:text-white rounded-md transition-colors gap-2.5"
                   >
-                    <Archive className="w-3.5 h-3.5 text-brand-100/30" />
+                    <Archive className="w-3.5 h-3.5 text-brand-100/45" />
                     Archive Brief
                   </button>
                 </div>
@@ -196,7 +197,7 @@ export function BriefView() {
                 <p className="text-sm text-brand-50 font-medium">
                   {brief.budgetMin && brief.budgetMax
                     ? `${formatCurrency(brief.budgetMin)} – ${formatCurrency(brief.budgetMax)}`
-                    : (brief.budget || <span className="text-brand-100/30 italic">Not specified</span>)}
+                    : (brief.budget || <span className="text-brand-100/45 italic">Not specified</span>)}
                 </p>
               </div>
 
@@ -205,14 +206,14 @@ export function BriefView() {
                 <p className="text-sm text-brand-50 font-medium">
                   {brief.durationMin && brief.durationMax
                     ? `${brief.durationMin} to ${brief.durationMax} years`
-                    : <span className="text-brand-100/30 italic">Not specified</span>}
+                    : <span className="text-brand-100/45 italic">Not specified</span>}
                 </p>
               </div>
 
               <div>
                 <p className="text-xs text-brand-100/50 mb-1">Available Capital</p>
                 <p className="text-sm text-brand-50 font-medium">
-                  {brief.capital ? formatCurrency(brief.capital) : <span className="text-brand-100/30 italic">Not specified</span>}
+                  {brief.capital ? formatCurrency(brief.capital) : <span className="text-brand-100/45 italic">Not specified</span>}
                 </p>
               </div>
 
@@ -239,14 +240,14 @@ export function BriefView() {
               <div>
                 <p className="text-xs text-brand-100/50 mb-1">Financial Targets</p>
                 <p className="text-sm text-brand-50 font-medium">
-                  {brief.targets || <span className="text-brand-100/30 italic">Not specified</span>}
+                  {brief.targets || <span className="text-brand-100/45 italic">Not specified</span>}
                 </p>
               </div>
 
               <div className="pt-4 border-t border-brand-800/20">
                 <p className="text-xs text-brand-100/50 mb-1">Additional Notes</p>
                 <p className="text-sm text-brand-100/70 whitespace-pre-wrap">
-                  {brief.others || <span className="text-brand-100/30 italic">No additional notes provided.</span>}
+                  {brief.others || <span className="text-brand-100/45 italic">No additional notes provided.</span>}
                 </p>
               </div>
             </div>
@@ -263,9 +264,7 @@ export function BriefView() {
             </div>
 
             {matches === undefined ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
-              </div>
+              <div className="flex justify-center py-12"><Spinner /></div>
             ) : matches.length === 0 ? (
               <div className="border border-brand-800/30 rounded-lg bg-[#111] p-12 text-center flex flex-col items-center">
                 <div className="w-12 h-12 rounded-full bg-brand-900/30 flex items-center justify-center mb-3">

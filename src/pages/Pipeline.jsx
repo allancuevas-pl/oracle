@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router-dom';
+import { PageLoader } from '../components/ui/Loading';
 import {
   Building2,
   FileText,
@@ -361,14 +362,7 @@ export function Pipeline() {
   }
 
   if (allMatches === undefined) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Layers className="w-8 h-8 text-brand-500 animate-pulse" />
-          <p className="text-brand-400 text-sm">Loading pipeline…</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (

@@ -4,7 +4,10 @@
 
 @layer base {
   body {
-    @apply bg-brand-black text-white antialiased;
+    @apply bg-brand-black text-white antialiased font-sans;
+    /* Crisper rendering for the new typeface on dark backgrounds */
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 

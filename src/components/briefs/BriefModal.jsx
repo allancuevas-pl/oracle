@@ -360,10 +360,11 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
             {/* ROW 4: Financial Targets & Capital */}
             <div className="grid grid-cols-2 gap-6 pt-4 border-t border-brand-800/30">
               <div>
-                <label className="block text-sm font-medium text-brand-100/70 mb-1">Available Capital ($)</label>
+                <label htmlFor="brief-capital" className="block text-sm font-medium text-brand-100/70 mb-1">Available Capital ($)</label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-brand-100/50">$</span>
-                  <input 
+                  <input
+                    id="brief-capital"
                     {...register("capital", {
                       onChange: (e) => {
                         const rawVal = e.target.value.replace(/\D/g, "");
@@ -381,15 +382,15 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-brand-100/70 mb-1">Financial Targets</label>
-                <input {...register("targets")} type="text" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Project Margin - 17%-20% Net After Tax" />
+                <label htmlFor="brief-targets" className="block text-sm font-medium text-brand-100/70 mb-1">Financial Targets</label>
+                <input id="brief-targets" {...register("targets")} type="text" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Project Margin - 17%-20% Net After Tax" />
               </div>
             </div>
 
             {/* ROW 5: Notes */}
             <div>
-              <label className="block text-sm font-medium text-brand-100/70 mb-1">Others (Notes / DD Requirements)</label>
-              <textarea {...register("others")} rows={2} className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Contamination – will review, require 60 days DD..."></textarea>
+              <label htmlFor="brief-others" className="block text-sm font-medium text-brand-100/70 mb-1">Others (Notes / DD Requirements)</label>
+              <textarea id="brief-others" {...register("others")} rows={2} className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" placeholder="e.g. Contamination – will review, require 60 days DD..."></textarea>
             </div>
           </form>
         </div>

@@ -79,7 +79,7 @@ export function MatchPropertyModal({ isOpen, onClose, briefId }) {
                   placeholder="Search properties by address or ID..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-[#0A0A0A] border border-white/10 rounded-md pl-9 pr-4 py-2.5 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 placeholder:text-brand-100/30 shadow-inner"
+                  className="w-full bg-[#0A0A0A] border border-white/10 rounded-md pl-9 pr-4 py-2.5 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 placeholder:text-brand-100/45 shadow-inner"
                 />
               </div>
             </div>

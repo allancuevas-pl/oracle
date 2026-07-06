@@ -10,7 +10,7 @@ export function Header() {
           <input 
             type="text" 
             placeholder="Search properties, clients, or briefs..." 
-            className="w-full bg-[#111] border border-white/5 rounded-md py-1.5 pl-9 pr-4 text-sm text-brand-50 placeholder:text-brand-100/30 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all shadow-inner"
+            className="w-full bg-[#111] border border-white/5 rounded-md py-1.5 pl-9 pr-4 text-sm text-brand-50 placeholder:text-brand-100/45 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all shadow-inner"
           />
         </div>
       </div>

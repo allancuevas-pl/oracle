@@ -22,7 +22,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        // Schibsted Grotesk is the UI typeface; system-ui covers the swap window.
+        sans: ['"Schibsted Grotesk"', 'system-ui', '-apple-system', 'sans-serif'],
       }
     },
   },

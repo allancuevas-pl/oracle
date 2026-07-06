@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { ClientModal } from '../components/clients/ClientModal';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { PulseFeed } from '../components/ui/PulseFeed';
-import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil } from 'lucide-react';
+import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil, UserPlus, Trash2 } from 'lucide-react';
 import { IconButton } from '../components/ui/IconButton';
+import { PageLoader, Spinner } from '../components/ui/Loading';
+import { toast } from 'sonner';
 
 import { formatCurrency } from '../utils/format';
 
@@ -17,16 +19,56 @@ export function ClientView() {
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBriefModalOpen, setIsBriefModalOpen] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const client = useQuery(api.clients.getClient, id ? { id } : "skip");
   const briefs = useQuery(api.briefs.getBriefsByClient, id ? { clientId: id } : "skip");
+  const inviteToPortal = useAction(api.team.inviteTeamMember);
+  const deleteClient = useMutation(api.clients.deleteClient);
+
+  const handleDelete = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setDeleting(true);
+    try {
+      await deleteClient({ id });
+      toast.success('Client deleted');
+      navigate('/clients');
+    } catch (err) {
+      toast.error(err.message || 'Delete failed');
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  const handleInviteToPortal = async () => {
+    if (!client?.email) {
+      toast.error('This client has no email address set');
+      return;
+    }
+    setInviting(true);
+    try {
+      await inviteToPortal({
+        email: client.email,
+        role: 'client',
+        clientRecordId: client._id,
+      });
+      toast.success(`Portal invite sent to ${client.email}`);
+    } catch (err) {
+      const msg = err.message || '';
+      if (msg.includes('email address is taken') || msg.includes('already')) {
+        toast.success(`${client.email} already has an account — role updated, they can sign in now`);
+      } else {
+        toast.error(msg || 'Invite failed');
+      }
+    } finally {
+      setInviting(false);
+    }
+  };
 
   if (client === undefined) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (client === null) {
@@ -54,7 +96,25 @@ export function ClientView() {
         subtitle={client.company || undefined}
         onBack={() => navigate('/clients')}
         actions={
-          <IconButton icon={Pencil} label="Edit Client" onClick={() => setIsEditModalOpen(true)} />
+          <>
+            {client.email && (
+              <IconButton
+                icon={inviting ? Loader2 : UserPlus}
+                label="Invite to Portal"
+                onClick={handleInviteToPortal}
+                disabled={inviting}
+              />
+            )}
+            <IconButton icon={Pencil} label="Edit Client" onClick={() => setIsEditModalOpen(true)} />
+            <IconButton
+              icon={deleting ? Loader2 : Trash2}
+              label={confirmDelete ? 'Click again to confirm delete' : 'Delete Client'}
+              onClick={handleDelete}
+              disabled={deleting}
+              variant="danger"
+              className={confirmDelete ? 'text-red-400 bg-red-500/10 border-red-500/40' : ''}
+            />
+          </>
         }
         leftColumn={
           <div className="space-y-6">
@@ -76,7 +136,7 @@ export function ClientView() {
             <div className="space-y-4">
               {client.company && (
                 <div className="flex items-start space-x-3">
-                  <Building className="w-4 h-4 text-brand-100/30 mt-0.5 shrink-0" />
+                  <Building className="w-4 h-4 text-brand-100/45 mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs text-brand-100/40 mb-0.5">Company</p>
                     <p className="text-sm text-brand-50">{client.company}</p>
@@ -85,7 +145,7 @@ export function ClientView() {
               )}
               {client.email && (
                 <div className="flex items-start space-x-3">
-                  <Mail className="w-4 h-4 text-brand-100/30 mt-0.5 shrink-0" />
+                  <Mail className="w-4 h-4 text-brand-100/45 mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs text-brand-100/40 mb-0.5">Email</p>
                     <a href={`mailto:${client.email}`} className="text-sm text-brand-400 hover:text-brand-300 transition-colors">
@@ -96,7 +156,7 @@ export function ClientView() {
               )}
               {client.phone && (
                 <div className="flex items-start space-x-3">
-                  <Phone className="w-4 h-4 text-brand-100/30 mt-0.5 shrink-0" />
+                  <Phone className="w-4 h-4 text-brand-100/45 mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs text-brand-100/40 mb-0.5">Phone</p>
                     <a href={`tel:${client.phone}`} className="text-sm text-brand-50 hover:text-brand-400 transition-colors">
@@ -106,7 +166,7 @@ export function ClientView() {
                 </div>
               )}
               {!client.company && !client.email && !client.phone && (
-                <p className="text-sm text-brand-100/30 italic">No contact details added yet.</p>
+                <p className="text-sm text-brand-100/45 italic">No contact details added yet.</p>
               )}
             </div>
 
@@ -137,9 +197,7 @@ export function ClientView() {
             </div>
 
             {briefs === undefined ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
-              </div>
+              <div className="flex justify-center py-12"><Spinner /></div>
             ) : briefs.length === 0 ? (
               <div className="border border-brand-800/30 rounded-lg bg-[#111] p-10 text-center flex flex-col items-center">
                 <div className="w-12 h-12 rounded-full bg-brand-900/30 flex items-center justify-center mb-3">

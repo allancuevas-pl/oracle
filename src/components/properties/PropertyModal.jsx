@@ -168,18 +168,19 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
                 {/* Address */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider">Address *</label>
+                    <label htmlFor="property-address" className="block text-xs font-semibold text-brand-500 uppercase tracking-wider">Address *</label>
                     {mapsHasKey && !mapsLoaded && (
-                      <span className="text-[10px] text-brand-100/25">Loading autocomplete…</span>
+                      <span className="text-[10px] text-brand-100/40">Loading autocomplete…</span>
                     )}
                     {mapsLoaded && (
-                      <span className="flex items-center gap-1 text-[10px] text-brand-100/30">
+                      <span className="flex items-center gap-1 text-[10px] text-brand-100/45">
                         <MapPin className="w-3 h-3 text-brand-500/50" />
                         Autocomplete active
                       </span>
                     )}
                   </div>
                   <input
+                    id="property-address"
                     type="text"
                     {...(({ ref: rhfRef, ...rest }) => {
                       return {
@@ -236,8 +237,9 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
                 {/* Financials Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Asking Price ($)</label>
+                    <label htmlFor="property-asking-price" className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Asking Price ($)</label>
                     <input
+                      id="property-asking-price"
                       type="number"
                       {...register("askingPrice")}
                       placeholder="e.g. 5000000"
@@ -245,8 +247,9 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Est. Yield (%)</label>
+                    <label htmlFor="property-estimated-yield" className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Est. Yield (%)</label>
                     <input
+                      id="property-estimated-yield"
                       type="number"
                       step="0.1"
                       {...register("estimatedYield")}
@@ -259,24 +262,27 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
                 {/* Metrics Row */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Land Area (sqm)</label>
+                    <label htmlFor="property-land-area" className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Land Area (sqm)</label>
                     <input
+                      id="property-land-area"
                       type="number"
                       {...register("landArea")}
                       className="w-full bg-[#111] border border-brand-800/50 rounded-md px-4 py-2 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Bldg Area (sqm)</label>
+                    <label htmlFor="property-building-area" className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Bldg Area (sqm)</label>
                     <input
+                      id="property-building-area"
                       type="number"
                       {...register("buildingArea")}
                       className="w-full bg-[#111] border border-brand-800/50 rounded-md px-4 py-2 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">WALE (Years)</label>
+                    <label htmlFor="property-wales" className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">WALE (Years)</label>
                     <input
+                      id="property-wales"
                       type="number"
                       step="0.1"
                       {...register("wales")}
@@ -287,8 +293,9 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
 
                 {/* Description */}
                 <div>
-                  <label className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Private Notes / Description</label>
+                  <label htmlFor="property-description" className="block text-xs font-semibold text-brand-500 uppercase tracking-wider mb-2">Private Notes / Description</label>
                   <textarea
+                    id="property-description"
                     {...register("description")}
                     rows={4}
                     className="w-full bg-[#111] border border-brand-800/50 rounded-md px-4 py-2 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"

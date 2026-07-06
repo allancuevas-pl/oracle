@@ -40,7 +40,7 @@ function FeasoField({ label, rawValue, displayValue, unit, hint, onSave, highlig
     <div className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0 group">
       <div className="flex items-baseline gap-2 min-w-0 shrink-0 mr-4">
         <span className="text-xs text-brand-100/45">{label}</span>
-        {hint && <span className="text-[10px] text-brand-100/25">{hint}</span>}
+        {hint && <span className="text-[10px] text-brand-100/40">{hint}</span>}
       </div>
       <div className="shrink-0">
         {editing ? (
@@ -57,7 +57,7 @@ function FeasoField({ label, rawValue, displayValue, unit, hint, onSave, highlig
               className="w-28 bg-transparent border-b border-brand-500/60 text-sm text-brand-100 text-right focus:outline-none py-0.5 tabular-nums"
               placeholder="0"
             />
-            {unit && <span className="text-xs text-brand-100/30">{unit}</span>}
+            {unit && <span className="text-xs text-brand-100/45">{unit}</span>}
           </div>
         ) : (
           <button
@@ -69,14 +69,14 @@ function FeasoField({ label, rawValue, displayValue, unit, hint, onSave, highlig
               className={`text-sm font-semibold tabular-nums ${
                 highlight          ? 'text-brand-500' :
                 displayValue != null ? 'text-brand-200' :
-                readOnly           ? 'text-brand-100/30 text-xs font-normal' :
-                                     'text-brand-100/30 italic text-xs font-normal'
+                readOnly           ? 'text-brand-100/45 text-xs font-normal' :
+                                     'text-brand-100/45 italic text-xs font-normal'
               }`}
             >
               {displayValue ?? (readOnly ? '—' : 'Click to add')}
             </span>
             {!readOnly && (
-              <Pencil className="w-2.5 h-2.5 text-brand-100/20 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+              <Pencil className="w-2.5 h-2.5 text-brand-100/40 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
             )}
           </button>
         )}
@@ -91,9 +91,9 @@ function CostLine({ label, calculatedValue, hint }) {
     <div className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
       <div className="flex items-baseline gap-2">
         <span className="text-xs text-brand-100/45">{label}</span>
-        {hint && <span className="text-[10px] text-brand-100/25">{hint}</span>}
+        {hint && <span className="text-[10px] text-brand-100/40">{hint}</span>}
       </div>
-      <span className={`text-sm tabular-nums ${calculatedValue != null ? 'text-brand-200 font-semibold' : 'text-brand-100/25 italic text-xs font-normal'}`}>
+      <span className={`text-sm tabular-nums ${calculatedValue != null ? 'text-brand-200 font-semibold' : 'text-brand-100/40 italic text-xs font-normal'}`}>
         {calculatedValue != null ? fmtRaw(calculatedValue) : '—'}
       </span>
     </div>
@@ -121,9 +121,9 @@ function OutputTile({ label, value, positive, negative, neutral }) {
                'text-brand-50';
   return (
     <div className="flex-1 bg-[#0A0A0A] rounded-xl border border-white/[0.07] px-5 py-4 text-center min-w-[100px]">
-      <p className="text-[9px] uppercase tracking-widest text-brand-100/30 mb-1.5">{label}</p>
+      <p className="text-[10px] uppercase tracking-widest text-brand-100/45 mb-1.5">{label}</p>
       <p className={`text-lg font-bold tabular-nums ${colorClass}`}>
-        {value ?? <span className="text-brand-100/20 text-sm font-normal italic">—</span>}
+        {value ?? <span className="text-brand-100/40 text-sm font-normal italic">—</span>}
       </p>
     </div>
   );
@@ -204,13 +204,13 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
           {/* Header row: Adopted | Min | Max */}
           <div className="grid grid-cols-4 bg-[#0A0A0A] border-b border-white/[0.06]">
             {['', 'Adopted', 'Min', 'Max'].map((h) => (
-              <div key={h} className="px-4 py-2 text-[9px] font-bold uppercase tracking-widest text-brand-100/30">{h}</div>
+              <div key={h} className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-brand-100/45">{h}</div>
             ))}
           </div>
           {/* Market rent row */}
           <div className="grid grid-cols-4 border-b border-white/[0.04] hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Market rent (net)</div>
-            <div className="px-4 py-2.5 text-xs text-brand-100/30">$/m²</div>
+            <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
             <FeasoFieldCell
               value={feaso.marketRentLow}
               display={feaso.marketRentLow ? `$${feaso.marketRentLow}/m²` : null}
@@ -225,7 +225,7 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
           {/* Market sale price — land */}
           <div className="grid grid-cols-4 border-b border-white/[0.04] hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Sale price (land)</div>
-            <div className="px-4 py-2.5 text-xs text-brand-100/30">$/m²</div>
+            <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
             <FeasoFieldCell
               value={feaso.salePricePerSqmLandLow}
               display={feaso.salePricePerSqmLandLow ? `$${Math.round(feaso.salePricePerSqmLandLow).toLocaleString()}` : null}
@@ -240,7 +240,7 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
           {/* Market sale price — build */}
           <div className="grid grid-cols-4 hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Sale price (build)</div>
-            <div className="px-4 py-2.5 text-xs text-brand-100/30">$/m²</div>
+            <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
             <FeasoFieldCell
               value={feaso.salePricePerSqmBuildLow}
               display={feaso.salePricePerSqmBuildLow ? `$${Math.round(feaso.salePricePerSqmBuildLow).toLocaleString()}` : null}
@@ -255,7 +255,7 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
           {/* Rates: Asking vs Offer */}
           <div className="grid grid-cols-4 bg-white/[0.015] border-t border-white/[0.06]">
             {['', 'Asking', 'Offer', ''].map((h) => (
-              <div key={h} className="px-4 py-1.5 text-[9px] font-bold uppercase tracking-widest text-brand-100/25">{h}</div>
+              <div key={h} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-brand-100/40">{h}</div>
             ))}
           </div>
           <div className="grid grid-cols-4 border-b border-white/[0.04] hover:bg-white/[0.01] items-center">
@@ -270,13 +270,13 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
             <div />
           </div>
           <div className="grid grid-cols-4 border-b border-white/[0.04] items-center">
-            <div className="px-4 py-1.5 text-[11px] text-brand-100/30">$/m² build</div>
+            <div className="px-4 py-1.5 text-[11px] text-brand-100/45">$/m² build</div>
             <div className="px-4 py-1.5 text-xs text-brand-100/40 tabular-nums">{apPsmBuild ? `$${apPsmBuild.toLocaleString()}` : '—'}</div>
             <div className="px-4 py-1.5 text-xs text-brand-100/40 tabular-nums">{offPsmBuild ? `$${offPsmBuild.toLocaleString()}` : '—'}</div>
             <div />
           </div>
           <div className="grid grid-cols-4 items-center">
-            <div className="px-4 py-1.5 text-[11px] text-brand-100/30">$/m² land</div>
+            <div className="px-4 py-1.5 text-[11px] text-brand-100/45">$/m² land</div>
             <div className="px-4 py-1.5 text-xs text-brand-100/40 tabular-nums">{apPsmLand ? `$${apPsmLand.toLocaleString()}` : '—'}</div>
             <div className="px-4 py-1.5 text-xs text-brand-100/40 tabular-nums">{offPsmLand ? `$${offPsmLand.toLocaleString()}` : '—'}</div>
             <div />
@@ -290,7 +290,7 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
           Leasing Feasibility
         </h3>
         {tenants.length === 0 ? (
-          <p className="text-xs text-brand-100/25 italic py-3">
+          <p className="text-xs text-brand-100/40 italic py-3">
             No tenants — add them on the Tenancy Schedule tab.
           </p>
         ) : (
@@ -300,7 +300,7 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
                 <thead>
                   <tr className="bg-[#0A0A0A] border-b border-white/[0.06]">
                     {['Unit', 'Tenant', 'Size', 'Expiry', 'Options', 'Reviews', 'Current Rent', '$/m²', 'Mkt Rent Low', '$/m²', 'Mkt Rent High', '$/m²'].map((h) => (
-                      <th key={h} className="px-3 py-2 text-[9px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -515,7 +515,7 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
             highlight
           />
           {mrLowTotal && feaso.adoptedCapRate && (
-            <span className="text-xs text-brand-100/30 ml-auto">
+            <span className="text-xs text-brand-100/45 ml-auto">
               → new value {fmt$(mrLowTotal / (feaso.adoptedCapRate / 100))}
             </span>
           )}
@@ -542,19 +542,19 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
         {newValue && totalCosts && (
           <div className="mt-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.01] grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
-              <p className="text-brand-100/30 mb-1">New Value $/m² Build</p>
+              <p className="text-brand-100/45 mb-1">New Value $/m² Build</p>
               <p className="text-brand-200 font-semibold tabular-nums">{nla ? `$${Math.round(newValue / nla).toLocaleString()}/m²` : '—'}</p>
             </div>
             <div>
-              <p className="text-brand-100/30 mb-1">New Value $/m² Land</p>
+              <p className="text-brand-100/45 mb-1">New Value $/m² Land</p>
               <p className="text-brand-200 font-semibold tabular-nums">{la ? `$${Math.round(newValue / la).toLocaleString()}/m²` : '—'}</p>
             </div>
             <div>
-              <p className="text-brand-100/30 mb-1">Equity Invested</p>
+              <p className="text-brand-100/45 mb-1">Equity Invested</p>
               <p className="text-brand-200 font-semibold tabular-nums">{fmt$(equity)}</p>
             </div>
             <div>
-              <p className="text-brand-100/30 mb-1">Loan</p>
+              <p className="text-brand-100/45 mb-1">Loan</p>
               <p className="text-brand-200 font-semibold tabular-nums">{fmt$(loan)}</p>
             </div>
           </div>
@@ -593,9 +593,9 @@ function FeasoFieldCell({ value, display, onSave, highlight }) {
           placeholder="0"
         />
       ) : (
-        <span className={`text-sm font-semibold tabular-nums flex items-center gap-1 ${highlight ? 'text-brand-500' : display ? 'text-brand-200' : 'text-brand-100/25 italic text-xs font-normal'}`}>
+        <span className={`text-sm font-semibold tabular-nums flex items-center gap-1 ${highlight ? 'text-brand-500' : display ? 'text-brand-200' : 'text-brand-100/40 italic text-xs font-normal'}`}>
           {display ?? 'Click to add'}
-          <Pencil className="w-2.5 h-2.5 text-brand-100/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Pencil className="w-2.5 h-2.5 text-brand-100/40 opacity-0 group-hover:opacity-100 transition-opacity" />
         </span>
       )}
     </div>
@@ -629,15 +629,15 @@ function FeasoFieldInline({ rawValue, displayValue, onSave, placeholder, highlig
         className="w-20 bg-transparent border-b border-brand-500/60 text-sm text-brand-100 focus:outline-none tabular-nums"
         placeholder={placeholder}
       />
-      <span className="text-xs text-brand-100/30">%</span>
+      <span className="text-xs text-brand-100/45">%</span>
     </div>
   ) : (
     <button onClick={() => { setInputVal(rawValue != null ? String(rawValue) : ''); setEditing(true); }}
       className="flex items-center gap-1.5 group/btn">
-      <span className={`text-sm font-semibold tabular-nums ${highlight ? 'text-brand-500' : displayValue ? 'text-brand-200' : 'text-brand-100/30 italic text-xs font-normal'}`}>
+      <span className={`text-sm font-semibold tabular-nums ${highlight ? 'text-brand-500' : displayValue ? 'text-brand-200' : 'text-brand-100/45 italic text-xs font-normal'}`}>
         {displayValue ?? 'Click to add'}
       </span>
-      <Pencil className="w-2.5 h-2.5 text-brand-100/20 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+      <Pencil className="w-2.5 h-2.5 text-brand-100/40 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
     </button>
   );
 }

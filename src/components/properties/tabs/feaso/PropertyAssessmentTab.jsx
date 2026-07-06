@@ -39,7 +39,7 @@ function RemoveBtn({ compId, linkComp }) {
           toast.success('Removed from Feaso')
         )
       }
-      className="text-[10px] text-brand-100/25 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+      className="text-[10px] text-brand-100/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
     >
       ✕
     </button>
@@ -82,7 +82,7 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-brand-500">
             Subject Property
           </h3>
-          <span className="text-[10px] text-brand-100/30">auto-populated from property record</span>
+          <span className="text-[10px] text-brand-100/45">auto-populated from property record</span>
         </div>
         <div className="rounded-xl border border-brand-800/40 overflow-hidden">
           <div className="overflow-x-auto">
@@ -102,7 +102,7 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-widest text-brand-500 border-b border-brand-800/30 whitespace-nowrap"
+                      className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-brand-500 border-b border-brand-800/30 whitespace-nowrap"
                     >
                       {h}
                     </th>
@@ -159,7 +159,7 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
         </div>
 
         {leasingComps.length === 0 ? (
-          <p className="text-xs text-brand-100/25 italic py-3">
+          <p className="text-xs text-brand-100/40 italic py-3">
             No leasing comps added — go to the Comps tab to add evidence.
           </p>
         ) : (
@@ -169,7 +169,7 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
                 <thead>
                   <tr className="bg-[#0A0A0A]">
                     {leaseColHeaders.map((h) => (
-                      <th key={h} className="px-4 py-2 text-[9px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap border-b border-white/[0.04]">
+                      <th key={h} className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap border-b border-white/[0.04]">
                         {h}
                       </th>
                     ))}
@@ -230,7 +230,7 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
         </div>
 
         {salesComps.length === 0 ? (
-          <p className="text-xs text-brand-100/25 italic py-3">
+          <p className="text-xs text-brand-100/40 italic py-3">
             No sales comps added — go to the Comps tab to add evidence.
           </p>
         ) : (
@@ -240,7 +240,7 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
                 <thead>
                   <tr className="bg-[#0A0A0A]">
                     {saleColHeaders.map((h) => (
-                      <th key={h} className="px-4 py-2 text-[9px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap border-b border-white/[0.04]">
+                      <th key={h} className="px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap border-b border-white/[0.04]">
                         {h}
                       </th>
                     ))}
