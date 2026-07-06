@@ -5,6 +5,7 @@ import { api } from '../../../convex/_generated/api';
 import { toast } from 'sonner';
 import { Plus, Trash2, Save, Copy, RotateCcw, Clock, Cpu, Database, Building2, Loader2 } from 'lucide-react';
 import { SaveCompsModal } from './SaveCompsModal';
+import { PropertyPhotos } from '../properties/PropertyPhotos';
 
 // ─── Asset class mapping (extraction → properties schema) ────────────────────
 const ASSET_CLASS_MAP = {
@@ -84,7 +85,7 @@ function ConfBadge({ level }) {
     low: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
   }[level] || '';
   return (
-    <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase tracking-wider font-medium ${cls}`}>
+    <span className={`text-[10px] px-1.5 py-0.5 rounded border uppercase tracking-wider font-medium ${cls}`}>
       {level}
     </span>
   );
@@ -109,12 +110,12 @@ function Field({ label, value, conf, onChange, type = 'text', suffix, multiline 
       <div className="flex items-baseline gap-1.5">
         <Tag
           rows={multiline ? 3 : undefined}
-          className="block w-full bg-transparent border-b border-white/[0.08] py-1 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none placeholder:text-brand-100/20 resize-none transition-colors"
+          className="block w-full bg-transparent border-b border-white/[0.08] py-1 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none placeholder:text-brand-100/40 resize-none transition-colors"
           value={display}
           placeholder="—"
           onChange={handleChange}
         />
-        {suffix && <span className="text-brand-100/30 text-xs shrink-0">{suffix}</span>}
+        {suffix && <span className="text-brand-100/45 text-xs shrink-0">{suffix}</span>}
       </div>
     </label>
   );
@@ -125,7 +126,7 @@ function SectionCard({ title, badge, children }) {
     <div className="rounded-xl border border-white/[0.06] bg-[#0A0A0A] overflow-hidden mb-4">
       <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-500">{title}</p>
-        {badge && <span className="text-[10px] text-brand-100/30">{badge}</span>}
+        {badge && <span className="text-[10px] text-brand-100/45">{badge}</span>}
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -164,7 +165,7 @@ function TenancyTable({ tenancies, onChange }) {
   if (!tenancies || tenancies.length === 0) {
     return (
       <div>
-        <p className="text-xs text-brand-100/30 italic mb-2">No tenancies extracted.</p>
+        <p className="text-xs text-brand-100/45 italic mb-2">No tenancies extracted.</p>
         <button onClick={addRow} className="text-xs text-brand-500 hover:text-brand-400 transition-colors">+ Add row</button>
       </div>
     );
@@ -179,7 +180,7 @@ function TenancyTable({ tenancies, onChange }) {
             <thead>
               <tr className="border-b border-white/[0.06]">
                 {TENANCY_COLS.map((c) => (
-                  <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium whitespace-nowrap ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>
+                  <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/45 font-medium whitespace-nowrap ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>
                     {c.label}
                   </th>
                 ))}
@@ -209,7 +210,7 @@ function TenancyTable({ tenancies, onChange }) {
                       </td>
                     ))}
                     <td className="px-1">
-                      <button onClick={() => removeRow(i)} className="p-1 text-brand-100/20 hover:text-red-400 transition-colors">
+                      <button onClick={() => removeRow(i)} className="p-1 text-brand-100/40 hover:text-red-400 transition-colors">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </td>
@@ -242,7 +243,7 @@ function OutgoingsTable({ items, onChange }) {
   if (!items || items.length === 0) {
     return (
       <div>
-        <p className="text-xs text-brand-100/30 italic mb-2">No outgoings line items extracted.</p>
+        <p className="text-xs text-brand-100/45 italic mb-2">No outgoings line items extracted.</p>
         <button onClick={add} className="text-xs text-brand-500 hover:text-brand-400 transition-colors">+ Add item</button>
       </div>
     );
@@ -253,9 +254,9 @@ function OutgoingsTable({ items, onChange }) {
       <table className="text-xs w-full mb-3">
         <thead>
           <tr className="border-b border-white/[0.06]">
-            <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium">Item</th>
-            <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium w-28">Amount pa</th>
-            <th className="text-center py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium w-28">Recoverable</th>
+            <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/45 font-medium">Item</th>
+            <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/45 font-medium w-28">Amount pa</th>
+            <th className="text-center py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/45 font-medium w-28">Recoverable</th>
             <th className="w-8" />
           </tr>
         </thead>
@@ -273,17 +274,17 @@ function OutgoingsTable({ items, onChange }) {
               <td className="py-1 px-2 text-center">
                 <button
                   onClick={() => update(i, 'recoverable', !og.recoverable)}
-                  className={`text-[9px] uppercase tracking-wider px-2 py-1 rounded border transition-colors ${
+                  className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded border transition-colors ${
                     og.recoverable === true ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' :
                     og.recoverable === false ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' :
-                    'border-white/[0.08] text-brand-100/30'
+                    'border-white/[0.08] text-brand-100/45'
                   }`}
                 >
                   {og.recoverable === true ? 'Recoverable' : og.recoverable === false ? 'Non-recov' : '—'}
                 </button>
               </td>
               <td>
-                <button onClick={() => remove(i)} className="p-1 text-brand-100/20 hover:text-red-400 transition-colors">
+                <button onClick={() => remove(i)} className="p-1 text-brand-100/40 hover:text-red-400 transition-colors">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </td>
@@ -324,7 +325,7 @@ function SalesCompsTable({ comps, onChange }) {
   if (!comps || comps.length === 0) {
     return (
       <div>
-        <p className="text-xs text-brand-100/30 italic mb-2">No sales comps in this IM.</p>
+        <p className="text-xs text-brand-100/45 italic mb-2">No sales comps in this IM.</p>
         <button onClick={add} className="text-xs text-brand-500 hover:text-brand-400 transition-colors">+ Add comp</button>
       </div>
     );
@@ -337,7 +338,7 @@ function SalesCompsTable({ comps, onChange }) {
           <thead>
             <tr className="border-b border-white/[0.06]">
               {SALES_COLS.map((c) => (
-                <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>{c.label}</th>
+                <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/45 font-medium ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>{c.label}</th>
               ))}
               <th className="w-8" />
             </tr>
@@ -354,7 +355,7 @@ function SalesCompsTable({ comps, onChange }) {
                     />
                   </td>
                 ))}
-                <td><button onClick={() => remove(i)} className="p-1 text-brand-100/20 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button></td>
+                <td><button onClick={() => remove(i)} className="p-1 text-brand-100/40 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button></td>
               </tr>
             ))}
           </tbody>
@@ -386,7 +387,7 @@ function LeasingCompsTable({ comps, onChange }) {
   if (!comps || comps.length === 0) {
     return (
       <div>
-        <p className="text-xs text-brand-100/30 italic mb-2">No leasing comps in this IM.</p>
+        <p className="text-xs text-brand-100/45 italic mb-2">No leasing comps in this IM.</p>
         <button onClick={add} className="text-xs text-brand-500 hover:text-brand-400 transition-colors">+ Add comp</button>
       </div>
     );
@@ -399,7 +400,7 @@ function LeasingCompsTable({ comps, onChange }) {
           <thead>
             <tr className="border-b border-white/[0.06]">
               {LEASE_COLS.map((c) => (
-                <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/30 font-medium ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>{c.label}</th>
+                <th key={c.key} className={`text-left py-2 px-2 text-[10px] uppercase tracking-wider text-brand-100/45 font-medium ${c.w} ${c.align === 'right' ? 'text-right' : ''}`}>{c.label}</th>
               ))}
               <th className="w-8" />
             </tr>
@@ -416,7 +417,7 @@ function LeasingCompsTable({ comps, onChange }) {
                     />
                   </td>
                 ))}
-                <td><button onClick={() => remove(i)} className="p-1 text-brand-100/20 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button></td>
+                <td><button onClick={() => remove(i)} className="p-1 text-brand-100/40 hover:text-red-400 transition-colors"><Trash2 className="w-3 h-3" /></button></td>
               </tr>
             ))}
           </tbody>
@@ -489,7 +490,7 @@ function KpiBar({ data }) {
     <div className="flex flex-wrap gap-px mb-6 rounded-xl overflow-hidden border border-white/[0.06]">
       {kpis.map((k, i) => (
         <div key={i} className="flex-1 min-w-[100px] bg-white/[0.02] px-4 py-3">
-          <p className="text-[9px] uppercase tracking-widest text-brand-100/30 mb-1">{k.label}</p>
+          <p className="text-[10px] uppercase tracking-widest text-brand-100/45 mb-1">{k.label}</p>
           <p className="text-sm font-semibold text-brand-300 tabular-nums">{k.value}</p>
         </div>
       ))}
@@ -499,7 +500,7 @@ function KpiBar({ data }) {
 
 // ─── ExtractionView ───────────────────────────────────────────────────────────
 
-export function ExtractionView({ extraction, onReset }) {
+export function ExtractionView({ extraction, onReset, photoStatus = 'idle' }) {
   const navigate        = useNavigate();
   const saveEdits       = useMutation(api.imExtraction.saveEdits);
   const deleteExtraction = useMutation(api.imExtraction.deleteExtraction);
@@ -584,6 +585,7 @@ export function ExtractionView({ extraction, onReset }) {
         landArea:           sp.land_size_sqm ?? undefined,
         buildingArea:       sp.nla_sqm ?? undefined,
         wales:              wale ?? undefined,
+        photoIds:           extraction.photoIds ?? undefined,
       });
 
       // 2. Link extraction back to the new property
@@ -629,12 +631,12 @@ export function ExtractionView({ extraction, onReset }) {
           </h1>
           <div className="flex items-center gap-3 mt-1">
             {extraction.model && (
-              <span className="flex items-center gap-1 text-[10px] text-brand-100/30">
+              <span className="flex items-center gap-1 text-[10px] text-brand-100/45">
                 <Cpu className="w-3 h-3" />{extraction.model}
               </span>
             )}
             {extraction.latencyMs && (
-              <span className="flex items-center gap-1 text-[10px] text-brand-100/30">
+              <span className="flex items-center gap-1 text-[10px] text-brand-100/45">
                 <Clock className="w-3 h-3" />{(extraction.latencyMs / 1000).toFixed(1)}s
               </span>
             )}
@@ -718,6 +720,18 @@ export function ExtractionView({ extraction, onReset }) {
 
         {/* KPI summary bar */}
         <KpiBar data={data} />
+
+        {/* Photos from the IM — editable (add / delete) once extraction settles */}
+        <div className="mt-4">
+          {photoStatus === 'extracting' && !extraction.photoIds?.length ? (
+            <div className="flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500" />
+              Finding photos in the IM…
+            </div>
+          ) : (
+            <PropertyPhotos photoIds={extraction.photoIds} extractionId={extraction._id} />
+          )}
+        </div>
 
         {/* Subject property */}
         <SectionCard title="Subject Property" badge={conf.address ? `address: ${conf.address}` : null}>
@@ -831,7 +845,7 @@ export function ExtractionView({ extraction, onReset }) {
         <div className="mt-8 pt-6 border-t border-white/[0.04] flex justify-end">
           <button
             onClick={handleDelete}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-brand-100/25 hover:text-red-400 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-brand-100/40 hover:text-red-400 transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
             Delete extraction

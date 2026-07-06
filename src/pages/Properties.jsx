@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
-import { Plus, Building, Search, Building2, Loader2 } from 'lucide-react';
+import { Plus, Building, Search, Building2 } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SkeletonTable } from '../components/ui/Loading';
+import { rowEntrance } from '../components/ui/motion';
 
 import { formatCurrency } from '../utils/format';
 
@@ -23,6 +25,20 @@ export function Properties() {
       p.assetType.toLowerCase().includes(q)
     );
   }) ?? [];
+
+  // Resolve the first photo of each property to a URL in one batched query.
+  const firstPhotoIds = useMemo(
+    () => (properties ?? []).map((p) => p.photoIds?.[0]).filter(Boolean),
+    [properties],
+  );
+  const photoUrls = useQuery(
+    api.imExtraction.getPhotoUrls,
+    firstPhotoIds.length ? { ids: firstPhotoIds } : 'skip',
+  );
+  const urlById = useMemo(
+    () => Object.fromEntries((photoUrls ?? []).map((p) => [p.id, p.url])),
+    [photoUrls],
+  );
 
   return (
     <div className="p-6 lg:p-8 space-y-6 h-full flex flex-col">
@@ -52,7 +68,7 @@ export function Properties() {
         {/* Toolbar */}
         <div className="p-4 border-b border-brand-800/30 bg-[#111] flex items-center justify-between">
           <div className="relative w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/30" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/45" />
             <input
               type="text"
               value={searchTerm}
@@ -73,9 +89,7 @@ export function Properties() {
         {/* Table View — loading/empty states live OUTSIDE AnimatePresence
             so the stagger animation fires correctly when rows mount. */}
         {properties === undefined ? (
-          <div className="flex-1 flex items-center justify-center py-16">
-            <Loader2 className="w-7 h-7 text-brand-500 animate-spin" />
-          </div>
+          <SkeletonTable rows={8} cols={6} />
         ) : filtered.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
             <Building className="w-10 h-10 mb-4 text-brand-500 opacity-30" />
@@ -92,15 +106,16 @@ export function Properties() {
             ) : (
               <>
                 <p className="text-brand-100/40 text-sm">No properties in inventory.</p>
-                <p className="text-brand-100/25 text-xs mt-1">Click "Add Property" to start.</p>
+                <p className="text-brand-100/40 text-xs mt-1">Click "Add Property" to start.</p>
               </>
             )}
           </div>
         ) : (
           <div className="flex-1 overflow-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left tabular-nums">
               <thead className="text-xs text-brand-100/50 uppercase bg-[#0A0A0A]/50 sticky top-0 border-b border-brand-800/30 z-10">
                 <tr>
+                  <th className="pl-6 pr-2 py-4 w-12"></th>
                   <th className="px-6 py-4 font-semibold tracking-wider">Property ID</th>
                   <th className="px-6 py-4 font-semibold tracking-wider">Address</th>
                   <th className="px-6 py-4 font-semibold tracking-wider">Asset Type</th>
@@ -114,13 +129,25 @@ export function Properties() {
                   {filtered.map((prop, index) => (
                     <motion.tr
                       key={prop._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      {...rowEntrance(index)}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: index * 0.05, type: 'spring', bounce: 0, duration: 0.4 }}
                       onClick={() => navigate(`/properties/${prop._id}`)}
                       className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
                     >
+                      <td className="pl-6 pr-2 py-3">
+                        {prop.photoIds?.[0] && urlById[prop.photoIds[0]] ? (
+                          <img
+                            src={urlById[prop.photoIds[0]]}
+                            alt=""
+                            loading="lazy"
+                            className="w-9 h-9 rounded-md object-cover border border-white/[0.08]"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center justify-center">
+                            <Building2 className="w-4 h-4 text-brand-100/20" />
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-brand-500 font-mono text-xs">
                         {prop.propertyId}
                       </td>

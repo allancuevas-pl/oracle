@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { ArrowLeft, Loader2, Pencil, MoreHorizontal, Archive } from 'lucide-react';
+import { ArrowLeft, Pencil, MoreHorizontal, Archive } from 'lucide-react';
 import { PropertyModal } from '../components/properties/PropertyModal';
 import { IconButton } from '../components/ui/IconButton';
+import { PageLoader } from '../components/ui/Loading';
 import { toast } from 'sonner';
 
 import { DetailsTab }     from '../components/properties/tabs/DetailsTab';
@@ -15,6 +16,7 @@ import { CompsTab }       from '../components/properties/tabs/CompsTab';
 import { FeasoTab }       from '../components/properties/tabs/FeasoTab';
 import { ReportsTab }     from '../components/properties/tabs/ReportsTab';
 import { FilesTab }       from '../components/properties/tabs/FilesTab';
+import { PropertyVideos } from '../components/properties/PropertyVideos';
 import { PulseFeed }      from '../components/ui/PulseFeed';
 
 const TABS = [
@@ -25,6 +27,7 @@ const TABS = [
   { id: 'comps',        label: 'Comps' },
   { id: 'feaso',        label: 'Feaso' },
   { id: 'reports',      label: 'Reports' },
+  { id: 'videos',       label: 'Videos' },
   { id: 'files',        label: 'Files' },
 ];
 
@@ -41,6 +44,17 @@ export function PropertyView() {
   const updateTenants   = useMutation(api.properties.updatePropertyTenants);
   const updateOutgoings = useMutation(api.properties.updatePropertyOutgoings);
 
+  // Resolve brief linked to this property (for Reports tab)
+  const propertyMatches = useQuery(
+    api.matches.getMatchesForProperty,
+    activeTab === 'reports' && id ? { propertyId: id } : 'skip'
+  );
+  const linkedBriefId = propertyMatches?.[0]?.briefId;
+  const linkedBrief   = useQuery(
+    api.briefs.getBrief,
+    linkedBriefId ? { id: linkedBriefId } : 'skip'
+  );
+
   useEffect(() => {
     if (!showMore) return;
     function handler(e) {
@@ -51,11 +65,7 @@ export function PropertyView() {
   }, [showMore]);
 
   if (property === undefined) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
   if (property === null) {
     return (
@@ -114,7 +124,7 @@ export function PropertyView() {
                       onClick={() => { setShowMore(false); toast.info('Archive coming soon'); }}
                       className="w-full flex items-center px-3 py-2 text-xs text-brand-100/60 hover:bg-white/[0.05] hover:text-white rounded-md transition-colors gap-2.5"
                     >
-                      <Archive className="w-3.5 h-3.5 text-brand-100/30" />
+                      <Archive className="w-3.5 h-3.5 text-brand-100/45" />
                       Archive Property
                     </button>
                   </div>
@@ -157,7 +167,8 @@ export function PropertyView() {
             {activeTab === 'rent-reviews' && <RentReviewsTab property={property} />}
             {activeTab === 'comps'        && <CompsTab       property={property} />}
             {activeTab === 'feaso'        && <FeasoTab       property={property} />}
-            {activeTab === 'reports'      && <ReportsTab />}
+            {activeTab === 'reports'      && <ReportsTab property={property} brief={linkedBrief ?? null} />}
+            {activeTab === 'videos'       && <PropertyVideos property={property} />}
             {activeTab === 'files'        && <FilesTab />}
           </div>
 

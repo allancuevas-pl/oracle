@@ -3,6 +3,7 @@ import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../../convex/_generated/api';
 import { CustomSelect } from '../../ui/CustomSelect';
+import { PropertyPhotos } from '../PropertyPhotos';
 import { Loader2, FileText, Building2, Pencil } from 'lucide-react';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -18,7 +19,7 @@ function DataRow({ label, value }) {
     <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04] last:border-0">
       <span className="text-xs text-brand-100/50">{label}</span>
       <span className="text-sm text-brand-50 font-medium text-right ml-4 max-w-[60%]">
-        {value || <span className="text-brand-100/25 italic font-normal">—</span>}
+        {value || <span className="text-brand-100/40 italic font-normal">—</span>}
       </span>
     </div>
   );
@@ -62,10 +63,10 @@ function MetricTile({ label, value, highlight, sub, editable, tooltip, onSave })
       onClick={!editing ? startEdit : undefined}
       title={!editable && tooltip ? tooltip : undefined}
     >
-      <p className="text-[9px] uppercase tracking-widest text-brand-100/30 mb-1 flex items-center gap-1">
+      <p className="text-[10px] uppercase tracking-widest text-brand-100/45 mb-1 flex items-center gap-1">
         {label}
         {editable && !editing && (
-          <Pencil className="w-2.5 h-2.5 text-brand-100/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Pencil className="w-2.5 h-2.5 text-brand-100/40 opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
       </p>
 
@@ -82,15 +83,15 @@ function MetricTile({ label, value, highlight, sub, editable, tooltip, onSave })
       ) : (
         <>
           <p className={`text-sm font-semibold tabular-nums leading-tight ${
-            isEmpty     ? (editable ? 'text-brand-100/25 italic font-normal text-xs' : 'text-brand-100/20 font-normal') :
+            isEmpty     ? (editable ? 'text-brand-100/40 italic font-normal text-xs' : 'text-brand-100/40 font-normal') :
             highlight   ? 'text-amber-400' :
                           'text-brand-300'
           }`}>
             {value || (editable ? 'Click to add' : '—')}
           </p>
-          {sub && <p className="text-[10px] text-brand-100/25 mt-0.5">{sub}</p>}
+          {sub && <p className="text-[10px] text-brand-100/40 mt-0.5">{sub}</p>}
           {!editable && tooltip && isEmpty && (
-            <p className="text-[9px] text-brand-100/20 mt-0.5 leading-tight">{tooltip}</p>
+            <p className="text-[10px] text-brand-100/40 mt-0.5 leading-tight">{tooltip}</p>
           )}
         </>
       )}
@@ -206,6 +207,9 @@ export function DetailsTab({ property, updateProperty }) {
         onSave={(field, value) => updateProperty({ id: property._id, [field]: value })}
       />
 
+      {/* ── Photos (from IM scan) ── */}
+      <PropertyPhotos photoIds={property.photoIds} propertyId={property._id} />
+
       {/* ── Listing status ── */}
       <section className="space-y-3 pb-5 border-b border-white/[0.04]">
         <h2 className="text-[10px] font-semibold uppercase tracking-widest text-brand-500">Listing Status</h2>
@@ -270,7 +274,7 @@ export function DetailsTab({ property, updateProperty }) {
           </div>
         ) : matches.length === 0 ? (
           <div className="rounded-lg border border-white/[0.05] bg-white/[0.01] p-6 text-center">
-            <Building2 className="w-6 h-6 text-brand-100/20 mx-auto mb-2" />
+            <Building2 className="w-6 h-6 text-brand-100/40 mx-auto mb-2" />
             <p className="text-xs text-brand-100/40">
               Not matched to any briefs yet. Match this property from an active brief.
             </p>
