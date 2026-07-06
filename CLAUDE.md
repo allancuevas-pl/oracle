@@ -4,6 +4,21 @@ This file governs all code written for this project. Every rule here exists beca
 
 ---
 
+## 0. Start here — project docs
+
+This is the **rulebook**. The rest of the project's context lives alongside it (any AI tool can read these; `AGENTS.md` is the cross-tool entrypoint):
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — the system map (stack, data model, subsystems).
+- **[docs/WORKFLOW.md](docs/WORKFLOW.md)** — how to run, the exact deploy sequence, security must-nots.
+- **[docs/STATE.md](docs/STATE.md)** — what's shipped / in flight / next. Read to know where we left off; **update it at the end of each session.**
+- **[DESIGN.md](DESIGN.md)** — visual north-star.
+
+@docs/ARCHITECTURE.md
+@docs/WORKFLOW.md
+@docs/STATE.md
+
+---
+
 ## 1. Layout & Visual Standards
 
 ### List views (Briefs, Properties, Clients, Pipeline)
@@ -105,8 +120,17 @@ Must be stateless and domain-agnostic. No Convex queries, no toast calls, no bus
 
 ## 6. Security Defaults
 
-- **New users default to `"client"` role.** The `users.ts` `create` mutation sets `role: "client"` unless overridden by an admin invitation. This prevents new sign-ups from accessing CRM data.
-- **Role checks in every mutation.** Use `requireStaffOrAdmin(ctx)` or `requireAdmin(ctx)` from `convex/authz.ts`. No mutation should touch data without an explicit role check.
+- **The four roles, and what each can reach:**
+  | Role | CRM | Client portal |
+  |---|---|---|
+  | `admin` | ✅ + team/settings | — |
+  | `staff` | ✅ | — |
+  | `client` | — | ✅ (only deals shared with them) |
+  | `blocked` | — | — |
+- **Uninvited sign-ups default to `"blocked"`** (zero access anywhere). `users.ts` `storeUser` only grants a real role when a matching `pendingInvitations` record exists. Never default to `"client"` — that grants portal access.
+- **Removing a team member sets `"blocked"`, never `"client"`.** Downgrading to `"client"` would let a removed agent back in through the portal side door (`team.ts` `removeMember`).
+- **A client-portal invite must never demote a CRM user.** Creating a client record with an admin's email must not strip their access. Guarded in both `storeUser` and `upsertUserRole`.
+- **Role checks in every mutation.** Use `requireStaffOrAdmin(ctx)` or `requireAdmin(ctx)` from `convex/authz.ts` (strict allowlist — `blocked`/`client` are rejected). No mutation should touch data without an explicit role check. Client-portal queries check `role === "client"` inline instead.
 - **No secrets in code or `.git/config`.** API keys and tokens live in Convex environment variables or browser localStorage only. The GitHub PAT leak from May 2026 must not recur — rotate tokens immediately if found in any config file.
 
 ---
