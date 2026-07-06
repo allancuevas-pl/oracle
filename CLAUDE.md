@@ -26,10 +26,11 @@ This is the **rulebook**. The rest of the project's context lives alongside it (
 - Consistent padding: `<div className="p-6 lg:p-8 space-y-6">`
 - All list views **must** include a search bar. One-third width max, record count on the right.
 
-### Record workspaces (BriefView, PropertyView, ClientView)
+### Record workspaces (BriefView, ClientView)
 - Use `RecordWorkspace.jsx`. Three columns: 25% criteria / 50% pipeline / 25% pulse log.
 - Sticky header: title + back button + action buttons (right-aligned).
 - The `actions` prop accepts a JSX fragment of icon buttons. There is no `statusControls` prop — inline selects live in the left column.
+- **`PropertyView` is the exception:** a bespoke tabbed layout (sticky header + tab bar + tab content + activity panel), not the `RecordWorkspace` shell. Match its existing structure when editing it; don't force it into the 25/50/25 shape.
 
 ### Tables
 - Headers: `text-xs text-brand-100/50 uppercase bg-[#0A0A0A]/50`

@@ -8,6 +8,7 @@
     "build": "npm run security:check && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test": "vitest run",
     "security:check": "node scripts/check-authz.js"
   },
   "dependencies": {

@@ -8,7 +8,9 @@ You are working on **Oracle**, a commercial-property deal platform for Property 
 2. **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — the system map: stack, data model, subsystems.
 3. **[docs/WORKFLOW.md](docs/WORKFLOW.md)** — how to run, deploy, and the security must-nots.
 4. **[docs/STATE.md](docs/STATE.md)** — what's shipped, in flight, and next. **Read this to know where we left off.**
-5. **[DESIGN.md](DESIGN.md)** — visual north-star ("The Private Deal Room").
+5. **[DESIGN.md](DESIGN.md)** — visual north-star ("The Private Deal Room"). Supplementary: `UI_STANDARDS.md`.
+
+**Visual-rules precedence** (they overlap): **CLAUDE.md §1 wins** — it's the enforceable rulebook ("governs all code"). `DESIGN.md` sets intent/tone; `UI_STANDARDS.md` is supplementary detail. On any conflict, follow CLAUDE.md §1.
 
 ## Golden rules (the guard rails — never violate)
 

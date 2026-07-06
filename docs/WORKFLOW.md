@@ -13,11 +13,13 @@
 
 ```bash
 npm install
-npm run dev            # Vite dev server
+npm run dev            # Vite dev server (port 5173)
 npx convex dev         # backend in watch mode (syncs functions to the dev deployment)
+npm run lint           # ESLint
+npm test               # vitest (unit tests, incl. convex/authz.test.ts)
 ```
 
-Preview verification (in this harness): use the `oracle` config in the repo-root `.claude/launch.json` (port 5174) with the preview tools, not raw shell servers.
+Preview verification (in this harness): use the **`oracle-dev`** config in `.claude/launch.json` (**port 5173**) with the preview tools, not raw shell servers.
 
 ## Deploy (the exact sequence)
 
@@ -66,5 +68,6 @@ Server-side secrets (e.g. the Claude API key for extraction) live in **Convex en
 
 - **Previewable UI change** → run it via the preview tools and confirm behavior (console/network/snapshot), don't ask the user to check manually.
 - **Pure logic (utils)** → a quick `node` check is cheap and reliable (see `videoEmbed.js` / `pdfPhotos.js` history).
-- **Auth logic** → `convex/authz.test.ts` exists; keep it green.
+- **Auth logic** → `convex/authz.test.ts`; run `npm test` (vitest) and keep it green.
+- **Lint** → `npm run lint` before shipping.
 - Report outcomes faithfully — if something is untested or skipped, say so.

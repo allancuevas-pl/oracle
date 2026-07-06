@@ -50,7 +50,7 @@ Two Convex deployments — **both must be kept in sync** (see [WORKFLOW.md](WORK
 - **`colorless-condor-502`** — the "dev" deployment, but it is what **Vercel production actually points at** (via `VITE_CONVEX_URL`). Changes here go live.
 - **`incredible-peccary-695`** — the "prod" Convex deployment (`npx convex deploy`).
 
-Frontend: Vercel project `oracle` (team `property-lions`). Production alias: **`oracle-psi-beryl.vercel.app`**. Convex is on the **Pro plan**.
+Frontend: Vercel project `oracle` (Vercel team `property-lions`, so deploy URLs look like `oracle-<hash>-property-lions.vercel.app`). Production alias: **`oracle-psi-beryl.vercel.app`**. Convex is on the **Pro plan** under a *separate* team (`allan-cuevas`, per `.env.local`) — the Vercel team and the Convex team are different accounts; don't conflate them.
 
 ## Data model (Convex tables)
 
@@ -75,4 +75,14 @@ Frontend: Vercel project `oracle` (team `property-lions`). Production alias: **`
 - **Property videos** — `PropertyVideos.jsx` + `utils/videoEmbed.js`: hosted links (YouTube/Vimeo/Loom, embedded) or uploaded files, on `properties.videos`. Surfaced to clients in the deal portal.
 - **Comps at scale** — ~262k rows. Browse via `usePaginatedQuery` (infinite scroll) + a `search_address` search index; a `source` dropdown defaults to "Curated (team)" so the 4,531 hand-curated comps stay front-and-centre. Property-detail matching is suburb-indexed.
 - **Client portal** — separate surface (`ClientLayout`, `pages/client/`). `role === "client"` users see only deals shared with them, via `clientPortal.ts` (token-gated `getMyReport`). Guard rails around role assignment are in [../CLAUDE.md](../CLAUDE.md) §6.
-- **Record workspaces** — `BriefView` / `PropertyView` / `ClientView` use `RecordWorkspace.jsx` (three columns) with a tabbed detail area.
+- **Record workspaces** — `BriefView` and `ClientView` use `RecordWorkspace.jsx` (the 25/50/25 three-column shell). **`PropertyView` is bespoke** — its own sticky header + tab bar + tab content + activity panel (imports `PulseFeed` directly), *not* the `RecordWorkspace` shell. Match the file you're editing, not the generic rule.
+
+## Common change: add a property-detail tab
+
+The property tabs are wired inline in [`src/pages/PropertyView.jsx`](../src/pages/PropertyView.jsx). To add one:
+
+1. Build the tab component in `src/components/properties/tabs/<Name>Tab.jsx` (or `src/components/properties/` for a larger standalone, e.g. `PropertyVideos.jsx`).
+2. In `PropertyView.jsx`: add its `import`; add `{ id, label }` to the `TABS` array; add the render line `{activeTab === '<id>' && <YourTab property={property} />}` in the tab-content block.
+3. Backend, if needed: add index-backed queries/mutations to `convex/properties.ts` — every mutation calls `requireStaffOrAdmin`, all args use `v.` validators, queries use `.withIndex()` + `.take(n)` (see [../CLAUDE.md](../CLAUDE.md) §2).
+
+This is exactly how the Videos tab was added — a good reference commit.
