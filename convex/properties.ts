@@ -47,6 +47,7 @@ export const createProperty = mutation({
     landArea: v.optional(v.number()),
     buildingArea: v.optional(v.number()),
     wales: v.optional(v.number()),
+    photoIds: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const { identity } = await requireStaffOrAdmin(ctx);
@@ -67,6 +68,34 @@ export const createProperty = mutation({
     });
 
     return newId;
+  },
+});
+
+/** Set a property's photos (used to backfill photos pulled from its IM). */
+export const setPropertyPhotos = mutation({
+  args: { id: v.id("properties"), photoIds: v.array(v.string()) },
+  handler: async (ctx, { id, photoIds }) => {
+    await requireStaffOrAdmin(ctx);
+    await ctx.db.patch(id, { photoIds });
+  },
+});
+
+const videoObject = v.object({
+  id: v.string(),
+  kind: v.union(v.literal("link"), v.literal("upload")),
+  url: v.optional(v.string()),
+  storageId: v.optional(v.string()),
+  title: v.optional(v.string()),
+  addedAt: v.number(),
+});
+
+/** Replace a property's video list (add/remove computed client-side). */
+export const setPropertyVideos = mutation({
+  args: { id: v.id("properties"), videos: v.array(videoObject) },
+  handler: async (ctx, { id, videos }) => {
+    await requireStaffOrAdmin(ctx);
+    if (videos.length > 50) throw new Error("A property cannot have more than 50 videos.");
+    await ctx.db.patch(id, { videos });
   },
 });
 

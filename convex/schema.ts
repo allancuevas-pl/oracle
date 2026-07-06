@@ -7,10 +7,12 @@ export default defineSchema({
     email: v.string(),
     firstName: v.optional(v.string()),
     lastName: v.optional(v.string()),
-    role: v.union(v.literal("staff"), v.literal("client"), v.literal("admin")),
+    // "blocked" = signed up without an invite — zero access anywhere
+    role: v.union(v.literal("staff"), v.literal("client"), v.literal("admin"), v.literal("blocked")),
   })
     .index("by_clerkId", ["clerkId"])
-    .index("by_role", ["role"]),
+    .index("by_role", ["role"])
+    .index("by_email", ["email"]),
 
   settings: defineTable({
     assetTypes: v.array(v.string()),
@@ -32,8 +34,11 @@ export default defineSchema({
       v.literal("other")
     )),
     notes: v.optional(v.string()),
+    portalInvitedAt: v.optional(v.number()),  // when they were invited to the client portal
     createdBy: v.string(),
-  }).index("by_name", ["name"]),
+  })
+    .index("by_name", ["name"])
+    .index("by_email", ["email"]),
 
   briefs: defineTable({
     briefId: v.optional(v.string()), // e.g. "ORC-B0001"
@@ -95,6 +100,17 @@ export default defineSchema({
     landArea: v.optional(v.number()),   // sqm
     buildingArea: v.optional(v.number()), // sqm (NLA)
     wales: v.optional(v.number()),      // Weighted Average Lease Expiry (years)
+    photoIds: v.optional(v.array(v.string())), // Convex storage IDs of property photos (from IM scan)
+
+    // Walkthrough / marketing videos — hosted links (YouTube/Vimeo/Loom) or uploaded files
+    videos: v.optional(v.array(v.object({
+      id: v.string(),                                          // client-generated row id
+      kind: v.union(v.literal("link"), v.literal("upload")),
+      url: v.optional(v.string()),                            // link kind: original URL
+      storageId: v.optional(v.string()),                      // upload kind: Convex storage ID
+      title: v.optional(v.string()),
+      addedAt: v.number(),
+    }))),
 
     // Market benchmarks (from feaso / manual)
     vacancyRate: v.optional(v.number()),     // current vacancy %
@@ -145,6 +161,7 @@ export default defineSchema({
     address: v.string(),
     suburb: v.string(),
     state: v.optional(v.string()),
+    postcode: v.optional(v.string()),   // AU 4-digit; kept as string to preserve leading zeros
 
     // Property characteristics (key for smart matching)
     assetType: v.optional(v.string()),  // Industrial / Retail / Office / Hybrid / Other
@@ -160,7 +177,9 @@ export default defineSchema({
     rentPerSqm: v.optional(v.number()),      // auto-calc: rentPa / nlaSqm
     leaseType: v.optional(v.string()),       // Net | Gross | Semi-Gross
     leaseDate: v.optional(v.string()),       // "YYYY-MM-DD"
+    leaseExpiry: v.optional(v.string()),     // "YYYY-MM-DD" — lease expiry / end of term
     leaseTerm: v.optional(v.string()),       // e.g. "3yr", "5 + 5yr"
+    incentives: v.optional(v.string()),      // e.g. "6 months rent-free, $50K fitout"
     reviewType: v.optional(v.string()),      // CPI | Fixed % | Market
     reviewRate: v.optional(v.number()),      // e.g. 3.5
 
@@ -177,6 +196,8 @@ export default defineSchema({
       v.literal("real_commercial"),
       v.literal("loopnet"),
       v.literal("im_scan"),
+      v.literal("historical_import"),  // bulk-imported from the team's state comp sheets
+      v.literal("arealytics"),         // bulk-imported from the Arealytics transaction archive
       v.literal("other")
     )),
     verified: v.optional(v.boolean()),       // verbally confirmed
@@ -184,6 +205,10 @@ export default defineSchema({
     agentPhone: v.optional(v.string()),
     agentCompany: v.optional(v.string()),
     notes: v.optional(v.string()),
+
+    // ── Audit ──
+    updatedAt: v.optional(v.number()),     // ms timestamp of last edit
+    updatedBy: v.optional(v.string()),     // clerkId of last editor
 
     // ── Links ──
     linkedPropertyId: v.optional(v.id("properties")),
@@ -194,7 +219,14 @@ export default defineSchema({
     .index("by_suburb", ["suburb"])
     .index("by_suburb_and_type", ["suburb", "type"])
     .index("by_suburb_assetType_type", ["suburb", "assetType", "type"])
-    .index("by_linkedProperty", ["linkedPropertyId"]),
+    .index("by_source", ["source"])
+    .index("by_linkedProperty", ["linkedPropertyId"])
+    // Full-text search over address so the Comps browse can find a comp across
+    // the ~260k-row table instantly, filterable by type/source.
+    .searchIndex("search_address", {
+      searchField: "address",
+      filterFields: ["type", "source"],
+    }),
 
   matches: defineTable({
     briefId: v.id("briefs"),
@@ -244,15 +276,17 @@ export default defineSchema({
 
   pendingInvitations: defineTable({
     email: v.string(),
-    role: v.union(v.literal("admin"), v.literal("staff")),
+    role: v.union(v.literal("admin"), v.literal("staff"), v.literal("client")),
     invitedBy: v.string(), // clerkId of the inviting admin
     clerkInvitationId: v.optional(v.string()), // Clerk's invitation ID for revocation
+    clientRecordId: v.optional(v.id("clients")), // set when inviting a client
   }).index("by_email", ["email"]),
 
   // IM extractions — one record per PDF upload, result stored as JSON string
   imExtractions: defineTable({
     propertyId: v.optional(v.id("properties")), // optional link to a property record
-    storageId: v.optional(v.string()),           // Convex file storage ID
+    storageId: v.optional(v.string()),           // Convex file storage ID (the PDF)
+    photoIds: v.optional(v.array(v.string())),   // storage IDs of photos pulled from the IM
     filename: v.string(),
     status: v.union(
       v.literal("processing"),
@@ -265,6 +299,50 @@ export default defineSchema({
     latencyMs: v.optional(v.number()),
     createdBy: v.string(),
   })
+    .index("by_propertyId", ["propertyId"])
+    .index("by_status", ["status"]),
+
+  // ─── Client Deal Reports ──────────────────────────────────────────────────
+  // One record per "Send to Client" action on a brief+property match.
+  // Accessed publicly at /report/:token — token IS the credential.
+  dealReports: defineTable({
+    briefId: v.id("briefs"),
+    propertyId: v.id("properties"),
+    matchId: v.optional(v.id("matches")),
+
+    // Denormalized for fast public reads (no joins on the client page)
+    clientName: v.string(),
+    clientEmail: v.optional(v.string()),
+    propertyAddress: v.string(),
+
+    // UUID v4 — the share token, generated client-side
+    token: v.string(),
+
+    // Status lifecycle
+    status: v.union(
+      v.literal("draft"),
+      v.literal("sent"),
+      v.literal("viewed"),
+      v.literal("approved"),
+      v.literal("declined")
+    ),
+
+    // Optional message from the analyst
+    analystMessage: v.optional(v.string()),
+
+    // Timestamps
+    sentAt: v.optional(v.number()),
+    viewedAt: v.optional(v.number()),
+    respondedAt: v.optional(v.number()),
+
+    // Client response
+    clientDecision: v.optional(v.union(v.literal("approved"), v.literal("declined"))),
+    clientNote: v.optional(v.string()),
+
+    createdBy: v.string(), // clerkId
+  })
+    .index("by_token", ["token"])
+    .index("by_briefId", ["briefId"])
     .index("by_propertyId", ["propertyId"])
     .index("by_status", ["status"]),
 

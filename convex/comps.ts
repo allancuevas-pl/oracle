@@ -1,6 +1,28 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import { requireStaffOrAdmin } from "./authz";
+
+// ─── Maintenance (CLI-only via `npx convex run`) ─────────────────────────────
+
+/**
+ * Delete a batch of comps with source === "historical_import". Internal-only
+ * (not exposed to the app). Returns how many were deleted so a CLI loop can
+ * keep calling until 0. Used to refresh the bulk import without duplicating.
+ */
+export const purgeImportedComps = internalMutation({
+  args: { batch: v.optional(v.number()), source: v.optional(v.string()) },
+  handler: async (ctx, { batch, source }) => {
+    const limit = batch ?? 2000;
+    const src = source ?? "historical_import";
+    const rows = await ctx.db
+      .query("comps")
+      .filter((q) => q.eq(q.field("source"), src))
+      .take(limit);
+    for (const r of rows) await ctx.db.delete(r._id);
+    return { deleted: rows.length };
+  },
+});
 
 // ─── Validators ────────────────────────────────────────────────────────────
 
@@ -11,6 +33,7 @@ const compWriteFields = {
   address: v.string(),
   suburb: v.string(),
   state: v.optional(v.string()),
+  postcode: v.optional(v.string()),
   assetType: v.optional(v.string()),
   nlaSqm: v.optional(v.number()),
   landAreaSqm: v.optional(v.number()),
@@ -21,7 +44,9 @@ const compWriteFields = {
   rentPerSqm: v.optional(v.number()),
   leaseType: v.optional(v.string()),
   leaseDate: v.optional(v.string()),
+  leaseExpiry: v.optional(v.string()),
   leaseTerm: v.optional(v.string()),
+  incentives: v.optional(v.string()),
   reviewType: v.optional(v.string()),
   reviewRate: v.optional(v.number()),
 
@@ -38,6 +63,8 @@ const compWriteFields = {
     v.literal("real_commercial"),
     v.literal("loopnet"),
     v.literal("im_scan"),
+    v.literal("historical_import"),
+    v.literal("arealytics"),
     v.literal("other")
   )),
   verified: v.optional(v.boolean()),
@@ -59,8 +86,9 @@ export const getComps = query({
     type: v.optional(compTypeValidator),
     suburb: v.optional(v.string()),
     assetType: v.optional(v.string()),
+    source: v.optional(v.string()),
   },
-  handler: async (ctx, { type, suburb, assetType }) => {
+  handler: async (ctx, { type, suburb, assetType, source }) => {
     await requireStaffOrAdmin(ctx);
 
     // Use most specific index available
@@ -86,14 +114,79 @@ export const getComps = query({
         .withIndex("by_suburb", q => q.eq("suburb", suburb))
         .take(500);
     }
+    // Source-filtered browse (e.g. only curated team comps, or only Arealytics).
+    // Indexed so it stays fast even with ~260k Arealytics rows in the table.
+    if (source) {
+      let q = ctx.db
+        .query("comps")
+        .withIndex("by_source", ix => ix.eq("source", source))
+        .order("desc");
+      const rows = await q.take(type ? 12000 : 6000);
+      return type ? rows.filter(r => r.type === type) : rows;
+    }
+    // Browse-all branches: newest first so freshly-imported comps surface.
+    // With the Arealytics archive loaded the table is large — the Comps page
+    // defaults to a source filter; this unfiltered path is the "All sources" view.
     if (type) {
       return ctx.db
         .query("comps")
         .withIndex("by_type", q => q.eq("type", type))
-        .take(500);
+        .order("desc")
+        .take(6000);
     }
 
-    return ctx.db.query("comps").take(500);
+    return ctx.db.query("comps").order("desc").take(6000);
+  },
+});
+
+/**
+ * Paginated browse for the Comps page. Indexed by source/type and ordered
+ * newest-first. Scales to the full ~260k table — the client loads 50 at a time.
+ */
+export const getCompsPaginated = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    type: v.optional(compTypeValidator),
+    source: v.optional(v.string()),
+  },
+  handler: async (ctx, { paginationOpts, type, source }) => {
+    await requireStaffOrAdmin(ctx);
+    let q;
+    if (source) {
+      q = ctx.db.query("comps").withIndex("by_source", ix => ix.eq("source", source)).order("desc");
+      if (type) q = q.filter(f => f.eq(f.field("type"), type));
+    } else if (type) {
+      q = ctx.db.query("comps").withIndex("by_type", ix => ix.eq("type", type)).order("desc");
+    } else {
+      q = ctx.db.query("comps").order("desc");
+    }
+    return await q.paginate(paginationOpts);
+  },
+});
+
+/**
+ * Paginated full-text search over comp addresses, filterable by type/source.
+ * Used by the Comps page when the search box is non-empty.
+ */
+export const searchComps = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    query: v.string(),
+    type: v.optional(compTypeValidator),
+    source: v.optional(v.string()),
+  },
+  handler: async (ctx, { paginationOpts, query, type, source }) => {
+    await requireStaffOrAdmin(ctx);
+    const result = await ctx.db
+      .query("comps")
+      .withSearchIndex("search_address", s => {
+        let b = s.search("address", query);
+        if (type) b = b.eq("type", type);
+        if (source) b = b.eq("source", source);
+        return b;
+      })
+      .paginate(paginationOpts);
+    return result;
   },
 });
 
@@ -144,12 +237,17 @@ export const createComp = mutation({
       args.salePrice && args.nlaSqm && args.nlaSqm > 0
         ? Math.round((args.salePrice / args.nlaSqm) * 100) / 100
         : args.pricePerSqmBuild;
+    const pricePerSqmLand =
+      args.salePrice && args.landAreaSqm && args.landAreaSqm > 0
+        ? Math.round((args.salePrice / args.landAreaSqm) * 100) / 100
+        : args.pricePerSqmLand;
 
     return ctx.db.insert("comps", {
       ...args,
       rentPa,
       rentPerSqm,
       pricePerSqmBuild,
+      pricePerSqmLand,
       createdBy: identity.subject,
     });
   },
@@ -179,12 +277,17 @@ export const createComps = mutation({
         comp.salePrice && comp.nlaSqm && comp.nlaSqm > 0
           ? Math.round((comp.salePrice / comp.nlaSqm) * 100) / 100
           : comp.pricePerSqmBuild;
+      const pricePerSqmLand =
+        comp.salePrice && comp.landAreaSqm && comp.landAreaSqm > 0
+          ? Math.round((comp.salePrice / comp.landAreaSqm) * 100) / 100
+          : comp.pricePerSqmLand;
 
       const id = await ctx.db.insert("comps", {
         ...comp,
         rentPa,
         rentPerSqm,
         pricePerSqmBuild,
+        pricePerSqmLand,
         createdBy: identity.subject,
       });
       ids.push(id);
@@ -205,6 +308,8 @@ export const updateComp = mutation({
   },
   handler: async (ctx, { id, ...fields }) => {
     await requireStaffOrAdmin(ctx);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
 
     // Re-derive calculated fields on update
     let rentPa = fields.rentPa;
@@ -219,8 +324,20 @@ export const updateComp = mutation({
       fields.salePrice && fields.nlaSqm && fields.nlaSqm > 0
         ? Math.round((fields.salePrice / fields.nlaSqm) * 100) / 100
         : fields.pricePerSqmBuild;
+    const pricePerSqmLand =
+      fields.salePrice && fields.landAreaSqm && fields.landAreaSqm > 0
+        ? Math.round((fields.salePrice / fields.landAreaSqm) * 100) / 100
+        : fields.pricePerSqmLand;
 
-    await ctx.db.patch(id, { ...fields, rentPa, rentPerSqm, pricePerSqmBuild });
+    await ctx.db.patch(id, {
+      ...fields,
+      rentPa,
+      rentPerSqm,
+      pricePerSqmBuild,
+      pricePerSqmLand,
+      updatedAt: Date.now(),
+      updatedBy: identity.subject,
+    });
   },
 });
 

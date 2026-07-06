@@ -30,6 +30,54 @@ export const createPendingExtraction = mutation({
   },
 });
 
+/** Attach photo storage IDs (extracted from the IM in the browser) to an extraction. */
+export const attachExtractionPhotos = mutation({
+  args: {
+    id: v.id("imExtractions"),
+    photoIds: v.array(v.string()),
+  },
+  handler: async (ctx, { id, photoIds }) => {
+    await requireStaffOrAdmin(ctx);
+    await ctx.db.patch(id, { photoIds });
+    // If a property was already created from this extraction (Create Property
+    // clicked before the photo upload finished), attach the photos there too so
+    // they're never lost to the race. Don't clobber existing photos.
+    const ex = await ctx.db.get(id);
+    if (ex?.propertyId) {
+      const prop = await ctx.db.get(ex.propertyId);
+      if (prop && !(prop.photoIds && prop.photoIds.length)) {
+        await ctx.db.patch(ex.propertyId, { photoIds });
+      }
+    }
+  },
+});
+
+/** The IM extraction linked to a property (if any) — used to backfill photos. */
+export const getExtractionForProperty = query({
+  args: { propertyId: v.id("properties") },
+  handler: async (ctx, { propertyId }) => {
+    await requireStaffOrAdmin(ctx);
+    const ex = await ctx.db
+      .query("imExtractions")
+      .withIndex("by_propertyId", (q) => q.eq("propertyId", propertyId))
+      .first();
+    if (!ex?.storageId) return null;
+    return { _id: ex._id, storageId: ex.storageId, photoIds: ex.photoIds ?? [] };
+  },
+});
+
+/** Resolve a list of storage IDs to served URLs (for displaying photos). */
+export const getPhotoUrls = query({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) => {
+    await requireStaffOrAdmin(ctx);
+    const urls = await Promise.all(
+      ids.slice(0, 30).map(async (id) => ({ id, url: await ctx.storage.getUrl(id) }))
+    );
+    return urls.filter((u) => u.url);
+  },
+});
+
 // ─── Internal status updates (called from the action only) ────────────────────
 
 export const markComplete = internalMutation({

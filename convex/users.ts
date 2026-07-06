@@ -41,31 +41,43 @@ export const storeUser = mutation({
       .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
       .first();
 
+    const email = (identity.email || "").toLowerCase();
+
+    // Check for a pending invitation regardless of whether user record exists.
+    // Admins re-invite existing users to change their role — we must apply it
+    // on sign-in even when the user row already exists.
+    const pendingInvite = email
+      ? await ctx.db
+          .query("pendingInvitations")
+          .withIndex("by_email", (q) => q.eq("email", email))
+          .first()
+      : null;
+
     if (!existingUser) {
-      const email = (identity.email || "").toLowerCase();
-
-      // Check for a pending invitation — lets invited users get the correct role
-      const pendingInvite = email
-        ? await ctx.db
-            .query("pendingInvitations")
-            .withIndex("by_email", (q) => q.eq("email", email))
-            .first()
-        : null;
-
       await ctx.db.insert("users", {
         clerkId: identity.subject,
         email,
         firstName: identity.givenName || "",
         lastName: identity.familyName || "",
-        // Use invited role when present; fallback to "client" (no access) for
-        // any unanticipated sign-up. Admins must explicitly invite with a role.
-        role: pendingInvite?.role ?? "client",
+        // Use invited role when present; fallback to "blocked" — zero access
+        // anywhere — for uninvited sign-ups. Admins must explicitly invite.
+        role: pendingInvite?.role ?? "blocked",
       });
-
-      // Consume the invitation record — it's single-use
-      if (pendingInvite) {
-        await ctx.db.delete(pendingInvite._id);
+    } else if (pendingInvite) {
+      // Existing user being re-invited with a new role — apply it immediately,
+      // EXCEPT a client-portal invite must never demote a CRM user (e.g. a client
+      // record created with an admin's email). Team invites are explicit & allowed.
+      const wouldDemoteCrmUser =
+        pendingInvite.role === "client" &&
+        (existingUser.role === "staff" || existingUser.role === "admin");
+      if (!wouldDemoteCrmUser) {
+        await ctx.db.patch(existingUser._id, { role: pendingInvite.role });
       }
+    }
+
+    // Consume the invitation — single-use
+    if (pendingInvite) {
+      await ctx.db.delete(pendingInvite._id);
     }
   },
 });

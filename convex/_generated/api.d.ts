@@ -11,9 +11,11 @@
 import type * as activities from "../activities.js";
 import type * as authz from "../authz.js";
 import type * as briefs from "../briefs.js";
+import type * as clientPortal from "../clientPortal.js";
 import type * as clients from "../clients.js";
 import type * as comps from "../comps.js";
 import type * as dashboard from "../dashboard.js";
+import type * as dealReports from "../dealReports.js";
 import type * as extractionPrompt from "../extractionPrompt.js";
 import type * as feasos from "../feasos.js";
 import type * as imExtraction from "../imExtraction.js";
@@ -36,9 +38,11 @@ declare const fullApi: ApiFromModules<{
   activities: typeof activities;
   authz: typeof authz;
   briefs: typeof briefs;
+  clientPortal: typeof clientPortal;
   clients: typeof clients;
   comps: typeof comps;
   dashboard: typeof dashboard;
+  dealReports: typeof dealReports;
   extractionPrompt: typeof extractionPrompt;
   feasos: typeof feasos;
   imExtraction: typeof imExtraction;

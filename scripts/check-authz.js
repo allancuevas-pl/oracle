@@ -10,6 +10,20 @@ let failed = false;
 // the lint enforces that below so this allowlist can't be used to skip auth.
 const USERS_BOOTSTRAP_ALLOWLIST = new Set(['getCurrentUser', 'storeUser']);
 
+// Client-portal queries in clientPortal.ts.
+// These check role === "client" internally via ctx.auth — not staff/admin gated.
+const CLIENT_PORTAL_ALLOWLIST = new Set(['getMyPortalData', 'getMyReport']);
+
+// Public token-gated endpoints in dealReports.ts.
+// These are intentionally unauthenticated — the UUID report token IS the
+// credential. Accessible at /report/:token with no Clerk session.
+// No CRM data is exposed; only the specific report bundle for that token.
+const DEAL_REPORTS_PUBLIC_ALLOWLIST = new Set([
+  'getReportByToken',    // Client portal query — token = credential
+  'markReportViewed',    // Client marks report as viewed
+  'submitClientDecision', // Client submits approve/decline
+]);
+
 function checkFile(filePath) {
   if (!filePath.endsWith('.ts') || filePath.includes('_generated')) return;
 
@@ -43,6 +57,14 @@ function checkFile(filePath) {
           hasAuthz = handlerSnippet.includes('requireAuthenticatedUser') || handlerSnippet.includes('requireStaffOrAdmin');
           reason = `'${fnName}' in users.ts is missing requireAuthenticatedUser or requireStaffOrAdmin check. (Add to USERS_BOOTSTRAP_ALLOWLIST only if it must run before user provisioning.)`;
         }
+      } else if (fileName === 'clientPortal.ts' && CLIENT_PORTAL_ALLOWLIST.has(fnName)) {
+        // Client-role gated internally — not staff/admin. Skip standard check.
+        hasAuthz = true;
+        reason = '';
+      } else if (fileName === 'dealReports.ts' && DEAL_REPORTS_PUBLIC_ALLOWLIST.has(fnName)) {
+        // Intentionally public — token-gated, not Clerk-gated. Skip auth check.
+        hasAuthz = true;
+        reason = '';
       } else {
         // requireAdmin is a superset restriction of requireStaffOrAdmin — both are valid.
         hasAuthz = handlerSnippet.includes('requireStaffOrAdmin') || handlerSnippet.includes('requireAdmin');

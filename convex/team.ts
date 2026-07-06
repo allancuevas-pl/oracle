@@ -32,9 +32,10 @@ export const getPendingInvitations = query({
 export const storePendingInvitation = internalMutation({
   args: {
     email: v.string(),
-    role: v.union(v.literal("admin"), v.literal("staff")),
+    role: v.union(v.literal("admin"), v.literal("staff"), v.literal("client")),
     invitedBy: v.string(),
     clerkInvitationId: v.optional(v.string()),
+    clientRecordId: v.optional(v.id("clients")),
   },
   handler: async (ctx, args) => {
     // Upsert: update if the same email was already invited
@@ -51,6 +52,31 @@ export const storePendingInvitation = internalMutation({
     } else {
       await ctx.db.insert("pendingInvitations", args);
     }
+  },
+});
+
+/**
+ * If a user already exists in our DB (email taken in Clerk), update their role
+ * directly so they don't have to sign out/in to get the new role.
+ */
+export const upsertUserRole = internalMutation({
+  args: {
+    email: v.string(),
+    role: v.union(v.literal("admin"), v.literal("staff"), v.literal("client")),
+  },
+  handler: async (ctx, { email, role }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .first();
+    if (!user) return;
+    // Guard: a client-portal invite must never demote an existing CRM user.
+    // E.g. creating a client record with an admin's email shouldn't strip their
+    // admin access. Team-role invites (staff/admin) are explicit and allowed.
+    if (role === "client" && (user.role === "staff" || user.role === "admin")) {
+      return;
+    }
+    await ctx.db.patch(user._id, { role });
   },
 });
 
@@ -79,9 +105,12 @@ export const updateMemberRole = mutation({
 });
 
 /**
- * Remove a team member by downgrading their role to "client" (blocks app access).
- * We keep the user record so that re-signing-in doesn't auto-restore access.
- * Admin-only; cannot remove yourself.
+ * Remove a team member by downgrading their role to "blocked" — zero access
+ * anywhere, CRM *and* client portal. We keep the user record so re-signing-in
+ * doesn't auto-restore access. Admin-only; cannot remove yourself.
+ *
+ * NOTE: must be "blocked", not "client" — "client" grants portal access, which
+ * would let a removed agent back in through the side door.
  */
 export const removeMember = mutation({
   args: { userId: v.id("users") },
@@ -90,7 +119,7 @@ export const removeMember = mutation({
     if (caller._id === args.userId) {
       throw new Error("Cannot remove yourself from the team");
     }
-    await ctx.db.patch(args.userId, { role: "client" });
+    await ctx.db.patch(args.userId, { role: "blocked" });
   },
 });
 
@@ -103,7 +132,8 @@ export const removeMember = mutation({
 export const inviteTeamMember = action({
   args: {
     email: v.string(),
-    role: v.union(v.literal("admin"), v.literal("staff")),
+    role: v.union(v.literal("admin"), v.literal("staff"), v.literal("client")),
+    clientRecordId: v.optional(v.id("clients")),
   },
   handler: async (ctx, args) => {
     const currentUser = await ctx.runQuery(api.users.getCurrentUser, {});
@@ -129,28 +159,50 @@ export const inviteTeamMember = action({
       body: JSON.stringify({
         email_address: email,
         public_metadata: { role: args.role },
+        redirect_url: "https://oracle-psi-beryl.vercel.app",
       }),
     });
 
+    let clerkInvitationId: string | undefined;
+
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      const errMsg =
-        body.errors?.[0]?.long_message ||
-        body.errors?.[0]?.message ||
-        `Clerk API error (${response.status})`;
-      throw new Error(errMsg);
+      const clerkCode = body.errors?.[0]?.code || "";
+      const emailTaken =
+        clerkCode === "duplicate_record" ||
+        (body.errors?.[0]?.message || "").toLowerCase().includes("taken") ||
+        (body.errors?.[0]?.long_message || "").toLowerCase().includes("taken");
+
+      if (!emailTaken) {
+        // Real Clerk error — bail out
+        const errMsg =
+          body.errors?.[0]?.long_message ||
+          body.errors?.[0]?.message ||
+          `Clerk API error (${response.status})`;
+        throw new Error(errMsg);
+      }
+      // Email already has a Clerk account — still store/update the pending
+      // invitation so storeUser picks up the correct role on their next sign-in.
+    } else {
+      const invitation = await response.json();
+      clerkInvitationId = invitation.id;
     }
 
-    const invitation = await response.json();
+    // Also update any existing user record directly if they're already in our DB
+    await ctx.runMutation(internal.team.upsertUserRole, {
+      email,
+      role: args.role,
+    });
 
     await ctx.runMutation(internal.team.storePendingInvitation, {
       email,
       role: args.role,
       invitedBy: currentUser.clerkId,
-      clerkInvitationId: invitation.id,
+      clerkInvitationId,
+      clientRecordId: args.clientRecordId,
     });
 
-    return { success: true };
+    return { success: true, alreadyHasAccount: !clerkInvitationId };
   },
 });
 
