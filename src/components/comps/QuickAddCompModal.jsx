@@ -19,10 +19,10 @@ const ASSET_TYPES  = ['Industrial', 'Retail', 'Office', 'Hybrid', 'Mixed Use', '
 
 const empty = {
   type: 'lease',
-  address: '', suburb: '', state: '',
+  address: '', suburb: '', state: '', postcode: '',
   assetType: '', nlaSqm: '', landAreaSqm: '',
   rentInput: '', rentInputFormat: 'annual',
-  leaseType: '', leaseDate: '', leaseTerm: '', reviewType: '', reviewRate: '',
+  leaseType: '', leaseDate: '', leaseExpiry: '', leaseTerm: '', incentives: '', reviewType: '', reviewRate: '',
   salePrice: '', saleDate: '', capRate: '',
   source: '', verified: false,
   agentName: '', agentPhone: '', agentCompany: '',
@@ -35,6 +35,7 @@ function compToForm(c) {
     address:         c.address ?? '',
     suburb:          c.suburb ?? '',
     state:           c.state ?? '',
+    postcode:        c.postcode ?? '',
     assetType:       c.assetType ?? '',
     nlaSqm:          c.nlaSqm?.toString() ?? '',
     landAreaSqm:     c.landAreaSqm?.toString() ?? '',
@@ -42,7 +43,9 @@ function compToForm(c) {
     rentInputFormat: 'annual', // always stored as annual
     leaseType:       c.leaseType ?? '',
     leaseDate:       c.leaseDate ?? '',
+    leaseExpiry:     c.leaseExpiry ?? '',
     leaseTerm:       c.leaseTerm ?? '',
+    incentives:      c.incentives ?? '',
     reviewType:      c.reviewType ?? '',
     reviewRate:      c.reviewRate?.toString() ?? '',
     salePrice:       c.salePrice?.toString() ?? '',
@@ -82,7 +85,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
       const f = compToForm(existingComp);
       setForm(f);
       setAgentOpen(!!(existingComp.agentName || existingComp.agentPhone));
-      setTermsOpen(!!(existingComp.leaseTerm || existingComp.reviewType));
+      setTermsOpen(!!(existingComp.leaseTerm || existingComp.reviewType || existingComp.incentives));
     } else {
       setForm(empty);
       setAgentOpen(false);
@@ -107,13 +110,15 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
       if (!place?.formatted_address) return;
       const get = (type, nameType = 'long_name') =>
         place.address_components?.find(c => c.types.includes(type))?.[nameType] ?? '';
-      const suburb = get('locality') || get('sublocality');
-      const state  = get('administrative_area_level_1', 'short_name');
+      const suburb   = get('locality') || get('sublocality');
+      const state    = get('administrative_area_level_1', 'short_name');
+      const postcode = get('postal_code');
       setForm(f => ({
         ...f,
-        address: place.formatted_address,
-        suburb:  suburb || f.suburb,
-        state:   state  || f.state,
+        address:  place.formatted_address,
+        suburb:   suburb   || f.suburb,
+        state:    state    || f.state,
+        postcode: postcode || f.postcode,
       }));
     });
 
@@ -139,6 +144,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
     address:    form.address.trim(),
     suburb:     form.suburb.trim(),
     state:      form.state || undefined,
+    postcode:   form.postcode || undefined,
     assetType:  form.assetType || undefined,
     nlaSqm:     nla || undefined,
     landAreaSqm: parseFloat(form.landAreaSqm) || undefined,
@@ -146,7 +152,9 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
     rentInputFormat: form.rentInputFormat,
     leaseType:  form.leaseType || undefined,
     leaseDate:  form.leaseDate || undefined,
+    leaseExpiry: form.leaseExpiry || undefined,
     leaseTerm:  form.leaseTerm || undefined,
+    incentives: form.incentives || undefined,
     reviewType: form.reviewType || undefined,
     reviewRate: parseFloat(form.reviewRate) || undefined,
     salePrice:  salePrice || undefined,
@@ -243,19 +251,24 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
               {mapsLoaded
                 ? <p className="text-[10px] text-brand-500/50 mt-1">Autocomplete active · suburb + state auto-fill</p>
                 : hasMapsKey
-                ? <p className="text-[10px] text-brand-100/25 mt-1">Loading autocomplete…</p>
-                : <p className="text-[10px] text-brand-100/20 mt-1">Add a Google Maps key in Settings to enable autocomplete</p>
+                ? <p className="text-[10px] text-brand-100/40 mt-1">Loading autocomplete…</p>
+                : <p className="text-[10px] text-brand-100/40 mt-1">Add a Google Maps key in Settings to enable autocomplete</p>
               }
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Suburb *">
-                <input className={inp} placeholder="Sumner" value={form.suburb} onChange={e => set('suburb', e.target.value)} />
-              </Field>
+            <div className="grid grid-cols-4 gap-3">
+              <div className="col-span-2">
+                <Field label="Suburb *">
+                  <input className={inp} placeholder="Sumner" value={form.suburb} onChange={e => set('suburb', e.target.value)} />
+                </Field>
+              </div>
               <Field label="State">
                 <select className={inp} value={form.state} onChange={e => set('state', e.target.value)}>
                   <option value="">—</option>
                   {states.map(s => <option key={s}>{s}</option>)}
                 </select>
+              </Field>
+              <Field label="Postcode">
+                <input className={inp} placeholder="4074" value={form.postcode} onChange={e => set('postcode', e.target.value)} />
               </Field>
             </div>
           </div>
@@ -282,7 +295,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
               <Field label="Rent">
                 <div className="flex gap-2 items-start">
                   <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/30 text-sm">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/45 text-sm">$</span>
                     <input className={inp + ' pl-6'} type="number" placeholder="320 000" value={form.rentInput} onChange={e => set('rentInput', e.target.value)} />
                   </div>
                   <div className="flex rounded-md border border-white/[0.08] overflow-hidden shrink-0">
@@ -302,7 +315,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
                   </p>
                 )}
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <Field label="Lease type">
                   <select className={inp} value={form.leaseType} onChange={e => set('leaseType', e.target.value)}>
                     <option value="">—</option>
@@ -312,21 +325,29 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
                 <Field label="Lease date">
                   <input className={inp} type="date" value={form.leaseDate} onChange={e => set('leaseDate', e.target.value)} />
                 </Field>
+                <Field label="Expiry">
+                  <input className={inp} type="date" value={form.leaseExpiry} onChange={e => set('leaseExpiry', e.target.value)} />
+                </Field>
               </div>
               <button onClick={() => setTermsOpen(o => !o)} className="flex items-center gap-1.5 text-xs text-brand-100/40 hover:text-brand-100/70 transition-colors">
                 {termsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 Lease terms & reviews
               </button>
               {termsOpen && (
-                <div className="grid grid-cols-3 gap-3 pt-1">
-                  <Field label="Term"><input className={inp} placeholder="3yr" value={form.leaseTerm} onChange={e => set('leaseTerm', e.target.value)} /></Field>
-                  <Field label="Review type">
-                    <select className={inp} value={form.reviewType} onChange={e => set('reviewType', e.target.value)}>
-                      <option value="">—</option>
-                      {REVIEW_TYPES.map(r => <option key={r}>{r}</option>)}
-                    </select>
+                <div className="space-y-3 pt-1">
+                  <div className="grid grid-cols-3 gap-3">
+                    <Field label="Term"><input className={inp} placeholder="3yr" value={form.leaseTerm} onChange={e => set('leaseTerm', e.target.value)} /></Field>
+                    <Field label="Review type">
+                      <select className={inp} value={form.reviewType} onChange={e => set('reviewType', e.target.value)}>
+                        <option value="">—</option>
+                        {REVIEW_TYPES.map(r => <option key={r}>{r}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Rate %"><input className={inp} type="number" placeholder="3.5" step="0.1" value={form.reviewRate} onChange={e => set('reviewRate', e.target.value)} /></Field>
+                  </div>
+                  <Field label="Incentives">
+                    <input className={inp} placeholder="e.g. 6 months rent-free, $50K fitout contribution" value={form.incentives} onChange={e => set('incentives', e.target.value)} />
                   </Field>
-                  <Field label="Rate %"><input className={inp} type="number" placeholder="3.5" step="0.1" value={form.reviewRate} onChange={e => set('reviewRate', e.target.value)} /></Field>
                 </div>
               )}
             </div>
@@ -338,7 +359,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Sale price">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/30 text-sm">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-100/45 text-sm">$</span>
                     <input className={inp + ' pl-6'} type="number" placeholder="4 000 000" value={form.salePrice} onChange={e => set('salePrice', e.target.value)} />
                   </div>
                   {pricePerSqm && <p className="text-xs text-brand-500/70 mt-1">= ${pricePerSqm}/sqm</p>}
@@ -355,7 +376,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
 
           {/* Source */}
           <div className="space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30">Source</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">Source</p>
             <div className="flex flex-wrap gap-2">
               {SOURCES.map(s => (
                 <button key={s.id} onClick={() => set('source', form.source === s.id ? '' : s.id)}
@@ -407,7 +428,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
               <button
                 onClick={handleDelete}
                 className={`flex items-center gap-1.5 text-xs transition-colors ${
-                  confirmDelete ? 'text-red-400 font-semibold' : 'text-brand-100/30 hover:text-red-400'
+                  confirmDelete ? 'text-red-400 font-semibold' : 'text-brand-100/45 hover:text-red-400'
                 }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -431,12 +452,14 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
 }
 
 function Field({ label, children }) {
+  // Wrapping the control inside the <label> gives implicit association — the
+  // label is announced with its input by screen readers, no id wiring needed.
   return (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30">{label}</label>
+    <label className="block space-y-1.5">
+      <span className="block text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 
-const inp = 'w-full bg-white/[0.03] border border-white/[0.08] rounded-md px-3 py-2 text-sm text-brand-100/80 placeholder:text-brand-100/20 focus:outline-none focus:border-brand-500/40 transition-colors';
+const inp = 'w-full bg-white/[0.03] border border-white/[0.08] rounded-md px-3 py-2 text-sm text-brand-100/80 placeholder:text-brand-100/40 focus:outline-none focus:border-brand-500/40 transition-colors';

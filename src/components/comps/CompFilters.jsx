@@ -74,7 +74,7 @@ export function CompFilters({ isOpen, onClose, filters, onChange, onClear, activ
           {/* Asset types */}
           <section className="px-6 py-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">
                 Asset type
               </span>
               {filters.assetTypes.length > 0 && (
@@ -119,7 +119,7 @@ export function CompFilters({ isOpen, onClose, filters, onChange, onClear, activ
 
           {/* State */}
           <section className="px-6 py-5 space-y-3">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 block">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 block">
               State
             </span>
             <div className="grid grid-cols-4 gap-2">
@@ -144,7 +144,7 @@ export function CompFilters({ isOpen, onClose, filters, onChange, onClear, activ
 
           {/* Date range */}
           <section className="px-6 py-5 space-y-3">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 block">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 block">
               Date range
             </span>
             <div className="grid grid-cols-2 gap-2">
@@ -210,6 +210,11 @@ function RangeSection({ label, unit, min, max, step, low, high, onLow, onHigh })
   const lowPct  = ((low  - min) / (max - min)) * 100;
   const highPct = ((high - min) / (max - min)) * 100;
 
+  // Slug from the section label so each RangeSection instance has unique ids
+  const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const minId = `${slug}-min`;
+  const maxId = `${slug}-max`;
+
   const [localLow,  setLocalLow]  = useState('');
   const [localHigh, setLocalHigh] = useState('');
 
@@ -229,7 +234,7 @@ function RangeSection({ label, unit, min, max, step, low, high, onLow, onHigh })
   return (
     <section className="px-6 py-5 space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">
           {label}
         </span>
         {!isDefault && (
@@ -261,27 +266,29 @@ function RangeSection({ label, unit, min, max, step, low, high, onLow, onHigh })
       {/* Text inputs */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-[10px] text-brand-100/25 uppercase tracking-widest">Min ({unit})</label>
+          <label htmlFor={minId} className="text-[10px] text-brand-100/40 uppercase tracking-widest">Min ({unit})</label>
           <input
+            id={minId}
             type="number"
             placeholder={low === min ? 'Any' : low.toLocaleString()}
             value={localLow}
             onChange={e => setLocalLow(e.target.value)}
             onBlur={commitLow}
             onKeyDown={e => e.key === 'Enter' && commitLow()}
-            className="w-full bg-white/[0.03] border border-white/[0.07] rounded-md px-3 py-2.5 text-sm text-brand-100/60 placeholder:text-brand-100/20 focus:outline-none focus:border-brand-500/30 transition-colors"
+            className="w-full bg-white/[0.03] border border-white/[0.07] rounded-md px-3 py-2.5 text-sm text-brand-100/60 placeholder:text-brand-100/40 focus:outline-none focus:border-brand-500/30 transition-colors"
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-[10px] text-brand-100/25 uppercase tracking-widest">Max ({unit})</label>
+          <label htmlFor={maxId} className="text-[10px] text-brand-100/40 uppercase tracking-widest">Max ({unit})</label>
           <input
+            id={maxId}
             type="number"
             placeholder={high === max ? 'Any' : high.toLocaleString()}
             value={localHigh}
             onChange={e => setLocalHigh(e.target.value)}
             onBlur={commitHigh}
             onKeyDown={e => e.key === 'Enter' && commitHigh()}
-            className="w-full bg-white/[0.03] border border-white/[0.07] rounded-md px-3 py-2.5 text-sm text-brand-100/60 placeholder:text-brand-100/20 focus:outline-none focus:border-brand-500/30 transition-colors"
+            className="w-full bg-white/[0.03] border border-white/[0.07] rounded-md px-3 py-2.5 text-sm text-brand-100/60 placeholder:text-brand-100/40 focus:outline-none focus:border-brand-500/30 transition-colors"
           />
         </div>
       </div>

@@ -162,7 +162,7 @@ export function SaveCompsModal({ isOpen, onClose, data, extractionId }) {
           <div className="flex items-center gap-3">
             <Database className="w-4 h-4 text-brand-500" />
             <h2 className="text-sm font-semibold text-white">Save to Comps DB</h2>
-            <span className="text-xs text-brand-100/30">{total} found in scan</span>
+            <span className="text-xs text-brand-100/45">{total} found in scan</span>
           </div>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-md text-brand-100/40 hover:text-brand-100/80 hover:bg-white/[0.05] transition-colors">
             <X className="w-4 h-4" />
@@ -177,7 +177,7 @@ export function SaveCompsModal({ isOpen, onClose, data, extractionId }) {
             return (
               <div key={group.label}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/30">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">
                     {group.label} ({group.comps.length})
                   </span>
                   <button
@@ -209,7 +209,7 @@ export function SaveCompsModal({ isOpen, onClose, data, extractionId }) {
                         </span>
 
                         {/* Type badge */}
-                        <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0 ${
+                        <span className={`text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0 ${
                           comp.type === 'lease' ? 'bg-blue-500/10 text-blue-400' : 'bg-emerald-500/10 text-emerald-400'
                         }`}>
                           {comp.type}
@@ -223,7 +223,7 @@ export function SaveCompsModal({ isOpen, onClose, data, extractionId }) {
 
                         {/* Key metric */}
                         {metric && <span className="text-xs font-medium text-brand-300 shrink-0">{metric}</span>}
-                        {comp.nlaSqm && <span className="text-xs text-brand-100/30 shrink-0">{comp.nlaSqm.toLocaleString()} m²</span>}
+                        {comp.nlaSqm && <span className="text-xs text-brand-100/45 shrink-0">{comp.nlaSqm.toLocaleString()} m²</span>}
                       </label>
                     );
                   })}
@@ -235,7 +235,7 @@ export function SaveCompsModal({ isOpen, onClose, data, extractionId }) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-white/[0.06] flex items-center justify-between shrink-0">
-          <span className="text-xs text-brand-100/30">
+          <span className="text-xs text-brand-100/45">
             {selected.size} of {total} selected
           </span>
           <div className="flex items-center gap-3">

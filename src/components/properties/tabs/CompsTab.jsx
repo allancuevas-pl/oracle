@@ -5,6 +5,7 @@ import {
   CheckCircle2, Plus, Search, TrendingUp, Building2, Loader2, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDate } from '../../../utils/format';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt$ = (v) => {
@@ -40,7 +41,41 @@ function CompTag({ label }) {
   );
 }
 
-function LeaseCompRow({ comp, isLinked, propertyId, onLink }) {
+/** Audit trail line: "Added D Mon YY by Name · Updated D Mon YY by Name" + verified badge. */
+function CompMeta({ comp, memberMap }) {
+  const name = (clerkId) => {
+    if (!clerkId) return null;
+    return memberMap?.[clerkId] || null;
+  };
+  const addedDate  = comp._creationTime ? formatDate(comp._creationTime) : null;
+  const addedBy    = name(comp.createdBy);
+  const updatedDate = comp.updatedAt ? formatDate(comp.updatedAt) : null;
+  const updatedBy  = name(comp.updatedBy);
+
+  if (!addedDate && !comp.verified) return null;
+
+  return (
+    <div className="flex items-center gap-2 mt-1 flex-wrap">
+      {addedDate && (
+        <span className="text-[10px] text-brand-100/40">
+          Added {addedDate}{addedBy ? ` by ${addedBy}` : ''}
+        </span>
+      )}
+      {updatedDate && (
+        <span className="text-[10px] text-brand-100/40">
+          · Edited {updatedDate}{updatedBy ? ` by ${updatedBy}` : ''}
+        </span>
+      )}
+      {comp.verified && (
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400/60">
+          <CheckCircle2 className="w-2.5 h-2.5" /> Verified
+        </span>
+      )}
+    </div>
+  );
+}
+
+function LeaseCompRow({ comp, isLinked, propertyId, onLink, memberMap }) {
   const [loading, setLoading] = useState(false);
 
   const handleLink = async () => {
@@ -61,25 +96,32 @@ function LeaseCompRow({ comp, isLinked, propertyId, onLink }) {
     <tr className="border-t border-white/[0.04] hover:bg-white/[0.015] transition-colors group">
       <td className="py-2.5 pr-4 max-w-0">
         <p className="text-sm text-brand-50 font-medium truncate">{comp.address}</p>
+        {comp.leaseTerm && (
+          <span className="inline-block text-[10px] font-medium text-brand-400/60 bg-brand-900/20 border border-brand-800/30 px-1.5 py-0.5 rounded mt-0.5 mr-1">{comp.leaseTerm}</span>
+        )}
+        {comp.incentives && (
+          <p className="text-[11px] text-amber-400/60 truncate mt-0.5">Incentives: {comp.incentives}</p>
+        )}
         {comp.notes && (
           <p className="text-[11px] text-brand-100/35 truncate mt-0.5">{comp.notes}</p>
         )}
+        <CompMeta comp={comp} memberMap={memberMap} />
       </td>
       <td className="py-2.5 pr-4 text-sm text-brand-300 tabular-nums whitespace-nowrap">
         {fmtSqm(comp.nlaSqm)}
       </td>
       <td className="py-2.5 pr-4 text-sm text-brand-300 tabular-nums whitespace-nowrap">
-        {fmt$(comp.rentPa)}<span className="text-brand-100/30 text-[11px]">/pa</span>
+        {fmt$(comp.rentPa)}<span className="text-brand-100/45 text-[11px]">/pa</span>
       </td>
       <td className="py-2.5 pr-4 text-sm font-semibold tabular-nums whitespace-nowrap">
-        <span className={rentPsm ? 'text-brand-500' : 'text-brand-100/30'}>
+        <span className={rentPsm ? 'text-brand-500' : 'text-brand-100/45'}>
           {rentPsm ? `$${rentPsm}/m²` : '—'}
         </span>
       </td>
       <td className="py-2.5 pr-4 whitespace-nowrap">
         {comp.leaseDate
           ? <span className="text-[11px] text-brand-100/40">{comp.leaseDate.slice(0, 7)}</span>
-          : <span className="text-brand-100/20">—</span>}
+          : <span className="text-brand-100/40">—</span>}
       </td>
       <td className="py-2.5 pl-2 text-right whitespace-nowrap">
         {isLinked ? (
@@ -105,7 +147,7 @@ function LeaseCompRow({ comp, isLinked, propertyId, onLink }) {
   );
 }
 
-function SaleCompRow({ comp, isLinked, propertyId, onLink }) {
+function SaleCompRow({ comp, isLinked, propertyId, onLink, memberMap }) {
   const [loading, setLoading] = useState(false);
 
   const handleLink = async () => {
@@ -127,6 +169,7 @@ function SaleCompRow({ comp, isLinked, propertyId, onLink }) {
         {comp.notes && (
           <p className="text-[11px] text-brand-100/35 truncate mt-0.5">{comp.notes}</p>
         )}
+        <CompMeta comp={comp} memberMap={memberMap} />
       </td>
       <td className="py-2.5 pr-4 text-sm text-brand-300 tabular-nums whitespace-nowrap">
         {fmtSqm(comp.nlaSqm)}
@@ -138,7 +181,7 @@ function SaleCompRow({ comp, isLinked, propertyId, onLink }) {
         {fmt$(comp.salePrice)}
       </td>
       <td className="py-2.5 pr-4 text-sm font-semibold tabular-nums whitespace-nowrap">
-        <span className={comp.pricePerSqmBuild ? 'text-brand-500' : 'text-brand-100/30'}>
+        <span className={comp.pricePerSqmBuild ? 'text-brand-500' : 'text-brand-100/45'}>
           {comp.pricePerSqmBuild ? `$${Math.round(comp.pricePerSqmBuild).toLocaleString()}` : '—'}
         </span>
       </td>
@@ -151,7 +194,7 @@ function SaleCompRow({ comp, isLinked, propertyId, onLink }) {
       <td className="py-2.5 pr-4 whitespace-nowrap">
         {comp.saleDate
           ? <span className="text-[11px] text-brand-100/40">{comp.saleDate.slice(0, 7)}</span>
-          : <span className="text-brand-100/20">—</span>}
+          : <span className="text-brand-100/40">—</span>}
       </td>
       <td className="py-2.5 pl-2 text-right whitespace-nowrap">
         {isLinked ? (
@@ -181,8 +224,8 @@ function EmptyState({ type }) {
   return (
     <div className="py-10 text-center border border-white/[0.05] rounded-lg bg-white/[0.01]">
       <TrendingUp className="w-6 h-6 text-brand-100/15 mx-auto mb-2" />
-      <p className="text-sm text-brand-100/30 font-medium">No {type} comps found</p>
-      <p className="text-xs text-brand-100/20 mt-1">
+      <p className="text-sm text-brand-100/45 font-medium">No {type} comps found</p>
+      <p className="text-xs text-brand-100/40 mt-1">
         Comps matching this suburb and asset type will appear here.
       </p>
     </div>
@@ -194,6 +237,18 @@ export function CompsTab({ property }) {
   const [search, setSearch] = useState('');
 
   const linkComp = useMutation(api.comps.linkCompToProperty);
+
+  // Team members — for audit trail name resolution
+  const teamMembers = useQuery(api.team.getTeamMembers);
+  const memberMap = useMemo(() => {
+    if (!teamMembers) return {};
+    return Object.fromEntries(
+      teamMembers.map((m) => [
+        m.clerkId,
+        [m.firstName, m.lastName].filter(Boolean).join(' ') || 'Team member',
+      ])
+    );
+  }, [teamMembers]);
 
   // All recommended comps for this suburb + assetType (both lease + sale)
   const allLeaseComps = useQuery(
@@ -273,12 +328,12 @@ export function CompsTab({ property }) {
         </div>
         {/* Search */}
         <div className="relative w-64 shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-100/30" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-100/45" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter by address…"
-            className="w-full bg-[#111] border border-white/[0.06] rounded-lg pl-9 pr-4 py-2 text-sm text-brand-50 placeholder:text-brand-100/25 focus:outline-none focus:border-brand-500/40 transition-colors"
+            className="w-full bg-[#111] border border-white/[0.06] rounded-lg pl-9 pr-4 py-2 text-sm text-brand-50 placeholder:text-brand-100/40 focus:outline-none focus:border-brand-500/40 transition-colors"
           />
         </div>
       </div>
@@ -308,12 +363,12 @@ export function CompsTab({ property }) {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-[#0A0A0A]">
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 min-w-[200px]">Address</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">NLA</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Rent pa</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Rent/m²</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Date</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap text-right">Action</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 min-w-[200px]">Address</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">NLA</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Rent pa</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Rent/m²</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Date</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -325,6 +380,7 @@ export function CompsTab({ property }) {
                       isLinked={true}
                       propertyId={property._id}
                       onLink={linkComp}
+                      memberMap={memberMap}
                     />
                   ))}
                   {/* Recommended (not yet linked) */}
@@ -335,6 +391,7 @@ export function CompsTab({ property }) {
                       isLinked={false}
                       propertyId={property._id}
                       onLink={linkComp}
+                      memberMap={memberMap}
                     />
                   ))}
                 </tbody>
@@ -364,15 +421,15 @@ export function CompsTab({ property }) {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-[#0A0A0A]">
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 min-w-[200px]">Address</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Build</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Land</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Price</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">$/m² Build</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">$/m² Land</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Cap Rate</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap">Date</th>
-                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/30 whitespace-nowrap text-right">Action</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 min-w-[200px]">Address</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Build</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Land</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Price</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">$/m² Build</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">$/m² Land</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Cap Rate</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap">Date</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-brand-100/45 whitespace-nowrap text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -383,6 +440,7 @@ export function CompsTab({ property }) {
                       isLinked={true}
                       propertyId={property._id}
                       onLink={linkComp}
+                      memberMap={memberMap}
                     />
                   ))}
                   {recommendedSaleComps.map((comp) => (
@@ -392,6 +450,7 @@ export function CompsTab({ property }) {
                       isLinked={false}
                       propertyId={property._id}
                       onLink={linkComp}
+                      memberMap={memberMap}
                     />
                   ))}
                 </tbody>
