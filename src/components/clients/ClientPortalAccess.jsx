@@ -30,12 +30,18 @@ export function ClientPortalAccess({ client }) {
   const run = async (key, fn, successMsg) => {
     setBusy(key);
     try {
-      await fn();
-      if (successMsg) toast.success(successMsg);
+      const result = await fn();
+      // invite/resend return { alreadyHasAccount }. Clerk sends NO email to an
+      // address that already has an account, so don't claim an email went out.
+      if (result?.alreadyHasAccount) {
+        toast.success(`${email} already has an account — no email sent, they can sign in directly`);
+      } else if (successMsg) {
+        toast.success(successMsg);
+      }
     } catch (err) {
       const msg = err?.message || 'Action failed';
       if (msg.includes('taken') || msg.includes('already')) {
-        toast.success(`${email} already has an account — role updated, they can sign in now`);
+        toast.success(`${email} already has an account — they can sign in, no email needed`);
       } else {
         toast.error(msg);
       }
