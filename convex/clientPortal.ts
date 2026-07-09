@@ -1,5 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { shapeDocsWithUrls, CLIENT_DOC_LIMIT } from "./clientDocuments";
 
 /**
  * Returns all deal data visible to the currently logged-in client.
@@ -127,5 +128,40 @@ export const getMyReport = query({
     );
 
     return { report, property, feaso, comps, brief, videos: videos.filter(v => v.url) };
+  },
+});
+
+/**
+ * Client-portal query: the logged-in client's own AML / compliance documents.
+ * Security: requires role === "client"; resolves the caller's email to a
+ * clients record and returns ONLY that client's docs (with signed URLs). The
+ * clientId is derived server-side from identity — never accepted from the caller.
+ */
+export const getMyDocuments = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", q => q.eq("clerkId", identity.subject))
+      .first();
+    if (!user || user.role !== "client") return [];
+
+    const email = (identity.email || "").toLowerCase();
+    if (!email) return [];
+
+    const clientRecord = await ctx.db
+      .query("clients")
+      .withIndex("by_email", q => q.eq("email", email))
+      .first();
+    if (!clientRecord) return [];
+
+    const docs = await ctx.db
+      .query("clientDocuments")
+      .withIndex("by_clientId", q => q.eq("clientId", clientRecord._id))
+      .take(CLIENT_DOC_LIMIT);
+    return await shapeDocsWithUrls(ctx, docs);
   },
 });

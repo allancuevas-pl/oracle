@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useAction } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
 import { ClientModal } from '../components/clients/ClientModal';
+import { ClientDocuments } from '../components/clients/ClientDocuments';
+import { ClientPortalAccess } from '../components/clients/ClientPortalAccess';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { PulseFeed } from '../components/ui/PulseFeed';
-import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil, UserPlus, Trash2 } from 'lucide-react';
+import { Loader2, Mail, Phone, Building, FileText, Plus, Tag, Pencil, Trash2 } from 'lucide-react';
 import { IconButton } from '../components/ui/IconButton';
 import { PageLoader, Spinner } from '../components/ui/Loading';
 import { toast } from 'sonner';
@@ -19,13 +21,11 @@ export function ClientView() {
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBriefModalOpen, setIsBriefModalOpen] = useState(false);
-  const [inviting, setInviting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const client = useQuery(api.clients.getClient, id ? { id } : "skip");
   const briefs = useQuery(api.briefs.getBriefsByClient, id ? { clientId: id } : "skip");
-  const inviteToPortal = useAction(api.team.inviteTeamMember);
   const deleteClient = useMutation(api.clients.deleteClient);
 
   const handleDelete = async () => {
@@ -39,31 +39,6 @@ export function ClientView() {
       toast.error(err.message || 'Delete failed');
       setDeleting(false);
       setConfirmDelete(false);
-    }
-  };
-
-  const handleInviteToPortal = async () => {
-    if (!client?.email) {
-      toast.error('This client has no email address set');
-      return;
-    }
-    setInviting(true);
-    try {
-      await inviteToPortal({
-        email: client.email,
-        role: 'client',
-        clientRecordId: client._id,
-      });
-      toast.success(`Portal invite sent to ${client.email}`);
-    } catch (err) {
-      const msg = err.message || '';
-      if (msg.includes('email address is taken') || msg.includes('already')) {
-        toast.success(`${client.email} already has an account — role updated, they can sign in now`);
-      } else {
-        toast.error(msg || 'Invite failed');
-      }
-    } finally {
-      setInviting(false);
     }
   };
 
@@ -97,14 +72,6 @@ export function ClientView() {
         onBack={() => navigate('/clients')}
         actions={
           <>
-            {client.email && (
-              <IconButton
-                icon={inviting ? Loader2 : UserPlus}
-                label="Invite to Portal"
-                onClick={handleInviteToPortal}
-                disabled={inviting}
-              />
-            )}
             <IconButton icon={Pencil} label="Edit Client" onClick={() => setIsEditModalOpen(true)} />
             <IconButton
               icon={deleting ? Loader2 : Trash2}
@@ -176,6 +143,8 @@ export function ClientView() {
                 <p className="text-sm text-brand-100/70 whitespace-pre-wrap leading-relaxed">{client.notes}</p>
               </div>
             )}
+
+            <ClientPortalAccess client={client} />
           </div>
         }
         centerColumn={
@@ -260,6 +229,10 @@ export function ClientView() {
                 })}
               </div>
             )}
+
+            <div className="pt-6 border-t border-white/5">
+              <ClientDocuments clientId={client._id} />
+            </div>
           </div>
         }
         rightColumn={

@@ -27,3 +27,14 @@ export const formatCurrency = (val, fallback = '—') => {
   if (val >= 1_000)     return '$' + (val / 1_000).toFixed(0) + 'K';
   return '$' + val.toLocaleString();
 };
+
+/**
+ * Format a byte count as a human-readable size.
+ *   1_048_576 → "1 MB"   ·   2_048 → "2 KB"   ·   null → ""
+ */
+export const formatFileSize = (bytes) => {
+  if (!bytes || bytes < 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '')} MB`;
+};

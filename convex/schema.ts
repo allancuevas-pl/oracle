@@ -282,6 +282,20 @@ export default defineSchema({
     clientRecordId: v.optional(v.id("clients")), // set when inviting a client
   }).index("by_email", ["email"]),
 
+  // AML / compliance documents the team uploads for a client. The client sees
+  // only their own docs in the portal (scoped by email -> clients record). Staff
+  // upload + delete; clients are view/download-only. (No property access here.)
+  clientDocuments: defineTable({
+    clientId: v.id("clients"),
+    storageId: v.id("_storage"),        // Convex file storage id (the uploaded file)
+    fileName: v.string(),
+    contentType: v.optional(v.string()),
+    size: v.optional(v.number()),       // bytes
+    label: v.optional(v.string()),      // optional free-text note (e.g. "Passport")
+    uploadedBy: v.string(),             // clerkId of the uploading staff member
+    uploadedAt: v.number(),
+  }).index("by_clientId", ["clientId"]),
+
   // IM extractions — one record per PDF upload, result stored as JSON string
   imExtractions: defineTable({
     propertyId: v.optional(v.id("properties")), // optional link to a property record

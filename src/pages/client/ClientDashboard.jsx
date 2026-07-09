@@ -2,9 +2,9 @@ import React from 'react';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../convex/_generated/api';
-import { Building2, CheckCircle2, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { Building2, CheckCircle2, XCircle, Clock, ArrowRight, ShieldCheck, FileText, Download } from 'lucide-react';
 import { PageLoader } from '../../components/ui/Loading';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatDate, formatFileSize } from '../../utils/format';
 
 const STATUS = {
   sent:     { label: 'Awaiting your review', icon: Clock,         color: 'text-brand-400',   bg: 'bg-brand-900/20 border-brand-800/30' },
@@ -83,8 +83,45 @@ function DealCard({ report }) {
   );
 }
 
+function DocumentsSection({ docs }) {
+  if (docs === undefined || docs.length === 0) return null;
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xs font-semibold uppercase tracking-widest text-brand-500/70 flex items-center gap-2">
+        <ShieldCheck className="w-3.5 h-3.5" /> Compliance documents · {docs.length}
+      </h2>
+      <div className="space-y-2">
+        {docs.map((doc) => {
+          const size = formatFileSize(doc.size);
+          return (
+            <a
+              key={doc._id}
+              href={doc.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.12] transition-all p-4"
+            >
+              <div className="w-9 h-9 rounded-md bg-brand-900/30 flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-brand-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-brand-50 truncate">{doc.fileName}</p>
+                <p className="text-xs text-brand-100/40">
+                  Shared {formatDate(doc.uploadedAt)}{size ? ` · ${size}` : ''}
+                </p>
+              </div>
+              <Download className="w-4 h-4 text-brand-100/45 group-hover:text-brand-400 transition-colors" />
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export function ClientDashboard() {
   const data = useQuery(api.clientPortal.getMyPortalData);
+  const docs = useQuery(api.clientPortal.getMyDocuments);
 
   if (data === undefined) {
     return <PageLoader />;
@@ -124,6 +161,8 @@ export function ClientDashboard() {
             : `${reports.length} deal${reports.length !== 1 ? 's' : ''} · ${pending.length} awaiting your decision`}
         </p>
       </div>
+
+      <DocumentsSection docs={docs} />
 
       {reports.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[300px] border border-white/[0.05] rounded-xl text-center p-10">

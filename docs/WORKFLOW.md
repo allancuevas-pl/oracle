@@ -5,9 +5,11 @@
 ## Git policy
 
 - Work on **`claude-code/main`**. This is the active build branch.
-- **`main`** is production on Vercel — **do not push to it without explicit approval.**
+- **`main`** is the intended production branch — **do not push to it without explicit approval.** Note: pushing to `main` does **not** auto-deploy (see the deploy note below); it just marks the production-intended state.
+- `staging` exists on the remote and is currently `origin/HEAD`. Treat it as an integration branch; confirm with the user before pushing to it.
 - `backup/pre-claude-code-2026-05-22` (commit `d850b8e`) is a frozen rollback snapshot of the Antigravity handoff state. `git diff` against it shows everything that's drifted since.
 - Commit / push only when the user asks.
+- Remote: `github.com/allancuevas-pl/oracle` (branches: `main`, `staging`, `claude-code/main`, `backup/pre-claude-code-2026-05-22`).
 
 ## Run locally
 
@@ -22,6 +24,8 @@ npm test               # vitest (unit tests, incl. convex/authz.test.ts)
 Preview verification (in this harness): use the **`oracle-dev`** config in `.claude/launch.json` (**port 5173**) with the preview tools, not raw shell servers.
 
 ## Deploy (the exact sequence)
+
+**Deployment is manual — a `git push` does NOT ship anything.** Verified 2026-07-08 from the Vercel deploy history: every production deployment on `property-lions/oracle-app` is a manual `vercel --prod` run from a machine (there is no Git-integration auto-deploy). Consequence: **the live site lags the repo until someone runs this sequence.** Committing/pushing keeps git in sync, but the site only updates when `vercel --prod` (step 3) is run and the alias (step 4) is moved.
 
 Both Convex deployments must be updated, then Vercel, then re-aliased. **Run all four, in order:**
 

@@ -12,7 +12,7 @@ const USERS_BOOTSTRAP_ALLOWLIST = new Set(['getCurrentUser', 'storeUser']);
 
 // Client-portal queries in clientPortal.ts.
 // These check role === "client" internally via ctx.auth — not staff/admin gated.
-const CLIENT_PORTAL_ALLOWLIST = new Set(['getMyPortalData', 'getMyReport']);
+const CLIENT_PORTAL_ALLOWLIST = new Set(['getMyPortalData', 'getMyReport', 'getMyDocuments']);
 
 // Public token-gated endpoints in dealReports.ts.
 // These are intentionally unauthenticated — the UUID report token IS the

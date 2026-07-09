@@ -11,6 +11,7 @@
 import type * as activities from "../activities.js";
 import type * as authz from "../authz.js";
 import type * as briefs from "../briefs.js";
+import type * as clientDocuments from "../clientDocuments.js";
 import type * as clientPortal from "../clientPortal.js";
 import type * as clients from "../clients.js";
 import type * as comps from "../comps.js";
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   activities: typeof activities;
   authz: typeof authz;
   briefs: typeof briefs;
+  clientDocuments: typeof clientDocuments;
   clientPortal: typeof clientPortal;
   clients: typeof clients;
   comps: typeof comps;

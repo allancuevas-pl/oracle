@@ -159,7 +159,11 @@ export const inviteTeamMember = action({
       body: JSON.stringify({
         email_address: email,
         public_metadata: { role: args.role },
-        redirect_url: "https://oracle-psi-beryl.vercel.app",
+        // Clients land on their branded portal login; staff/admin invites also
+        // resolve fine there (they get redirected onward post-auth by routing).
+        redirect_url: args.role === "client"
+          ? "https://oracle-psi-beryl.vercel.app/portal"
+          : "https://oracle-psi-beryl.vercel.app",
       }),
     });
 
@@ -239,5 +243,84 @@ export const revokePendingInvitation = action({
     });
 
     return { success: true };
+  },
+});
+
+/**
+ * Portal-access status for a single client email, for the client record UI.
+ * Staff/admin (read-only). Tells the UI which state to render:
+ *   - pendingInvite present  -> "Invited (pending)"  (offer Resend / Revoke)
+ *   - account.role === client -> "Active"            (offer Revoke access)
+ *   - neither                 -> "Not invited"       (offer Invite)
+ */
+export const getClientPortalStatus = query({
+  args: { email: v.string() },
+  handler: async (ctx, { email }) => {
+    await requireStaffOrAdmin(ctx);
+    const norm = email.trim().toLowerCase();
+    if (!norm) return { pendingInvite: null, account: null };
+
+    const [pending, user] = await Promise.all([
+      ctx.db
+        .query("pendingInvitations")
+        .withIndex("by_email", (q) => q.eq("email", norm))
+        .first(),
+      ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", norm))
+        .first(),
+    ]);
+
+    return {
+      pendingInvite: pending
+        ? {
+            _id: pending._id,
+            clerkInvitationId: pending.clerkInvitationId,
+            role: pending.role,
+          }
+        : null,
+      account: user ? { _id: user._id, role: user.role } : null,
+    };
+  },
+});
+
+/**
+ * Resend a client's portal invite: revoke the old Clerk invite link (so the
+ * previous email link stops working), then send a fresh invite. Admin-only.
+ * Delegates the create path to inviteTeamMember so there is one source of truth.
+ */
+export const resendPortalInvite = action({
+  args: {
+    email: v.string(),
+    clientRecordId: v.optional(v.id("clients")),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await ctx.runQuery(api.users.getCurrentUser, {});
+    if (!currentUser || currentUser.role !== "admin") {
+      throw new Error("Only admins can resend invitations");
+    }
+
+    const email = args.email.trim().toLowerCase();
+
+    // Revoke the previous Clerk invite link, if any, before issuing a new one.
+    const status = await ctx.runQuery(api.team.getClientPortalStatus, { email });
+    const oldClerkId = status.pendingInvite?.clerkInvitationId;
+    if (oldClerkId) {
+      const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+      if (clerkSecretKey) {
+        await fetch(
+          `https://api.clerk.com/v1/invitations/${oldClerkId}/revoke`,
+          { method: "POST", headers: { Authorization: `Bearer ${clerkSecretKey}` } }
+        ).catch(() => {});
+      }
+    }
+
+    // Re-issue. inviteTeamMember upserts the pending invitation + Clerk invite,
+    // and already tolerates the "email already has an account" case.
+    return await ctx.runAction(api.team.inviteTeamMember, {
+      email,
+      role: "client",
+      clientRecordId: args.clientRecordId,
+    });
   },
 });

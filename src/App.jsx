@@ -27,6 +27,7 @@ const Comps          = named(() => import('./pages/Comps'), 'Comps');
 const ReportView     = named(() => import('./pages/ReportView'), 'ReportView');
 const ClientDashboard = named(() => import('./pages/client/ClientDashboard'), 'ClientDashboard');
 const ClientDealView  = named(() => import('./pages/client/ClientDealView'), 'ClientDealView');
+const ClientPortalLogin = named(() => import('./pages/client/ClientPortalLogin'), 'ClientPortalLogin');
 
 function RoleGuard({ children }) {
   const user = useQuery(api.users.getCurrentUser);
@@ -72,7 +73,7 @@ function ClientPortalLayout() {
 
   return (
     <>
-      <SignedOut><Navigate to="/" replace /></SignedOut>
+      <SignedOut><Navigate to="/portal" replace /></SignedOut>
       <SignedIn>
         {user === undefined ? (
           <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
@@ -88,6 +89,21 @@ function ClientPortalLayout() {
           <ClientLayout />
         )}
       </SignedIn>
+    </>
+  );
+}
+
+/**
+ * Client portal login route (/portal) — the Property Lions-branded client
+ * sign-in. Signed-out visitors see the branded login; already-signed-in users
+ * are sent to their dashboard. Kept separate from the staff ORACLE <SignIn>
+ * because the client's role isn't known until after auth.
+ */
+function ClientPortalEntry() {
+  return (
+    <>
+      <SignedIn><Navigate to="/client/dashboard" replace /></SignedIn>
+      <SignedOut><ClientPortalLogin /></SignedOut>
     </>
   );
 }
@@ -151,6 +167,9 @@ function App() {
         <Routes>
           {/* Public — token-gated, no Clerk auth required */}
           <Route path="/report/:token" element={<ReportView />} />
+
+          {/* Client portal login — branded, signed-out client sign-in */}
+          <Route path="/portal" element={<ClientPortalEntry />} />
 
           {/* Client portal — Clerk-gated, no CRM staff/admin check */}
           <Route path="/client" element={<ClientPortalLayout />}>
