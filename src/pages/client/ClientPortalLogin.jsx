@@ -26,8 +26,6 @@ const C = {
 
 const SUPPORT_EMAIL = 'hello@propertylions.com.au';
 const SUPPORT_PHONE = '1300 399 933';
-// Optional SSO button — feature-flagged off per the design (no SSO configured yet).
-const SHOW_SSO = false;
 
 const scopedCss = `
 .pl-login, .pl-login input, .pl-login button { font-family: 'Jost', system-ui, sans-serif; }
@@ -82,6 +80,23 @@ export function ClientPortalLogin() {
 
   const clerkError = (err) =>
     err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || 'Something went wrong. Please try again.';
+
+  // Google OAuth — Clerk redirects out, returns to /sso-callback which completes
+  // the handshake, then routing sends the user to the right place by role.
+  const handleGoogle = async () => {
+    if (!isLoaded || busy) return;
+    setBusy(true); setError('');
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectUrlComplete: `${window.location.origin}/`,
+      });
+    } catch (err) {
+      setError(clerkError(err));
+      setBusy(false);
+    }
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -185,12 +200,24 @@ export function ClientPortalLogin() {
                 {busy ? 'Signing in…' : 'Enter the Portal'}
               </button>
 
-              {SHOW_SSO && (
-                <button type="button" className="pl-sso"
-                  style={{ background: 'transparent', border: '1px solid rgba(244,239,228,0.25)', borderRadius: 2, padding: '13px 0', fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(244,239,228,0.8)', cursor: 'pointer', transition: 'border-color 150ms ease' }}>
-                  Single Sign-On
-                </button>
-              )}
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(244,239,228,0.12)' }} />
+                <span style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(244,239,228,0.35)' }}>or</span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(244,239,228,0.12)' }} />
+              </div>
+
+              {/* Google OAuth — works for accounts created via Google */}
+              <button type="button" className="pl-sso" onClick={handleGoogle} disabled={busy || !isLoaded}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: 'transparent', border: '1px solid rgba(244,239,228,0.25)', borderRadius: 2, padding: '13px 0', fontSize: 13, letterSpacing: '0.04em', color: 'rgba(244,239,228,0.85)', cursor: 'pointer', transition: 'border-color 150ms ease' }}>
+                <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true">
+                  <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+                  <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+                  <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/>
+                  <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+                </svg>
+                Continue with Google
+              </button>
             </form>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: 22, fontSize: 13, fontWeight: 300 }}>

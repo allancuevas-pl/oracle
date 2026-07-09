@@ -1,6 +1,6 @@
 import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignIn, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { AppLayout } from './components/layout/AppLayout';
 import { ClientLayout } from './components/layout/ClientLayout';
 import { Toaster } from 'sonner';
@@ -170,6 +170,9 @@ function App() {
 
           {/* Client portal login — branded, signed-out client sign-in */}
           <Route path="/portal" element={<ClientPortalEntry />} />
+
+          {/* OAuth return handshake (Google from /portal). Completes then routes by role. */}
+          <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback />} />
 
           {/* Client portal — Clerk-gated, no CRM staff/admin check */}
           <Route path="/client" element={<ClientPortalLayout />}>
