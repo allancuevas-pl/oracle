@@ -17,7 +17,7 @@ Three product pillars:
 |---|---|
 | Frontend | React + Vite + Tailwind, Framer Motion, React Hook Form + Zod |
 | Backend | **Convex** (real-time DB + serverless functions + file storage) |
-| Auth | **Clerk** (currently DEV keys — production instance still pending) |
+| Auth | **Clerk** — **PRODUCTION** instance on `clerk.propertylions.com.au` (live 2026-07-23; see docs/CLERK_PRODUCTION.md). Preview/PR builds still use the dev instance. |
 | Hosting | **Vercel** (frontend), Convex Cloud (backend) |
 | Fonts | Schibsted Grotesk (Google Fonts) |
 
@@ -50,7 +50,7 @@ Two Convex deployments — **both must be kept in sync** (see [WORKFLOW.md](WORK
 - **`colorless-condor-502`** — the "dev" deployment, but it is what **Vercel production actually points at** (via `VITE_CONVEX_URL`). Changes here go live.
 - **`incredible-peccary-695`** — the "prod" Convex deployment (`npx convex deploy`).
 
-Frontend: Vercel project **`oracle-app`** (Vercel team `property-lions`, so deploy URLs look like `oracle-<hash>-property-lions.vercel.app`; linkage in `.vercel/project.json`). Production alias: **`oracle-psi-beryl.vercel.app`**. **Deploys are manual** (`vercel --prod` from a machine) — there is no Git auto-deploy, so a `git push` alone does not update the live site (see [WORKFLOW.md](WORKFLOW.md) → Deploy). Convex is on the **Pro plan** under a *separate* team (`allan-cuevas`, per `.env.local`) — the Vercel team and the Convex team are different accounts; don't conflate them.
+Frontend: Vercel project **`oracle-app`** (Vercel team `property-lions`, so deploy URLs look like `oracle-<hash>-property-lions.vercel.app`; linkage in `.vercel/project.json`). Production domains (alias **both** on every deploy): the client-facing **`oracle.propertylions.com.au`** and the stable **`oracle-psi-beryl.vercel.app`**. **Deploys are manual** (`vercel --prod` from a machine) — there is no Git auto-deploy, so a `git push` alone does not update the live site (see [WORKFLOW.md](WORKFLOW.md) → Deploy). Convex is on the **Pro plan** under a *separate* team (`allan-cuevas`, per `.env.local`) — the Vercel team and the Convex team are different accounts; don't conflate them.
 
 ## Data model (Convex tables)
 
