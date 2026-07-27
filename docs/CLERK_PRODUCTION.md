@@ -235,6 +235,18 @@ Handled in code once the above is green. Order matters:
 5. Full 4-step deploy per [WORKFLOW.md](WORKFLOW.md) — `npx convex dev --once`
    → `npx convex deploy --yes` → `vercel --prod --yes` → `vercel alias …`.
    The Vercel build is mandatory here, not optional (trap #3).
+   - **Convex auth-config gotcha:** Convex statically requires any env var
+     referenced in `auth.config.ts` to be *set* at deploy time — the JS
+     `|| fallback` does NOT satisfy it. So `CLERK_JWT_ISSUER_DOMAIN` must be set
+     (to the dev value first, if you want a no-op push) before `convex dev --once`
+     will succeed. Set it on **both** deployments (`--prod` for 695).
+   - **Vercel custom-domain gotcha:** `vercel --prod` moved `oracle-psi-beryl`
+     but did NOT auto-move the custom domain `oracle.propertylions.com.au` — it
+     stayed on an older deployment (root 200 but `/portal` 404, i.e. a build
+     predating `vercel.json`'s SPA rewrite). Fix: explicitly
+     `vercel alias <new-deployment> oracle.propertylions.com.au`. **Every future
+     deploy must alias BOTH** `oracle-psi-beryl.vercel.app` AND
+     `oracle.propertylions.com.au` to the new deployment.
 6. Verify end to end: sign in at `oracle.propertylions.com.au`, confirm the
    staff role survived, then invite a test client and confirm the email links to
    `oracle.propertylions.com.au/portal`.

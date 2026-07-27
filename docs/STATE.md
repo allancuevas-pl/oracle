@@ -16,8 +16,8 @@
 
 ## In flight / next up
 
-- **PRODUCTION LAUNCH — move Oracle to a real domain (THE NEXT TASK, in progress 2026-07-23).**
-  - **Domain DECIDED: `oracle.propertylions.com.au`** — one host for the whole platform: staff CRM at the root, client portal at `/portal`. (Supersedes the earlier `portal.` / `app.` split proposal.) **DNS host: GoDaddy.**
+- **PRODUCTION LAUNCH — Oracle is LIVE on `oracle.propertylions.com.au` behind Clerk PRODUCTION (SHIPPED 2026-07-23).** Deployment `oracle-pwpw7gvon`, both Vercel domains aliased, both Convex deployments in sync. Verified headless: `/portal` renders the branded login on the custom domain, Clerk JS loads from `clerk.propertylions.com.au` (prod frontend API, 200), no console errors, no dev-mode banner, `pk_live` in the bundle. Migration ran (4 users seeded, idempotent) so admins/clients keep their roles on first prod sign-in. **The ONE remaining check is human: sign in and confirm the admin role survived + invite a test client** (can't be done headless without a password). Env now live on Convex 502+695: `APP_URL`, `CLERK_JWT_ISSUER_DOMAIN=https://clerk.propertylions.com.au`, `CLERK_SECRET_KEY=sk_live`; Vercel prod `VITE_CLERK_PUBLISHABLE_KEY=pk_live` (Preview still dev). Rollback: unset the two Convex vars + restore `pk_test` in Vercel + redeploy + run `migrations:undoSeedInvitationsForClerkCutover`. Full runbook + gotchas: [CLERK_PRODUCTION.md](CLERK_PRODUCTION.md).
+  - **Domain: `oracle.propertylions.com.au`** — one host for the whole platform: staff CRM at the root, client portal at `/portal`. (Supersedes the earlier `portal.` / `app.` split proposal.) **DNS host: GoDaddy.**
   - **CODE — DONE this session, verified, not yet deployed:**
     - `convex/team.ts` — invite `redirect_url` is no longer hardcoded; new `inviteRedirectUrl()` reads `PORTAL_URL` / `APP_URL` with fallback to `oracle-psi-beryl.vercel.app`. `resendPortalInvite` delegates to `inviteTeamMember`, so this is the single source of truth.
     - `convex/auth.config.ts` — issuer reads `CLERK_JWT_ISSUER_DOMAIN`, falling back to the dev instance.

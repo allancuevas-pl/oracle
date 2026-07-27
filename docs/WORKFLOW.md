@@ -40,11 +40,16 @@ npx convex deploy --yes
 vercel --prod --yes
 # → note the printed https://oracle-<hash>-property-lions.vercel.app URL
 
-# 4. Point the stable production domain at the new deployment
+# 4. Point BOTH production domains at the new deployment
 vercel alias <that-url> oracle-psi-beryl.vercel.app
+vercel alias <that-url> oracle.propertylions.com.au   # the real client-facing domain
 ```
 
 Skipping step 1 is the classic mistake: the live app reads `colorless-condor-502`, so a schema/function change that only went to `convex deploy` won't be live. Skipping step 4 leaves the change deployed but not on the production domain.
+
+**Both aliases in step 4 are required.** `vercel --prod` does NOT auto-move the custom domain `oracle.propertylions.com.au` (it stayed pinned to an older deployment during the 2026-07-23 launch — root served 200 but `/portal` 404'd because that build predated the SPA-rewrite `vercel.json`). Alias both every time, then verify a deep link like `/portal` returns 200 on `oracle.propertylions.com.au`, not just `/`.
+
+Since the Clerk PRODUCTION cutover (2026-07-23), `auth.config.ts` reads `CLERK_JWT_ISSUER_DOMAIN` — Convex requires it *set* on both deployments at deploy time (the `|| fallback` does not satisfy the static check), so `convex dev --once` / `convex deploy` will fail if it's ever unset. See [CLERK_PRODUCTION.md](CLERK_PRODUCTION.md).
 
 `npm run build` runs `npm run security:check` (`scripts/check-authz.js`) before `vite build` — an authz gate. If the build fails there, a mutation is missing a role check; fix it rather than bypassing.
 
