@@ -22,6 +22,7 @@ import type * as feasos from "../feasos.js";
 import type * as imExtraction from "../imExtraction.js";
 import type * as imExtractionAction from "../imExtractionAction.js";
 import type * as matches from "../matches.js";
+import type * as migrations from "../migrations.js";
 import type * as properties from "../properties.js";
 import type * as settings from "../settings.js";
 import type * as team from "../team.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   imExtraction: typeof imExtraction;
   imExtractionAction: typeof imExtractionAction;
   matches: typeof matches;
+  migrations: typeof migrations;
   properties: typeof properties;
   settings: typeof settings;
   team: typeof team;
