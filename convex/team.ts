@@ -126,6 +126,26 @@ export const removeMember = mutation({
 // ─── Actions (external Clerk API calls) ──────────────────────────────────────
 
 /**
+ * Where a Clerk invite lands after the recipient accepts.
+ *
+ * Set PORTAL_URL (client portal) and APP_URL (staff CRM) in the Convex
+ * dashboard when either surface moves to its own subdomain. Both fall back to
+ * the current Vercel production domain, so invites keep working until they are.
+ */
+const DEFAULT_SITE_URL = "https://oracle-psi-beryl.vercel.app";
+
+function inviteRedirectUrl(role: "admin" | "staff" | "client"): string {
+  const base =
+    role === "client"
+      ? process.env.PORTAL_URL || process.env.APP_URL || DEFAULT_SITE_URL
+      : process.env.APP_URL || DEFAULT_SITE_URL;
+  const trimmed = base.replace(/\/+$/, "");
+  // Clients land on their branded portal login; staff/admin invites resolve at
+  // the app root and get redirected onward post-auth by routing.
+  return role === "client" ? `${trimmed}/portal` : trimmed;
+}
+
+/**
  * Send a Clerk invitation email and record a pending invite.
  * Requires CLERK_SECRET_KEY to be set in Convex dashboard environment variables.
  */
@@ -159,11 +179,7 @@ export const inviteTeamMember = action({
       body: JSON.stringify({
         email_address: email,
         public_metadata: { role: args.role },
-        // Clients land on their branded portal login; staff/admin invites also
-        // resolve fine there (they get redirected onward post-auth by routing).
-        redirect_url: args.role === "client"
-          ? "https://oracle-psi-beryl.vercel.app/portal"
-          : "https://oracle-psi-beryl.vercel.app",
+        redirect_url: inviteRedirectUrl(args.role),
       }),
     });
 
