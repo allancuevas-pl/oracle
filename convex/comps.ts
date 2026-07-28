@@ -39,6 +39,7 @@ const compWriteFields = {
   landAreaSqm: v.optional(v.number()),
 
   // Lease
+  tenant: v.optional(v.string()),
   rentPa: v.optional(v.number()),
   rentInputFormat: v.optional(v.union(v.literal("annual"), v.literal("monthly"))),
   rentPerSqm: v.optional(v.number()),
@@ -46,7 +47,9 @@ const compWriteFields = {
   leaseDate: v.optional(v.string()),
   leaseExpiry: v.optional(v.string()),
   leaseTerm: v.optional(v.string()),
+  leaseTermYears: v.optional(v.number()),
   incentives: v.optional(v.string()),
+  incentivePct: v.optional(v.number()),
   reviewType: v.optional(v.string()),
   reviewRate: v.optional(v.number()),
 
@@ -65,6 +68,7 @@ const compWriteFields = {
     v.literal("im_scan"),
     v.literal("historical_import"),
     v.literal("arealytics"),
+    v.literal("property_lions"),
     v.literal("other")
   )),
   verified: v.optional(v.boolean()),

@@ -169,6 +169,7 @@ export default defineSchema({
     landAreaSqm: v.optional(v.number()),
 
     // ── Lease fields (type = "lease") ──
+    tenant: v.optional(v.string()),          // lessee / tenant name
     rentPa: v.optional(v.number()),          // always stored as $/pa
     rentInputFormat: v.optional(v.union(     // what the user typed in
       v.literal("annual"),
@@ -179,7 +180,9 @@ export default defineSchema({
     leaseDate: v.optional(v.string()),       // "YYYY-MM-DD"
     leaseExpiry: v.optional(v.string()),     // "YYYY-MM-DD" — lease expiry / end of term
     leaseTerm: v.optional(v.string()),       // e.g. "3yr", "5 + 5yr"
+    leaseTermYears: v.optional(v.number()),  // numeric term in years (e.g. 5)
     incentives: v.optional(v.string()),      // e.g. "6 months rent-free, $50K fitout"
+    incentivePct: v.optional(v.number()),    // incentive as a % (e.g. 17.5)
     reviewType: v.optional(v.string()),      // CPI | Fixed % | Market
     reviewRate: v.optional(v.number()),      // e.g. 3.5
 
@@ -198,6 +201,7 @@ export default defineSchema({
       v.literal("im_scan"),
       v.literal("historical_import"),  // bulk-imported from the team's state comp sheets
       v.literal("arealytics"),         // bulk-imported from the Arealytics transaction archive
+      v.literal("property_lions"),     // curated comps supplied by Property Lions (Will)
       v.literal("other")
     )),
     verified: v.optional(v.boolean()),       // verbally confirmed

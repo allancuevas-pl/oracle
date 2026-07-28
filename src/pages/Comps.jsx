@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 // ── Constants ────────────────────────────────────────────────────────────────
 const TYPE_TABS = ['All', 'Lease', 'Sale'];
 const SOURCE_OPTIONS = [
+  { value: 'property_lions',     label: 'Property Lions' },
   { value: 'historical_import', label: 'Curated (team)' },
   { value: 'arealytics',        label: 'Arealytics' },
   { value: 'im_scan',           label: 'IM scans' },
@@ -28,6 +29,8 @@ const DEFAULT_FILTERS = {
 const SOURCE_LABELS = {
   agent_call: 'Agent call', real_commercial: 'RealCommercial',
   loopnet: 'LoopNet', im_scan: 'IM scan', other: 'Other',
+  property_lions: 'Property Lions', historical_import: 'Curated (team)',
+  arealytics: 'Arealytics',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -65,7 +68,7 @@ function countActiveFilters(f) {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function Comps() {
   const [tab, setTab]               = useState('All');
-  const [sourceFilter, setSourceFilter] = useState('historical_import');
+  const [sourceFilter, setSourceFilter] = useState('property_lions');
   const [search, setSearch]         = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters]       = useState(DEFAULT_FILTERS);

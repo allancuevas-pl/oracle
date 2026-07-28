@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 
 const SOURCES = [
+  { id: 'property_lions',  label: 'Property Lions' },
   { id: 'agent_call',      label: 'Agent call' },
   { id: 'real_commercial', label: 'RealCommercial' },
   { id: 'loopnet',         label: 'LoopNet' },
