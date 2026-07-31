@@ -301,6 +301,63 @@ export const getClientPortalStatus = query({
 });
 
 /**
+ * The TRUE invitation state from Clerk (source of truth for the lifecycle),
+ * for a single client email. Staff/admin, read-only.
+ *
+ * `getClientPortalStatus` above reads only our local tables, which can lie:
+ * the local pendingInvitation is deleted on first sign-in and was also *seeded*
+ * for existing users during the prod-Clerk cutover. Clerk knows the real
+ * status: pending / accepted / revoked / expired. Returns the most recent
+ * invitation for the email plus its timestamps, so the UI can show accurate
+ * "Invited / Accepted / Revoked / Expired" states with dates.
+ *
+ * This is an action (not a query) because it calls the Clerk REST API.
+ */
+export const getPortalInviteDetail = action({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    const currentUser = await ctx.runQuery(api.users.getCurrentUser, {});
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "staff")) {
+      throw new Error("Only staff or admins can view invitation status");
+    }
+
+    const email = args.email.trim().toLowerCase();
+    if (!email) return { configured: true, found: false };
+
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+    if (!clerkSecretKey) return { configured: false, found: false };
+
+    // Search invitations for this email (query is fuzzy, so we filter exactly).
+    const res = await fetch(
+      `https://api.clerk.com/v1/invitations?query=${encodeURIComponent(email)}&limit=20&order_by=-created_at`,
+      { headers: { Authorization: `Bearer ${clerkSecretKey}` } }
+    );
+    if (!res.ok) {
+      // Don't throw — the UI still has the local reactive status to fall back on.
+      return { configured: true, found: false, error: `Clerk API error (${res.status})` };
+    }
+
+    const body = await res.json();
+    const list = Array.isArray(body) ? body : body?.data || [];
+    const mine = list
+      .filter((inv) => (inv.email_address || "").toLowerCase() === email)
+      .sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+    if (mine.length === 0) return { configured: true, found: false };
+
+    const inv = mine[0];
+    return {
+      configured: true,
+      found: true,
+      status: inv.status, // "pending" | "accepted" | "revoked" | "expired"
+      invitedAt: inv.created_at ?? null, // Unix ms
+      updatedAt: inv.updated_at ?? null, // Unix ms (when accepted/revoked)
+      expiresAt: inv.expires_at ?? null, // Unix ms | null
+    };
+  },
+});
+
+/**
  * Resend a client's portal invite: revoke the old Clerk invite link (so the
  * previous email link stops working), then send a fresh invite. Admin-only.
  * Delegates the create path to inviteTeamMember so there is one source of truth.
