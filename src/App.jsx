@@ -20,6 +20,7 @@ const Properties     = named(() => import('./pages/Properties'), 'Properties');
 const PropertyView   = named(() => import('./pages/PropertyView'), 'PropertyView');
 const Pipeline       = named(() => import('./pages/Pipeline'), 'Pipeline');
 const Clients        = named(() => import('./pages/Clients'), 'Clients');
+const Directory      = named(() => import('./pages/Directory'), 'Directory');
 const ClientView     = named(() => import('./pages/ClientView'), 'ClientView');
 const Settings       = named(() => import('./pages/Settings'), 'Settings');
 const OracleScanner  = named(() => import('./pages/OracleScanner'), 'OracleScanner');
@@ -142,6 +143,7 @@ function CRMApp() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientView />} />
+                <Route path="/directory" element={<Directory />} />
                 <Route path="/briefs" element={<Briefs />} />
                 <Route path="/briefs/:id" element={<BriefView />} />
                 <Route path="/properties" element={<Properties />} />

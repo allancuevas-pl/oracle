@@ -40,6 +40,35 @@ export default defineSchema({
     .index("by_name", ["name"])
     .index("by_email", ["email"]),
 
+  // Directory of non-client contacts (agents, contractors/inspectors,
+  // solicitors, brokers). Clients live in `clients`; the Directory page
+  // aggregates both. Kept deliberately simple — a searchable address book.
+  contacts: defineTable({
+    name: v.string(),
+    category: v.union(
+      v.literal("agent"),
+      v.literal("contractor"),
+      v.literal("solicitor"),
+      v.literal("broker"),
+      v.literal("other")
+    ),
+    company: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    state: v.optional(v.string()),        // NSW / VIC / QLD / ... (uppercase)
+    suburb: v.optional(v.string()),
+    specialty: v.optional(v.string()),    // e.g. "Building & Pest", "Conveyancer"
+    notes: v.optional(v.string()),
+    createdBy: v.string(),                // clerkId
+    updatedAt: v.optional(v.number()),    // ms timestamp of last edit
+  })
+    .index("by_category", ["category"])
+    .index("by_name", ["name"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["category", "state"],
+    }),
+
   briefs: defineTable({
     briefId: v.optional(v.string()), // e.g. "ORC-B0001"
     clientId: v.optional(v.id("clients")), // Link to clients table

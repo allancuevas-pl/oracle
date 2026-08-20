@@ -1,11 +1,12 @@
 import React from 'react';
-import { LayoutDashboard, FileText, Building2, Layers, Users, Settings, LogOut, ScanSearch, Database } from 'lucide-react';
+import { LayoutDashboard, FileText, Building2, Layers, Users, Settings, LogOut, ScanSearch, Database, Contact } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Users, label: 'Clients', path: '/clients' },
+  { icon: Contact, label: 'Directory', path: '/directory' },
   { icon: FileText, label: 'Client Briefs', path: '/briefs' },
   { icon: Building2, label: 'Properties', path: '/properties' },
   { icon: Database, label: 'Comps', path: '/comps' },
