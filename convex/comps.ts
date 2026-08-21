@@ -35,6 +35,12 @@ const compWriteFields = {
   state: v.optional(v.string()),
   postcode: v.optional(v.string()),
   assetType: v.optional(v.string()),
+  grade: v.optional(v.union(
+    v.literal("Prime"),
+    v.literal("A"),
+    v.literal("B"),
+    v.literal("C")
+  )),
   nlaSqm: v.optional(v.number()),
   landAreaSqm: v.optional(v.number()),
 

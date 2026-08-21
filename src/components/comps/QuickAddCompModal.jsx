@@ -21,7 +21,7 @@ const ASSET_TYPES  = ['Industrial', 'Retail', 'Office', 'Hybrid', 'Mixed Use', '
 const empty = {
   type: 'lease',
   address: '', suburb: '', state: '', postcode: '',
-  assetType: '', nlaSqm: '', landAreaSqm: '',
+  assetType: '', grade: '', nlaSqm: '', landAreaSqm: '',
   rentInput: '', rentInputFormat: 'annual',
   leaseType: '', leaseDate: '', leaseExpiry: '', leaseTerm: '', incentives: '', reviewType: '', reviewRate: '',
   salePrice: '', saleDate: '', capRate: '',
@@ -38,6 +38,7 @@ function compToForm(c) {
     state:           c.state ?? '',
     postcode:        c.postcode ?? '',
     assetType:       c.assetType ?? '',
+    grade:           c.grade ?? '',
     nlaSqm:          c.nlaSqm?.toString() ?? '',
     landAreaSqm:     c.landAreaSqm?.toString() ?? '',
     rentInput:       c.rentPa?.toString() ?? '',
@@ -147,6 +148,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
     state:      form.state || undefined,
     postcode:   form.postcode || undefined,
     assetType:  form.assetType || undefined,
+    grade:      form.grade || undefined,
     nlaSqm:     nla || undefined,
     landAreaSqm: parseFloat(form.landAreaSqm) || undefined,
     rentPa:     rentPa || undefined,
@@ -275,11 +277,17 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
           </div>
 
           {/* Property info */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <Field label="Asset type">
               <select className={inp} value={form.assetType} onChange={e => set('assetType', e.target.value)}>
                 <option value="">—</option>
                 {ASSET_TYPES.map(a => <option key={a}>{a}</option>)}
+              </select>
+            </Field>
+            <Field label="Grade">
+              <select className={inp} value={form.grade} onChange={e => set('grade', e.target.value)}>
+                <option value="">—</option>
+                {['Prime', 'A', 'B', 'C'].map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </Field>
             <Field label="NLA (sqm)">

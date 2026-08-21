@@ -194,6 +194,12 @@ export default defineSchema({
 
     // Property characteristics (key for smart matching)
     assetType: v.optional(v.string()),  // Industrial / Retail / Office / Hybrid / Other
+    grade: v.optional(v.union(          // building grade (commercial classification)
+      v.literal("Prime"),
+      v.literal("A"),
+      v.literal("B"),
+      v.literal("C")
+    )),
     nlaSqm: v.optional(v.number()),     // Net Lettable Area
     landAreaSqm: v.optional(v.number()),
 

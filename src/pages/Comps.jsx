@@ -340,8 +340,10 @@ export function Comps() {
                   {tab === 'All' && <Th sortKey="type" {...sortProps}>Type</Th>}
                   <Th sortKey="address" {...sortProps}>Address</Th>
                   <Th sortKey="suburb" {...sortProps}>Suburb</Th>
+                  <Th sortKey="state" {...sortProps}>State</Th>
                   <Th sortKey="postcode" {...sortProps}>Postcode</Th>
                   <Th sortKey="assetType" {...sortProps}>Asset</Th>
+                  <Th sortKey="grade" {...sortProps}>Grade</Th>
                   <Th sortKey="nlaSqm" {...sortProps}>NLA</Th>
                   <Th sortKey="landAreaSqm" {...sortProps}>Land</Th>
                   {tab !== 'Sale'  && <Th sortKey="rentPa" {...sortProps}>Rent/pa</Th>}
@@ -380,8 +382,14 @@ export function Comps() {
                         <p className="text-brand-100/80 font-medium truncate max-w-[200px]">{c.address}</p>
                       </td>
                       <td className="px-4 py-3 text-brand-100/50">{c.suburb || <Unset />}</td>
+                      <td className="px-4 py-3 text-brand-100/50">{c.state || <Unset />}</td>
                       <td className="px-4 py-3 text-brand-100/40">{c.postcode || <Unset />}</td>
                       <td className="px-4 py-3 text-brand-100/50">{c.assetType ?? <Unset />}</td>
+                      <td className="px-4 py-3">
+                        {c.grade
+                          ? <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-500/10 text-brand-400 border border-brand-500/20">{c.grade}</span>
+                          : <Unset />}
+                      </td>
                       <td className="px-4 py-3 text-brand-100/50">
                         {c.nlaSqm ? `${c.nlaSqm.toLocaleString()} sqm` : <Unset />}
                       </td>
