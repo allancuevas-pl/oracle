@@ -2,8 +2,9 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, usePaginatedQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Plus, Database, Search, Loader2, CheckCircle2, Phone, SlidersHorizontal, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Database, Search, Loader2, CheckCircle2, Phone, SlidersHorizontal, X, ArrowUp, ArrowDown, ScanLine } from 'lucide-react';
 import { QuickAddCompModal } from '../components/comps/QuickAddCompModal';
+import { CompScannerModal } from '../components/comps/CompScannerModal';
 import { CompFilters } from '../components/comps/CompFilters';
 import { SkeletonTable } from '../components/ui/Loading';
 import { rowEntrance } from '../components/ui/motion';
@@ -16,6 +17,7 @@ const SOURCE_OPTIONS = [
   { value: 'historical_import', label: 'Curated (team)' },
   { value: 'arealytics',        label: 'Arealytics' },
   { value: 'im_scan',           label: 'IM scans' },
+  { value: 'comp_scan',         label: 'Scanned' },
   { value: 'all',               label: 'All sources' },
 ];
 const NLA_MAX  = 10_000;
@@ -28,7 +30,7 @@ const DEFAULT_FILTERS = {
 
 const SOURCE_LABELS = {
   agent_call: 'Agent call', real_commercial: 'RealCommercial',
-  loopnet: 'LoopNet', im_scan: 'IM scan', other: 'Other',
+  loopnet: 'LoopNet', im_scan: 'IM scan', comp_scan: 'Scanned', other: 'Other',
   property_lions: 'Property Lions', historical_import: 'Curated (team)',
   arealytics: 'Arealytics',
 };
@@ -76,6 +78,7 @@ export function Comps() {
   const [assignPropId, setAssignPropId] = useState('');
   const [assigning, setAssigning]   = useState(false);
   const [modalOpen, setModalOpen]   = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [editingComp, setEditingComp] = useState(null);
   const [sort, setSort]             = useState({ key: null, dir: 'asc' });
 
@@ -221,13 +224,22 @@ export function Comps() {
           </h1>
           <p className="text-sm text-brand-100/50 mt-1">Lease and sale evidence. Grows with every deal.</p>
         </div>
-        <button
-          onClick={openAdd}
-          className="bg-brand-500 hover:bg-brand-400 text-brand-950 px-4 py-2.5 rounded-md text-sm font-semibold transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.15)] flex items-center justify-center shrink-0"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Add Comp
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setScannerOpen(true)}
+            className="bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-brand-100/80 px-4 py-2.5 rounded-md text-sm font-semibold transition-colors flex items-center justify-center"
+          >
+            <ScanLine className="w-4 h-4 mr-1.5" />
+            Scan Comps
+          </button>
+          <button
+            onClick={openAdd}
+            className="bg-brand-500 hover:bg-brand-400 text-brand-950 px-4 py-2.5 rounded-md text-sm font-semibold transition-all hover:scale-[1.02] active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.15)] flex items-center justify-center"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Add Comp
+          </button>
+        </div>
       </div>
 
       {/* Table card */}
@@ -496,6 +508,7 @@ export function Comps() {
       />
 
       <QuickAddCompModal isOpen={modalOpen} onClose={closeModal} existingComp={editingComp} />
+      <CompScannerModal isOpen={scannerOpen} onClose={() => setScannerOpen(false)} onImported={() => setSourceFilter('comp_scan')} />
     </div>
   );
 }

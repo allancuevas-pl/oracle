@@ -72,6 +72,7 @@ const compWriteFields = {
     v.literal("real_commercial"),
     v.literal("loopnet"),
     v.literal("im_scan"),
+    v.literal("comp_scan"),
     v.literal("historical_import"),
     v.literal("arealytics"),
     v.literal("property_lions"),

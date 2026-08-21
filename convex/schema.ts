@@ -234,6 +234,7 @@ export default defineSchema({
       v.literal("real_commercial"),
       v.literal("loopnet"),
       v.literal("im_scan"),
+      v.literal("comp_scan"),          // extracted from an agent-supplied comp table via the comp scanner
       v.literal("historical_import"),  // bulk-imported from the team's state comp sheets
       v.literal("arealytics"),         // bulk-imported from the Arealytics transaction archive
       v.literal("property_lions"),     // curated comps supplied by Property Lions (Will)
