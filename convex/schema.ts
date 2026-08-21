@@ -141,6 +141,11 @@ export default defineSchema({
       addedAt: v.number(),
     }))),
 
+    // FISO Google Sheet (generated export — see convex/googleSheets.ts)
+    fisoSheetUrl: v.optional(v.string()),
+    fisoSheetId: v.optional(v.string()),
+    fisoSheetAt: v.optional(v.number()),     // ms timestamp of last generation
+
     // Market benchmarks (from feaso / manual)
     vacancyRate: v.optional(v.number()),     // current vacancy %
     marketRentLow: v.optional(v.number()),  // $/sqm low estimate

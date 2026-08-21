@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { logSystemActivity } from "./activities";
 import { requireStaffOrAdmin } from "./authz";
@@ -182,5 +182,14 @@ export const updateProperty = mutation({
         userId: identity.subject,
       });
     }
+  },
+});
+
+/** Persist the generated FISO Google Sheet reference on a property. Internal —
+ *  called by convex/googleSheets.ts after creating the sheet. */
+export const setFisoSheet = internalMutation({
+  args: { id: v.id("properties"), url: v.string(), sheetId: v.string() },
+  handler: async (ctx, { id, url, sheetId }) => {
+    await ctx.db.patch(id, { fisoSheetUrl: url, fisoSheetId: sheetId, fisoSheetAt: Date.now() });
   },
 });

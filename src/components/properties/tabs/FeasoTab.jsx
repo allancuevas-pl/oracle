@@ -1,26 +1,45 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FileSpreadsheet, ExternalLink, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { PropertyAssessmentTab } from './feaso/PropertyAssessmentTab';
 import { ProjectFeasibilityTab }  from './feaso/ProjectFeasibilityTab';
 
 const SUB_TABS = [
   { id: 'assessment',  label: 'Property Assessment' },
   { id: 'feasibility', label: 'Project Feasibility' },
-  { id: 'cashflow',    label: 'Cashflow' },
+  { id: 'sheet',       label: 'FISO Sheet' },
 ];
 
 export function FeasoTab({ property }) {
   const [activeTab, setActiveTab] = useState('assessment');
+  const [generating, setGenerating] = useState(false);
+  const [generatedUrl, setGeneratedUrl] = useState(null);
 
   const upsertFeaso = useMutation(api.feasos.upsertFeaso);
   const linkComp    = useMutation(api.comps.linkCompToProperty);
+  const generateSheet = useAction(api.googleSheets.generateFisoSheet);
 
   const feasoData   = useQuery(api.feasos.getFeasoForProperty, { propertyId: property._id });
   const linkedComps = useQuery(api.comps.getCompsByProperty,   { propertyId: property._id });
 
   const save = (updates) => upsertFeaso({ propertyId: property._id, ...updates });
+
+  const sheetUrl = generatedUrl ?? property.fisoSheetUrl ?? null;
+  const runGenerate = async () => {
+    setGenerating(true);
+    try {
+      const { url } = await generateSheet({ propertyId: property._id });
+      setGeneratedUrl(url);
+      toast.success('FISO sheet generated');
+      window.open(url, '_blank', 'noopener');
+    } catch (err) {
+      toast.error(err?.message || 'Could not generate the sheet.');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   if (feasoData === undefined || linkedComps === undefined) {
     return (
@@ -75,16 +94,39 @@ export function FeasoTab({ property }) {
           save={save}
         />
       )}
-      {activeTab === 'cashflow' && (
-        <div className="flex flex-col items-center justify-center min-h-[360px] text-center">
-          <div className="w-12 h-12 rounded-xl bg-brand-900/30 border border-brand-800/40 flex items-center justify-center mb-4">
-            <span className="text-brand-500/50 text-lg font-mono">~</span>
+      {activeTab === 'sheet' && (
+        <div className="flex flex-col items-center justify-center min-h-[360px] text-center max-w-md mx-auto">
+          <div className="w-12 h-12 rounded-xl bg-emerald-900/20 border border-emerald-800/40 flex items-center justify-center mb-4">
+            <FileSpreadsheet className="w-6 h-6 text-emerald-400/70" />
           </div>
-          <p className="text-sm font-semibold text-brand-50 mb-1">10-Year Cashflow</p>
-          <p className="text-xs text-brand-100/35 max-w-xs leading-relaxed">
-            Annual cashflow model — Gross Rent, Vacancy, NOI, Debt Service, and yield per year.
-            Coming in the next phase.
+          <p className="text-sm font-semibold text-brand-50 mb-1">FISO Google Sheet</p>
+          <p className="text-xs text-brand-100/40 leading-relaxed mb-5">
+            Generate an editable Google Sheet pre-filled from this property — assessment, tenancy
+            schedule, linked comps, and a feasibility + 10-year cashflow model. Download or edit it
+            in Google Sheets to customise the deal.
           </p>
+
+          {sheetUrl && (
+            <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
+              className="mb-3 inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
+              <ExternalLink className="w-4 h-4" /> Open FISO sheet
+            </a>
+          )}
+
+          <button
+            onClick={runGenerate}
+            disabled={generating}
+            className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-brand-950 px-4 py-2.5 rounded-md text-sm font-semibold transition-colors"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : sheetUrl ? <RefreshCw className="w-4 h-4" /> : <FileSpreadsheet className="w-4 h-4" />}
+            {generating ? 'Generating…' : sheetUrl ? 'Regenerate sheet' : 'Generate FISO Sheet'}
+          </button>
+
+          {property.fisoSheetAt && !generatedUrl && (
+            <p className="mt-3 text-[11px] text-brand-100/30">
+              Last generated {new Date(property.fisoSheetAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+          )}
         </div>
       )}
 

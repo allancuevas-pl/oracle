@@ -21,6 +21,7 @@ import type * as dashboard from "../dashboard.js";
 import type * as dealReports from "../dealReports.js";
 import type * as extractionPrompt from "../extractionPrompt.js";
 import type * as feasos from "../feasos.js";
+import type * as googleSheets from "../googleSheets.js";
 import type * as imExtraction from "../imExtraction.js";
 import type * as imExtractionAction from "../imExtractionAction.js";
 import type * as matches from "../matches.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   dealReports: typeof dealReports;
   extractionPrompt: typeof extractionPrompt;
   feasos: typeof feasos;
+  googleSheets: typeof googleSheets;
   imExtraction: typeof imExtraction;
   imExtractionAction: typeof imExtractionAction;
   matches: typeof matches;
