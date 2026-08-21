@@ -2,7 +2,7 @@
 
 > **This is the only doc that changes often. Update it at the end of every working session** so the next agent — in any tool — can start cold. Keep it a snapshot of *now*, not a changelog: prune what's no longer true. For rules see [../CLAUDE.md](../CLAUDE.md), the map [ARCHITECTURE.md](ARCHITECTURE.md), the runbook [WORKFLOW.md](WORKFLOW.md).
 
-**Last updated:** 2026-07-23 · branch `claude-code/main`
+**Last updated:** 2026-08-21 · branch `claude-code/main`
 
 ## Shipped & live
 
