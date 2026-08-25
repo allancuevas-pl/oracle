@@ -34,19 +34,22 @@ You can reuse the **same Google Cloud project** you made for the Clerk OAuth app
 That's it on your side. Hand the agent nothing secret — the key goes straight
 into the Convex dashboard.
 
-## Sharing model (default)
-Generated sheets are **owned by the service account** and shared **editor
-access to the `propertylions.com.au` domain**, so any signed-in team member can
-open + edit via the link. They appear under Drive → "Shared with me", not each
-person's own Drive.
+## Where sheets live — a Shared Drive (required)
 
-- To have sheets created *inside* a specific person's own Drive instead, that
-  needs **domain-wide delegation** (a Workspace-admin step authorizing the
-  service account's client ID for the Sheets + Drive scopes). Deferred — ask if
-  you want it.
-- **Storage note:** a service account has limited Drive storage. FISO sheets are
-  tiny, so this is fine for a long time; if it ever fills, old sheets can be
-  pruned or we move to domain-wide delegation (which uses the user's storage).
+Google removed service accounts' personal Drive storage, so the service account
+cannot own files. Generated sheets must live in a **Shared Drive** the service
+account is a member of:
+
+1. [Google Drive](https://drive.google.com) → **Shared drives → New** → name it e.g. `Oracle FISO`.
+2. Open it → **Manage members** → add the service-account email
+   (`client_email` from step 4 above) as **Content manager**.
+3. Copy the Shared Drive **ID** from its URL:
+   `https://drive.google.com/drive/folders/<ID>` — the part after `/folders/`.
+4. Set a third Convex env var (both deployments):
+   - `GOOGLE_SHARED_DRIVE_ID` = that ID.
+
+Sheets are created in this Shared Drive, so everyone with access to it sees +
+edits them. This also survives staff changes (team-owned, not one person's Drive).
 
 ## After you've set the env vars
 Tell the agent — it will run an end-to-end test (generate a sheet from a real

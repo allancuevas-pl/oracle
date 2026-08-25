@@ -9,7 +9,6 @@ import { JWT } from "google-auth-library";
 // tenancy, linked comps, feaso inputs) via a service account. See
 // docs/GOOGLE_SHEETS_SETUP.md for the one-time Google Cloud setup.
 
-const SHARE_DOMAIN = "propertylions.com.au";
 const round = (n: number) => Math.round(n * 100) / 100;
 const numOr = (x: any, d: any = "") => (typeof x === "number" && Number.isFinite(x) ? x : d);
 
@@ -152,45 +151,56 @@ export const generateFisoSheet = action({
     if (!token) throw new Error("Could not authenticate with Google. Check the service-account key.");
     const auth = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
-    const title = `FISO — ${property.address}${property.suburb ? `, ${property.suburb}` : ""}`;
-
-    // 1. Create the spreadsheet with four tabs.
-    const createRes = await fetch("https://sheets.googleapis.com/v4/spreadsheets", {
-      method: "POST", headers: auth,
-      body: JSON.stringify({
-        properties: { title },
-        sheets: ["Property Assessment", "Comps", "Feasibility", "Cashflow"].map((t) => ({ properties: { title: t } })),
-      }),
-    });
-    if (!createRes.ok) throw new Error(`Sheets API create failed (${createRes.status}): ${await createRes.text()}`);
-    const sheet = await createRes.json();
-    const spreadsheetId = sheet.spreadsheetId as string;
-    const url = sheet.spreadsheetUrl as string;
-
-    // 2. Populate each tab (USER_ENTERED so formulas evaluate).
-    const valuesRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`, {
-      method: "POST", headers: auth,
-      body: JSON.stringify({
-        valueInputOption: "USER_ENTERED",
-        data: [
-          { range: "'Property Assessment'!A1", values: assessmentTab(property) },
-          { range: "'Comps'!A1", values: compsTab(comps || []) },
-          { range: "'Feasibility'!A1", values: feasibilityTab(property, feaso) },
-          { range: "'Cashflow'!A1", values: cashflowTab(property, feaso) },
-        ],
-      }),
-    });
-    if (!valuesRes.ok) throw new Error(`Sheets populate failed (${valuesRes.status}): ${await valuesRes.text()}`);
-
-    // 3. Share it so the team can edit (best-effort — don't fail the whole op).
-    try {
-      await fetch(`https://www.googleapis.com/drive/v3/files/${spreadsheetId}/permissions?sendNotificationEmail=false`, {
-        method: "POST", headers: auth,
-        body: JSON.stringify({ type: "domain", role: "writer", domain: SHARE_DOMAIN }),
-      });
-    } catch { /* owner can still share manually */ }
-
-    await ctx.runMutation(internal.properties.setFisoSheet, { id: propertyId, url, sheetId: spreadsheetId });
-    return { url };
+    const sharedDriveId = process.env.GOOGLE_SHARED_DRIVE_ID;
+    if (!sharedDriveId) {
+      throw new Error("GOOGLE_SHARED_DRIVE_ID is not set. Create a Shared Drive, add the service account as Content Manager, and set its ID in Convex (see docs/GOOGLE_SHEETS_SETUP.md).");
+    }
+    const url = await buildSheet(auth, sharedDriveId, property, comps || [], feaso);
+    await ctx.runMutation(internal.properties.setFisoSheet, { id: propertyId, url: url.url, sheetId: url.id });
+    return { url: url.url };
   },
 });
+
+// Create a FISO spreadsheet inside a Shared Drive and populate its four tabs.
+// Service accounts have no personal Drive storage, so we create the file via
+// the Drive API into a Shared Drive rather than Sheets `spreadsheets.create`.
+async function buildSheet(auth: any, sharedDriveId: string, property: any, comps: any[], feaso: any) {
+  const title = `FISO — ${property.address}${property.suburb ? `, ${property.suburb}` : ""}`;
+
+  // 1. Blank spreadsheet in the Shared Drive.
+  const createRes = await fetch(
+    "https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id,webViewLink",
+    { method: "POST", headers: auth, body: JSON.stringify({ name: title, mimeType: "application/vnd.google-apps.spreadsheet", parents: [sharedDriveId] }) }
+  );
+  if (!createRes.ok) throw new Error(`Drive create failed (${createRes.status}): ${await createRes.text()}`);
+  const file = await createRes.json();
+  const id = file.id as string;
+  const url = file.webViewLink || `https://docs.google.com/spreadsheets/d/${id}/edit`;
+
+  // 2. Name the four tabs (a new sheet starts with one default tab).
+  const metaRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}?fields=sheets.properties(sheetId,title)`, { headers: auth });
+  const firstSheetId = (await metaRes.json())?.sheets?.[0]?.properties?.sheetId ?? 0;
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
+    method: "POST", headers: auth,
+    body: JSON.stringify({ requests: [
+      { updateSheetProperties: { properties: { sheetId: firstSheetId, title: "Property Assessment" }, fields: "title" } },
+      { addSheet: { properties: { title: "Comps" } } },
+      { addSheet: { properties: { title: "Feasibility" } } },
+      { addSheet: { properties: { title: "Cashflow" } } },
+    ] }),
+  });
+
+  // 3. Populate (USER_ENTERED so formulas evaluate).
+  const valuesRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchUpdate`, {
+    method: "POST", headers: auth,
+    body: JSON.stringify({ valueInputOption: "USER_ENTERED", data: [
+      { range: "'Property Assessment'!A1", values: assessmentTab(property) },
+      { range: "'Comps'!A1", values: compsTab(comps) },
+      { range: "'Feasibility'!A1", values: feasibilityTab(property, feaso) },
+      { range: "'Cashflow'!A1", values: cashflowTab(property, feaso) },
+    ] }),
+  });
+  if (!valuesRes.ok) throw new Error(`Sheets populate failed (${valuesRes.status}): ${await valuesRes.text()}`);
+
+  return { url, id };
+}
