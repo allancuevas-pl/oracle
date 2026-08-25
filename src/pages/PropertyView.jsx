@@ -28,7 +28,7 @@ const TABS = [
   { id: 'feaso',        label: 'Feaso' },
   { id: 'reports',      label: 'Reports' },
   { id: 'videos',       label: 'Videos' },
-  { id: 'files',        label: 'Files' },
+  { id: 'files',        label: 'Deal Vault' },
 ];
 
 export function PropertyView() {
@@ -169,7 +169,7 @@ export function PropertyView() {
             {activeTab === 'feaso'        && <FeasoTab       property={property} />}
             {activeTab === 'reports'      && <ReportsTab property={property} brief={linkedBrief ?? null} />}
             {activeTab === 'videos'       && <PropertyVideos property={property} />}
-            {activeTab === 'files'        && <FilesTab />}
+            {activeTab === 'files'        && <FilesTab property={property} />}
           </div>
 
           {/* Activity panel — fixed width, sticks below header + tab bar */}

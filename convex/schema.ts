@@ -341,6 +341,21 @@ export default defineSchema({
     uploadedAt: v.number(),
   }).index("by_clientId", ["clientId"]),
 
+  // Deal vault — sensitive deal documents on a property (loan papers, legal,
+  // contracts, DD). `visibility` gates access: "internal" = staff-only;
+  // "client" = also shareable to the client's portal (surfacing is a follow-up).
+  dealFiles: defineTable({
+    propertyId: v.id("properties"),
+    storageId: v.id("_storage"),
+    fileName: v.string(),
+    contentType: v.optional(v.string()),
+    size: v.optional(v.number()),
+    visibility: v.union(v.literal("internal"), v.literal("client")),
+    category: v.optional(v.string()),   // Loan / Legal / Contract / DD / Other
+    uploadedBy: v.string(),             // clerkId
+    uploadedAt: v.number(),
+  }).index("by_property", ["propertyId"]),
+
   // IM extractions — one record per PDF upload, result stored as JSON string
   imExtractions: defineTable({
     propertyId: v.optional(v.id("properties")), // optional link to a property record

@@ -18,6 +18,7 @@ import type * as compExtractionAction from "../compExtractionAction.js";
 import type * as comps from "../comps.js";
 import type * as contacts from "../contacts.js";
 import type * as dashboard from "../dashboard.js";
+import type * as dealFiles from "../dealFiles.js";
 import type * as dealReports from "../dealReports.js";
 import type * as extractionPrompt from "../extractionPrompt.js";
 import type * as feasos from "../feasos.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   comps: typeof comps;
   contacts: typeof contacts;
   dashboard: typeof dashboard;
+  dealFiles: typeof dealFiles;
   dealReports: typeof dealReports;
   extractionPrompt: typeof extractionPrompt;
   feasos: typeof feasos;
