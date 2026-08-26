@@ -1,6 +1,6 @@
-# Oracle — Google Sheets (FISO export) setup
+# Oracle — Google Sheets (FEASO export) setup
 
-> One-time setup so Oracle can generate a **FISO Google Sheet** in your Google
+> One-time setup so Oracle can generate a **FEASO Google Sheet** in your Google
 > Drive from a property's data. Companion to the code in
 > `convex/googleSheets.ts`. Your part is the Google Cloud service account + the
 > two Convex env vars; the agent wires and tests the rest.
@@ -16,14 +16,14 @@ output inherits **every PL formula, cross-sheet reference, and format 1:1**
 analyst-judgment cells (adopted rents, refurb costs, cap-rate assumptions) ready
 to complete. The sheet lands in the Shared Drive; the URL is saved on the property.
 
-### The master template (`GOOGLE_FISO_TEMPLATE_ID`)
+### The master template (`GOOGLE_FEASO_TEMPLATE_ID`)
 The template that gets cloned is a Google Sheet named **"PL FEASO Template
 (master — do not edit)"** living in the `ORACLE FEASO` Shared Drive
 (id `1o-q-vucFVKL0S5byTnPX9fU9FEoiKU1SdS5TIi6VXPI`, set as env var
-`GOOGLE_FISO_TEMPLATE_ID` on both deployments). It's a cleaned copy of
+`GOOGLE_FEASO_TEMPLATE_ID` on both deployments). It's a cleaned copy of
 `AG-ORACLE/Feaso Template.xlsx` (junk tabs stripped, 4 core tabs kept). **To
 change the FEASO layout/formulas, edit that master sheet** — or upload a new
-one and update `GOOGLE_FISO_TEMPLATE_ID`; the code does not hard-code the layout
+one and update `GOOGLE_FEASO_TEMPLATE_ID`; the code does not hard-code the layout
 beyond the fixed cell addresses it fills (subject row 8; leasing rows 12-31;
 sales rows 34-57 on the `Property Assessment ` tab — note the trailing space).
 
@@ -34,10 +34,10 @@ You can reuse the **same Google Cloud project** you made for the Clerk OAuth app
 1. [console.cloud.google.com](https://console.cloud.google.com) → select that project.
 2. **APIs & Services → Library** → enable **Google Sheets API** AND **Google Drive API** (both).
 3. **APIs & Services → Credentials → Create credentials → Service account.**
-   - Name: `oracle-fiso-sheets`. Skip the optional role grants. Create.
+   - Name: `oracle-feaso-sheets`. Skip the optional role grants. Create.
 4. Open the new service account → **Keys → Add key → Create new key → JSON.**
    A `.json` file downloads. Open it — you need two values:
-   - `client_email` (looks like `oracle-fiso-sheets@<project>.iam.gserviceaccount.com`)
+   - `client_email` (looks like `oracle-feaso-sheets@<project>.iam.gserviceaccount.com`)
    - `private_key` (a long `-----BEGIN PRIVATE KEY----- … -----END PRIVATE KEY-----` block)
 5. **Set two Convex env vars** (dashboard → deployment `colorless-condor-502`
    → Settings → Environment Variables). Do it on the **prod** deployment
@@ -56,7 +56,7 @@ Google removed service accounts' personal Drive storage, so the service account
 cannot own files. Generated sheets must live in a **Shared Drive** the service
 account is a member of:
 
-1. [Google Drive](https://drive.google.com) → **Shared drives → New** → name it e.g. `Oracle FISO`.
+1. [Google Drive](https://drive.google.com) → **Shared drives → New** → name it e.g. `Oracle FEASO`.
 2. Open it → **Manage members** → add the service-account email
    (`client_email` from step 4 above) as **Content manager**.
 3. Copy the Shared Drive **ID** from its URL:

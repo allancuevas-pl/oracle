@@ -185,11 +185,11 @@ export const updateProperty = mutation({
   },
 });
 
-/** Persist the generated FISO Google Sheet reference on a property. Internal —
+/** Persist the generated FEASO Google Sheet reference on a property. Internal —
  *  called by convex/googleSheets.ts after creating the sheet. */
-export const setFisoSheet = internalMutation({
+export const setFeasoSheet = internalMutation({
   args: { id: v.id("properties"), url: v.string(), sheetId: v.string() },
   handler: async (ctx, { id, url, sheetId }) => {
-    await ctx.db.patch(id, { fisoSheetUrl: url, fisoSheetId: sheetId, fisoSheetAt: Date.now() });
+    await ctx.db.patch(id, { feasoSheetUrl: url, feasoSheetId: sheetId, feasoSheetAt: Date.now() });
   },
 });

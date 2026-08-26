@@ -5,12 +5,12 @@ import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { JWT } from "google-auth-library";
 
-// Generate a FISO Google Sheet by CLONING the Property Lions master template
+// Generate a FEASO Google Sheet by CLONING the Property Lions master template
 // (a Google Sheet living in the Shared Drive) and populating the cells Oracle
 // knows — date, subject property, and the linked comparable evidence. Cloning
 // preserves every PL formula, cross-sheet reference, and format 1:1, so the
 // output looks exactly like a hand-built PL FEASO. One-time setup + the master
-// template id (GOOGLE_FISO_TEMPLATE_ID) are documented in GOOGLE_SHEETS_SETUP.md.
+// template id (GOOGLE_FEASO_TEMPLATE_ID) are documented in GOOGLE_SHEETS_SETUP.md.
 
 const ASSESS = "Property Assessment "; // NB: trailing space in the sheet title
 const num = (x: any): number | null => (typeof x === "number" && Number.isFinite(x) ? x : null);
@@ -25,16 +25,16 @@ async function saToken(scopes: string[]) {
   return token;
 }
 
-export const generateFisoSheet = action({
+export const generateFeasoSheet = action({
   args: { propertyId: v.id("properties") },
   handler: async (ctx, { propertyId }): Promise<{ url: string }> => {
     const user = await ctx.runQuery(api.users.getCurrentUser, {});
     if (!user || (user.role !== "admin" && user.role !== "staff")) {
-      throw new Error("Only staff or admins can generate FISO sheets");
+      throw new Error("Only staff or admins can generate FEASO sheets");
     }
-    const templateId = process.env.GOOGLE_FISO_TEMPLATE_ID;
+    const templateId = process.env.GOOGLE_FEASO_TEMPLATE_ID;
     const sharedDriveId = process.env.GOOGLE_SHARED_DRIVE_ID;
-    if (!templateId) throw new Error("GOOGLE_FISO_TEMPLATE_ID is not set (the master PL FEASO template). See docs/GOOGLE_SHEETS_SETUP.md.");
+    if (!templateId) throw new Error("GOOGLE_FEASO_TEMPLATE_ID is not set (the master PL FEASO template). See docs/GOOGLE_SHEETS_SETUP.md.");
     if (!sharedDriveId) throw new Error("GOOGLE_SHARED_DRIVE_ID is not set. See docs/GOOGLE_SHEETS_SETUP.md.");
 
     const [property, comps] = await Promise.all([
@@ -45,7 +45,7 @@ export const generateFisoSheet = action({
 
     const token = await saToken(["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]);
     const { id, url } = await cloneAndFill(token, templateId, sharedDriveId, property, comps || []);
-    await ctx.runMutation(internal.properties.setFisoSheet, { id: propertyId, url, sheetId: id });
+    await ctx.runMutation(internal.properties.setFeasoSheet, { id: propertyId, url, sheetId: id });
     return { url };
   },
 });
@@ -55,7 +55,7 @@ export const generateFisoSheet = action({
 // formatting, cross-sheet formulas) is inherited from the template untouched.
 async function cloneAndFill(token: string, templateId: string, sharedDriveId: string, property: any, comps: any[]) {
   const auth = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-  const title = `FISO — ${property.address}${property.suburb ? `, ${property.suburb}` : ""}`;
+  const title = `FEASO — ${property.address}${property.suburb ? `, ${property.suburb}` : ""}`;
 
   // 1. Clone the template (stays inside the Shared Drive).
   const copyRes = await fetch(

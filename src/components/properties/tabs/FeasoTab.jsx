@@ -9,7 +9,7 @@ import { ProjectFeasibilityTab }  from './feaso/ProjectFeasibilityTab';
 const SUB_TABS = [
   { id: 'assessment',  label: 'Property Assessment' },
   { id: 'feasibility', label: 'Project Feasibility' },
-  { id: 'sheet',       label: 'FISO Sheet' },
+  { id: 'sheet',       label: 'FEASO Sheet' },
 ];
 
 export function FeasoTab({ property }) {
@@ -19,20 +19,20 @@ export function FeasoTab({ property }) {
 
   const upsertFeaso = useMutation(api.feasos.upsertFeaso);
   const linkComp    = useMutation(api.comps.linkCompToProperty);
-  const generateSheet = useAction(api.googleSheets.generateFisoSheet);
+  const generateSheet = useAction(api.googleSheets.generateFeasoSheet);
 
   const feasoData   = useQuery(api.feasos.getFeasoForProperty, { propertyId: property._id });
   const linkedComps = useQuery(api.comps.getCompsByProperty,   { propertyId: property._id });
 
   const save = (updates) => upsertFeaso({ propertyId: property._id, ...updates });
 
-  const sheetUrl = generatedUrl ?? property.fisoSheetUrl ?? null;
+  const sheetUrl = generatedUrl ?? property.feasoSheetUrl ?? null;
   const runGenerate = async () => {
     setGenerating(true);
     try {
       const { url } = await generateSheet({ propertyId: property._id });
       setGeneratedUrl(url);
-      toast.success('FISO sheet generated');
+      toast.success('FEASO sheet generated');
       window.open(url, '_blank', 'noopener');
     } catch (err) {
       toast.error(err?.message || 'Could not generate the sheet.');
@@ -99,7 +99,7 @@ export function FeasoTab({ property }) {
           <div className="w-12 h-12 rounded-xl bg-emerald-900/20 border border-emerald-800/40 flex items-center justify-center mb-4">
             <FileSpreadsheet className="w-6 h-6 text-emerald-400/70" />
           </div>
-          <p className="text-sm font-semibold text-brand-50 mb-1">FISO Google Sheet</p>
+          <p className="text-sm font-semibold text-brand-50 mb-1">FEASO Google Sheet</p>
           <p className="text-xs text-brand-100/40 leading-relaxed mb-5">
             Generate an editable Google Sheet pre-filled from this property — assessment, tenancy
             schedule, linked comps, and a feasibility + 10-year cashflow model. Download or edit it
@@ -109,7 +109,7 @@ export function FeasoTab({ property }) {
           {sheetUrl && (
             <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
               className="mb-3 inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
-              <ExternalLink className="w-4 h-4" /> Open FISO sheet
+              <ExternalLink className="w-4 h-4" /> Open FEASO sheet
             </a>
           )}
 
@@ -119,12 +119,12 @@ export function FeasoTab({ property }) {
             className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-brand-950 px-4 py-2.5 rounded-md text-sm font-semibold transition-colors"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : sheetUrl ? <RefreshCw className="w-4 h-4" /> : <FileSpreadsheet className="w-4 h-4" />}
-            {generating ? 'Generating…' : sheetUrl ? 'Regenerate sheet' : 'Generate FISO Sheet'}
+            {generating ? 'Generating…' : sheetUrl ? 'Regenerate sheet' : 'Generate FEASO Sheet'}
           </button>
 
-          {property.fisoSheetAt && !generatedUrl && (
+          {property.feasoSheetAt && !generatedUrl && (
             <p className="mt-3 text-[11px] text-brand-100/30">
-              Last generated {new Date(property.fisoSheetAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+              Last generated {new Date(property.feasoSheetAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           )}
         </div>
