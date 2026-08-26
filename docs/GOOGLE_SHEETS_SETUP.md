@@ -6,10 +6,26 @@
 > two Convex env vars; the agent wires and tests the rest.
 
 ## What Oracle does with this
-A Convex action authenticates as a **service account**, creates a Google Sheet
-(tabs: Property Assessment, Comps, Feasibility, Cashflow) pre-filled from the
-property + tenancy + linked comps + feaso inputs, shares it to your team, and
-returns the live URL. You then download / customize the sheet as usual.
+A Convex action authenticates as a **service account**, **clones the master PL
+FEASO template** (a Google Sheet in the Shared Drive), and fills in the cells
+Oracle knows — report date, the subject-property summary row, and the linked
+comparable leasing + sales evidence. Because it clones the real template, the
+output inherits **every PL formula, cross-sheet reference, and format 1:1**
+(Property Assessment, Project Feasibility, Cashflow Inputs & Analysis, Outgoings)
+— it comes out looking like a hand-built PL FEASO, ~60% pre-filled, with the
+analyst-judgment cells (adopted rents, refurb costs, cap-rate assumptions) ready
+to complete. The sheet lands in the Shared Drive; the URL is saved on the property.
+
+### The master template (`GOOGLE_FISO_TEMPLATE_ID`)
+The template that gets cloned is a Google Sheet named **"PL FEASO Template
+(master — do not edit)"** living in the `ORACLE FEASO` Shared Drive
+(id `1o-q-vucFVKL0S5byTnPX9fU9FEoiKU1SdS5TIi6VXPI`, set as env var
+`GOOGLE_FISO_TEMPLATE_ID` on both deployments). It's a cleaned copy of
+`AG-ORACLE/Feaso Template.xlsx` (junk tabs stripped, 4 core tabs kept). **To
+change the FEASO layout/formulas, edit that master sheet** — or upload a new
+one and update `GOOGLE_FISO_TEMPLATE_ID`; the code does not hard-code the layout
+beyond the fixed cell addresses it fills (subject row 8; leasing rows 12-31;
+sales rows 34-57 on the `Property Assessment ` tab — note the trailing space).
 
 ## Your steps (Google Cloud)
 
