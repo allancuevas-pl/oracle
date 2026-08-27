@@ -264,6 +264,7 @@ export default defineSchema({
     .index("by_suburb", ["suburb"])
     .index("by_suburb_and_type", ["suburb", "type"])
     .index("by_suburb_assetType_type", ["suburb", "assetType", "type"])
+    .index("by_state_assetType_type", ["state", "assetType", "type"]) // wider comp suggestions (nearby suburbs)
     .index("by_source", ["source"])
     .index("by_linkedProperty", ["linkedPropertyId"])
     // Full-text search over address so the Comps browse can find a comp across

@@ -225,45 +225,53 @@ export const suggestCompsForProperty = query({
   handler: async (ctx, { propertyId }) => {
     await requireStaffOrAdmin(ctx);
     const property = await ctx.db.get(propertyId);
-    if (!property) return { suburb: null, assetType: null, sales: [], leases: [] };
+    if (!property) return { suburb: null, state: null, assetType: null, sales: [], leases: [] };
     const suburb = property.suburb;
+    const state = property.location; // e.g. "VIC"
     const assetType = property.assetType;
     const nla = property.buildingArea;
-    if (!suburb) return { suburb: null, assetType: assetType ?? null, sales: [], leases: [] };
+    if (!suburb && !state) return { suburb: null, state: null, assetType: assetType ?? null, sales: [], leases: [] };
 
     const dateOf = (r) => r.saleDate || r.leaseDate || "";
     const pool = async (type) => {
-      let rows = [];
-      if (assetType) {
-        rows = await ctx.db
-          .query("comps")
-          .withIndex("by_suburb_assetType_type", (q) =>
-            q.eq("suburb", suburb).eq("assetType", assetType).eq("type", type))
-          .take(60);
-      }
-      if (rows.length < 8) {
-        const more = await ctx.db
-          .query("comps")
+      const rows = [];
+      const seen = new Set();
+      const add = (arr) => { for (const m of arr) if (!seen.has(m._id)) { seen.add(m._id); rows.push(m); } };
+
+      // 1. Exact suburb matches first (guaranteed — never crowded out by the wider net).
+      if (suburb && assetType) {
+        add(await ctx.db.query("comps")
+          .withIndex("by_suburb_assetType_type", (q) => q.eq("suburb", suburb).eq("assetType", assetType).eq("type", type))
+          .take(50));
+      } else if (suburb) {
+        add(await ctx.db.query("comps")
           .withIndex("by_suburb_and_type", (q) => q.eq("suburb", suburb).eq("type", type))
-          .take(60);
-        const seen = new Set(rows.map((r) => r._id));
-        for (const m of more) if (!seen.has(m._id)) rows.push(m);
+          .take(50));
       }
-      rows = rows.filter((r) => !r.linkedPropertyId); // only unlinked = available to attach
-      rows.sort((a, b) => {
-        const at = (a.assetType === assetType ? 0 : 1) - (b.assetType === assetType ? 0 : 1);
-        if (at !== 0) return at;
-        if (nla && a.nlaSqm && b.nlaSqm) {
-          const d = Math.abs(a.nlaSqm - nla) - Math.abs(b.nlaSqm - nla);
-          if (d !== 0) return d;
-        }
-        return dateOf(b).localeCompare(dateOf(a));
-      });
-      return rows.slice(0, 12);
+      // 2. Widen: same state + asset type (nearby suburbs across the state).
+      if (state && assetType) {
+        add(await ctx.db.query("comps")
+          .withIndex("by_state_assetType_type", (q) => q.eq("state", state).eq("assetType", assetType).eq("type", type))
+          .take(200));
+      }
+
+      const ranked = rows
+        .filter((r) => !r.linkedPropertyId) // only unlinked = available to attach
+        .sort((a, b) => {
+          const sub = (a.suburb === suburb ? 0 : 1) - (b.suburb === suburb ? 0 : 1); // exact suburb leads
+          if (sub !== 0) return sub;
+          if (nla && a.nlaSqm && b.nlaSqm) { // then closest in size
+            const d = Math.abs(a.nlaSqm - nla) - Math.abs(b.nlaSqm - nla);
+            if (d !== 0) return d;
+          }
+          return dateOf(b).localeCompare(dateOf(a)); // then most recent
+        })
+        .slice(0, 14);
+      return ranked.map((r) => ({ ...r, sameSuburb: r.suburb === suburb }));
     };
 
     const [sales, leases] = [await pool("sale"), await pool("lease")];
-    return { suburb, assetType: assetType ?? null, sales, leases };
+    return { suburb: suburb ?? null, state: state ?? null, assetType: assetType ?? null, sales, leases };
   },
 });
 

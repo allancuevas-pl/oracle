@@ -24,7 +24,14 @@ function CompRow({ comp, linking, onLink }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-white/[0.06] bg-white/[0.015] hover:border-brand-500/25 transition-colors">
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-brand-50 truncate">{comp.address}</p>
+        <p className="text-sm text-brand-50 truncate flex items-center gap-1.5">
+          {comp.address}
+          {comp.sameSuburb === false && comp.suburb && (
+            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-amber-400/80 bg-amber-900/15 border border-amber-800/30 px-1.5 py-px rounded">
+              {comp.suburb} · nearby
+            </span>
+          )}
+        </p>
         <p className="text-[11px] text-brand-100/40 flex flex-wrap gap-x-2">
           <span>{fmtSqm(comp.nlaSqm)}</span>
           <span className="text-brand-500 font-semibold">{fmt$(price)}{isSale ? '' : ' pa'}</span>
@@ -103,7 +110,9 @@ export function AddCompsModal({ isOpen, onClose, property, linkComp }) {
               <h2 className="text-sm font-semibold text-brand-50">Suggested comps</h2>
               <p className="text-[11px] text-brand-100/40 flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                {suburb ? `Matched in ${suburb}${data?.assetType ? ` · ${data.assetType}` : ''}` : 'Matched from the comp database'}
+                {suburb
+                  ? `${suburb} first, then nearby${data?.state ? ` ${data.state}` : ''}${data?.assetType ? ` · ${data.assetType}` : ''}`
+                  : 'Matched from the comp database'}
               </p>
             </div>
           </div>
