@@ -61,7 +61,7 @@ Frontend: Vercel project **`oracle-app`** (Vercel team `property-lions`, so depl
 | `clients` | Buyer clients (portal access keyed by email) |
 | `briefs` | Client acquisition briefs (criteria) |
 | `properties` | The core asset record — incl. `tenants`, `outgoings`, `photoIds`, `videos`, feaso link |
-| `comps` | Sales/lease comparables (~262k rows; `source`: curated / arealytics / historical_import / im_scan) |
+| `comps` | Sales/lease comparables (`source`: curated / arealytics / historical_import / im_scan / comp_scan). ⚠️ **Only ~95 rows currently live** on both deployments — the ~262k bulk import is absent; see STATE.md. |
 | `matches` | Junction: brief ↔ property with pipeline stage |
 | `imExtractions` | One IM scan: storage id, Claude extraction result, `photoIds` |
 | `dealReports` | Branded report shared to a client (token-gated), decision capture |
@@ -73,7 +73,7 @@ Frontend: Vercel project **`oracle-app`** (Vercel team `property-lions`, so depl
 
 - **IM scanner + photo pipeline** — `OracleScanner.jsx` uploads an IM → `imExtractionAction.ts` runs Claude extraction; browser-side `utils/pdfPhotos.js` extracts embedded photos (pdf.js) → Convex storage. See [../CLAUDE.md](../CLAUDE.md) and STATE.md for the hard-won gotchas (per-image timeout, blank/size filtering). Display: `PropertyPhotos.jsx` (add/delete/lightbox/backfill).
 - **Property videos** — `PropertyVideos.jsx` + `utils/videoEmbed.js`: hosted links (YouTube/Vimeo/Loom, embedded) or uploaded files, on `properties.videos`. Surfaced to clients in the deal portal.
-- **Comps at scale** — ~262k rows. Browse via `usePaginatedQuery` (infinite scroll) + a `search_address` search index; a `source` dropdown defaults to "Curated (team)" so the 4,531 hand-curated comps stay front-and-centre. Property-detail matching is suburb-indexed.
+- **Comps at scale** — the schema/UI are built for ~262k rows (browse via `usePaginatedQuery` infinite scroll + a `search_address` search index; a `source` dropdown defaults to "Curated (team)"). ⚠️ **But the DB currently holds only ~95 comps** (Brisbane `property_lions`) — the bulk import is absent (see STATE.md "COMP DATABASE IS NEARLY EMPTY"). Feaso "suggested comps" matching: suburb-first, then widened to same state + asset type (`comps.suggestCompsForProperty`, `by_state_assetType_type` index).
 - **Client portal** — separate surface (`ClientLayout`, `pages/client/`). `role === "client"` users see only deals shared with them, via `clientPortal.ts` (token-gated `getMyReport`). Guard rails around role assignment are in [../CLAUDE.md](../CLAUDE.md) §6.
 - **Record workspaces** — `BriefView` and `ClientView` use `RecordWorkspace.jsx` (the 25/50/25 three-column shell). **`PropertyView` is bespoke** — its own sticky header + tab bar + tab content + activity panel (imports `PulseFeed` directly), *not* the `RecordWorkspace` shell. Match the file you're editing, not the generic rule.
 
