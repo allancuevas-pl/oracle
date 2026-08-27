@@ -27,13 +27,14 @@ export function FeasoTab({ property }) {
   const save = (updates) => upsertFeaso({ propertyId: property._id, ...updates });
 
   const sheetUrl = generatedUrl ?? property.feasoSheetUrl ?? null;
+  const sheetId = sheetUrl ? (sheetUrl.match(/\/d\/([A-Za-z0-9_-]+)/)?.[1] ?? null) : null;
+  const previewUrl = sheetId ? `https://docs.google.com/spreadsheets/d/${sheetId}/preview` : null;
   const runGenerate = async () => {
     setGenerating(true);
     try {
       const { url } = await generateSheet({ propertyId: property._id });
       setGeneratedUrl(url);
-      toast.success('FEASO sheet generated');
-      window.open(url, '_blank', 'noopener');
+      toast.success(sheetUrl ? 'FEASO sheet regenerated' : 'FEASO sheet created');
     } catch (err) {
       toast.error(err?.message || 'Could not generate the sheet.');
     } finally {
@@ -94,39 +95,70 @@ export function FeasoTab({ property }) {
           save={save}
         />
       )}
-      {activeTab === 'sheet' && (
+      {activeTab === 'sheet' && !sheetUrl && (
         <div className="flex flex-col items-center justify-center min-h-[360px] text-center max-w-md mx-auto">
           <div className="w-12 h-12 rounded-xl bg-emerald-900/20 border border-emerald-800/40 flex items-center justify-center mb-4">
             <FileSpreadsheet className="w-6 h-6 text-emerald-400/70" />
           </div>
           <p className="text-sm font-semibold text-brand-50 mb-1">FEASO Google Sheet</p>
           <p className="text-xs text-brand-100/40 leading-relaxed mb-5">
-            Generate an editable Google Sheet pre-filled from this property — assessment, tenancy
-            schedule, linked comps, and a feasibility + 10-year cashflow model. Download or edit it
-            in Google Sheets to customise the deal.
+            Creates an editable Google Sheet in the team Drive, pre-filled from this property —
+            subject metrics, linked comparable evidence, plus the feasibility + cashflow model.
+            It stays linked here, and the team can open it in Google Drive anytime.
           </p>
-
-          {sheetUrl && (
-            <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
-              className="mb-3 inline-flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
-              <ExternalLink className="w-4 h-4" /> Open FEASO sheet
-            </a>
-          )}
-
           <button
             onClick={runGenerate}
             disabled={generating}
             className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-brand-950 px-4 py-2.5 rounded-md text-sm font-semibold transition-colors"
           >
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : sheetUrl ? <RefreshCw className="w-4 h-4" /> : <FileSpreadsheet className="w-4 h-4" />}
-            {generating ? 'Generating…' : sheetUrl ? 'Regenerate sheet' : 'Generate FEASO Sheet'}
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+            {generating ? 'Creating…' : 'Create FEASO Sheet'}
           </button>
+        </div>
+      )}
 
-          {property.feasoSheetAt && !generatedUrl && (
-            <p className="mt-3 text-[11px] text-brand-100/30">
-              Last generated {new Date(property.feasoSheetAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </p>
-          )}
+      {activeTab === 'sheet' && sheetUrl && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-emerald-900/20 border border-emerald-800/40 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400/70" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-brand-50">FEASO Sheet</p>
+                <p className="text-[11px] text-brand-100/40">
+                  Lives in the team Google Drive
+                  {property.feasoSheetAt && !generatedUrl && ` · updated ${new Date(property.feasoSheetAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold text-emerald-400 bg-emerald-900/15 border border-emerald-800/40 hover:bg-emerald-900/25 transition-colors">
+                <ExternalLink className="w-3.5 h-3.5" /> Open in Google Sheets
+              </a>
+              <button
+                onClick={runGenerate}
+                disabled={generating}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold text-brand-100/70 bg-white/[0.03] border border-white/[0.08] hover:text-brand-100 disabled:opacity-50 transition-colors"
+                title="Rebuild the sheet from the property's current data"
+              >
+                {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                {generating ? 'Regenerating…' : 'Regenerate'}
+              </button>
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/[0.08] overflow-hidden bg-white/[0.02]">
+            <iframe
+              key={sheetUrl}
+              src={previewUrl}
+              title="FEASO Sheet preview"
+              className="w-full h-[68vh] min-h-[480px]"
+            />
+          </div>
+          <p className="text-[11px] text-brand-100/30 text-center">
+            Read-only preview. Edit in Google Sheets — you may need to be signed in to the Google account with Drive access.
+          </p>
         </div>
       )}
 
