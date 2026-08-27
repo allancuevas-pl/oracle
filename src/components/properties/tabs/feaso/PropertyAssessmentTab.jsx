@@ -1,7 +1,19 @@
-import React from 'react';
-import { useMutation } from 'convex/react';
-import { api } from '../../../../../convex/_generated/api';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
+import { AddCompsModal } from './AddCompsModal';
+
+// Small "Add comps" trigger used in each evidence section header.
+function AddCompsButton({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold text-brand-400 bg-brand-900/20 border border-brand-800/40 hover:bg-brand-900/35 hover:text-brand-300 transition-colors"
+    >
+      <Plus className="w-3 h-3" /> Add comps
+    </button>
+  );
+}
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 const fmt$ = (v) => {
@@ -10,7 +22,6 @@ const fmt$ = (v) => {
   if (v >= 1_000) return '$' + Math.round(v / 1_000) + 'K';
   return '$' + v.toLocaleString();
 };
-const fmtSqm  = (v) => (v == null ? '—' : `${Math.round(v).toLocaleString()} m²`);
 const fmtPsm  = (v) => (v == null ? '—' : `$${Math.round(v).toLocaleString()}/m²`);
 const fmtPct  = (v) => (v == null ? '—' : `${Number(v).toFixed(2)}%`);
 
@@ -48,6 +59,7 @@ function RemoveBtn({ compId, linkComp }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function PropertyAssessmentTab({ property, leasingComps, salesComps, linkComp }) {
+  const [addOpen, setAddOpen] = useState(false);
   const tenants      = property.tenants || [];
   const currentRent  = tenants.reduce((s, t) => s + (t.netFaceRent || 0), 0);
   const nla          = property.buildingArea;
@@ -156,11 +168,12 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
               avg {fmtPsm(avgRentPsm)}
             </span>
           )}
+          <AddCompsButton onClick={() => setAddOpen(true)} />
         </div>
 
         {leasingComps.length === 0 ? (
           <p className="text-xs text-brand-100/40 italic py-3">
-            No leasing comps added — go to the Comps tab to add evidence.
+            No leasing comps yet — <button onClick={() => setAddOpen(true)} className="text-brand-400 hover:text-brand-300 underline underline-offset-2">add suggested comps</button>.
           </p>
         ) : (
           <div className="rounded-xl border border-white/[0.07] overflow-hidden">
@@ -227,11 +240,12 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
               avg {fmtPsm(avgSalePsmBuild)} build
             </span>
           )}
+          <AddCompsButton onClick={() => setAddOpen(true)} />
         </div>
 
         {salesComps.length === 0 ? (
           <p className="text-xs text-brand-100/40 italic py-3">
-            No sales comps added — go to the Comps tab to add evidence.
+            No sales comps yet — <button onClick={() => setAddOpen(true)} className="text-brand-400 hover:text-brand-300 underline underline-offset-2">add suggested comps</button>.
           </p>
         ) : (
           <div className="rounded-xl border border-white/[0.07] overflow-hidden">
@@ -269,6 +283,12 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
         )}
       </section>
 
+      <AddCompsModal
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        property={property}
+        linkComp={linkComp}
+      />
     </div>
   );
 }

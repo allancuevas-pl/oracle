@@ -213,6 +213,60 @@ export const getCompsByProperty = query({
   },
 });
 
+/**
+ * Suggested comps to attach to a property, matched from the comp database by
+ * suburb (+ asset type when known) and ranked by asset-type match, size
+ * closeness, then recency. Only returns UNLINKED comps (available to attach —
+ * won't steal evidence already tied to another property). Powers the "Add
+ * comps → Suggested" panel on the Feaso Assessment sub-tab.
+ */
+export const suggestCompsForProperty = query({
+  args: { propertyId: v.id("properties") },
+  handler: async (ctx, { propertyId }) => {
+    await requireStaffOrAdmin(ctx);
+    const property = await ctx.db.get(propertyId);
+    if (!property) return { suburb: null, assetType: null, sales: [], leases: [] };
+    const suburb = property.suburb;
+    const assetType = property.assetType;
+    const nla = property.buildingArea;
+    if (!suburb) return { suburb: null, assetType: assetType ?? null, sales: [], leases: [] };
+
+    const dateOf = (r) => r.saleDate || r.leaseDate || "";
+    const pool = async (type) => {
+      let rows = [];
+      if (assetType) {
+        rows = await ctx.db
+          .query("comps")
+          .withIndex("by_suburb_assetType_type", (q) =>
+            q.eq("suburb", suburb).eq("assetType", assetType).eq("type", type))
+          .take(60);
+      }
+      if (rows.length < 8) {
+        const more = await ctx.db
+          .query("comps")
+          .withIndex("by_suburb_and_type", (q) => q.eq("suburb", suburb).eq("type", type))
+          .take(60);
+        const seen = new Set(rows.map((r) => r._id));
+        for (const m of more) if (!seen.has(m._id)) rows.push(m);
+      }
+      rows = rows.filter((r) => !r.linkedPropertyId); // only unlinked = available to attach
+      rows.sort((a, b) => {
+        const at = (a.assetType === assetType ? 0 : 1) - (b.assetType === assetType ? 0 : 1);
+        if (at !== 0) return at;
+        if (nla && a.nlaSqm && b.nlaSqm) {
+          const d = Math.abs(a.nlaSqm - nla) - Math.abs(b.nlaSqm - nla);
+          if (d !== 0) return d;
+        }
+        return dateOf(b).localeCompare(dateOf(a));
+      });
+      return rows.slice(0, 12);
+    };
+
+    const [sales, leases] = [await pool("sale"), await pool("lease")];
+    return { suburb, assetType: assetType ?? null, sales, leases };
+  },
+});
+
 /** Single comp by ID. */
 export const getComp = query({
   args: { id: v.id("comps") },
