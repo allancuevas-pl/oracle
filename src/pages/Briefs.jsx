@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Plus, X, ArrowUpDown, Search } from 'lucide-react';
@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { AvatarStack } from '../components/briefs/AssigneePicker';
 import { SkeletonTable } from '../components/ui/Loading';
@@ -35,6 +35,16 @@ export function Briefs() {
   const openNewModal = () => {
     setIsModalOpen(true);
   };
+
+  // The header's "+ New Brief" navigates here with this flag — open the modal
+  // on arrival, then clear the flag so a back/refresh doesn't reopen it.
+  const location = useLocation();
+  useEffect(() => {
+    if (location.state?.newBrief) {
+      setIsModalOpen(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const renderTags = (tagsStringOrArray) => {
     if (!tagsStringOrArray) return '-';
