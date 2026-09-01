@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, usePaginatedQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -93,14 +93,32 @@ export function Comps() {
 
   // Two paginated sources: browse (indexed by source/type) vs full-text search.
   // Only one is active at a time — the other is skipped.
+  // Secondary filters run SERVER-side. They used to be applied in the browser to
+  // whatever pages happened to be loaded — fine at ~100 comps, silently wrong at
+  // ~260k (State=VIC would search the first page and report a handful of matches
+  // out of tens of thousands). Convex filters before it paginates, so each page
+  // of 50 is 50 rows that actually match.
+  const filterArgs = useMemo(() => {
+    const a = {};
+    if (filters.state) a.state = filters.state;
+    if (filters.assetTypes.length > 0) a.assetTypes = filters.assetTypes;
+    const cutoff = getDateCutoff(filters.dateRange);
+    if (cutoff) a.dateFrom = cutoff;
+    if (filters.nlaMin !== 0)        a.nlaMin  = filters.nlaMin;
+    if (filters.nlaMax !== NLA_MAX)  a.nlaMax  = filters.nlaMax;
+    if (filters.landMin !== 0)       a.landMin = filters.landMin;
+    if (filters.landMax !== LAND_MAX) a.landMax = filters.landMax;
+    return a;
+  }, [filters]);
+
   const browse = usePaginatedQuery(
     api.comps.getCompsPaginated,
-    isSearching ? 'skip' : { type: typeFilter, source: sourceArg },
+    isSearching ? 'skip' : { type: typeFilter, source: sourceArg, ...filterArgs },
     { initialNumItems: 50 },
   );
   const searched = usePaginatedQuery(
     api.comps.searchComps,
-    isSearching ? { query: searchTerm, type: typeFilter, source: sourceArg } : 'skip',
+    isSearching ? { query: searchTerm, type: typeFilter, source: sourceArg, ...filterArgs } : 'skip',
     { initialNumItems: 50 },
   );
   const active   = isSearching ? searched : browse;
@@ -113,28 +131,9 @@ export function Comps() {
   const linkComp   = useMutation(api.comps.linkCompToProperty);
 
   const activeFilterCount = countActiveFilters(filters);
-  const dateCutoff        = getDateCutoff(filters.dateRange);
 
-  // Secondary filters applied to the loaded pages (text search is server-side now).
-  const filtered = useMemo(() => {
-    return comps.filter(c => {
-      if (filters.state && c.state !== filters.state) return false;
-      if (filters.assetTypes.length > 0 && !filters.assetTypes.includes(c.assetType)) return false;
-      if (dateCutoff) {
-        const date = c.type === 'lease' ? c.leaseDate : c.saleDate;
-        if (!date || date < dateCutoff) return false;
-      }
-      if (filters.nlaMin !== 0 || filters.nlaMax !== NLA_MAX) {
-        if (!c.nlaSqm) return false;
-        if (c.nlaSqm < filters.nlaMin || c.nlaSqm > filters.nlaMax) return false;
-      }
-      if (filters.landMin !== 0 || filters.landMax !== LAND_MAX) {
-        if (!c.landAreaSqm) return false;
-        if (c.landAreaSqm < filters.landMin || c.landAreaSqm > filters.landMax) return false;
-      }
-      return true;
-    });
-  }, [comps, filters, dateCutoff]);
+  // Rows arrive already filtered by the server — nothing left to do client-side.
+  const filtered = comps;
 
   // Column sort — applies to the loaded/filtered rows. Empty values sort last
   // regardless of direction; numbers compare numerically, everything else as text.
@@ -160,13 +159,6 @@ export function Comps() {
       return String(va).localeCompare(String(vb), undefined, { numeric: true }) * dir;
     });
   }, [filtered, sort]);
-
-  // Keep pulling pages while active filters leave too few rows to fill the view —
-  // but cap auto-loading at ~1k scanned so a rare filter can't spin forever; past
-  // that the user clicks "Load more" explicitly.
-  useEffect(() => {
-    if (status === 'CanLoadMore' && filtered.length < 30 && comps.length < 1000) loadMore(50);
-  }, [status, filtered.length, comps.length, loadMore]);
 
   // Auto-load the next page when the user scrolls near the bottom.
   const onScroll = useCallback((e) => {
@@ -310,6 +302,11 @@ export function Comps() {
                 ? 'Loading…'
                 : `${filtered.length.toLocaleString()} ${filtered.length === 1 ? 'comp' : 'comps'} loaded${status === 'Exhausted' ? '' : '+'}`}
             </span>
+            {/* Filters are server-side and exact; column sort is not — it orders
+                the rows loaded so far. Say so instead of implying a full sort. */}
+            {!loadingFirst && sort.key && status !== 'Exhausted' && (
+              <span className="text-brand-100/35">· sorted within loaded rows</span>
+            )}
           </div>
         </div>
 

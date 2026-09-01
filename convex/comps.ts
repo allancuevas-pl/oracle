@@ -89,21 +89,112 @@ const compWriteFields = {
   linkedExtractionId: v.optional(v.id("imExtractions")),
 };
 
+// ─── Secondary filters (server-side) ────────────────────────────────────────
+
+/**
+ * Optional "secondary" filters for the Comps browse/search screens: state,
+ * asset type, recency, and size bands.
+ *
+ * These MUST be applied server-side. They used to run in the browser over
+ * whatever pages had been loaded, which is invisible at ~100 comps but silently
+ * wrong at ~260k — filtering State=VIC would only ever search the first page or
+ * two and report a handful of matches out of tens of thousands. Convex applies
+ * `.filter()` before `.paginate()`, so a page of 50 is 50 *matching* rows.
+ */
+const compFilterArgs = {
+  state: v.optional(v.string()),
+  assetTypes: v.optional(v.array(v.string())),
+  dateFrom: v.optional(v.string()),   // ISO "YYYY-MM-DD"; comp must be on/after
+  nlaMin: v.optional(v.number()),
+  nlaMax: v.optional(v.number()),
+  landMin: v.optional(v.number()),
+  landMax: v.optional(v.number()),
+};
+
+type CompFilters = {
+  state?: string;
+  assetTypes?: string[];
+  dateFrom?: string;
+  nlaMin?: number;
+  nlaMax?: number;
+  landMin?: number;
+  landMax?: number;
+};
+
+/** True when no secondary filter is set — lets the caller skip `.filter()`. */
+function hasCompFilters(f: CompFilters): boolean {
+  return !!(
+    f.state ||
+    (f.assetTypes && f.assetTypes.length > 0) ||
+    f.dateFrom ||
+    f.nlaMin != null || f.nlaMax != null ||
+    f.landMin != null || f.landMax != null
+  );
+}
+
+/**
+ * Build the Convex filter predicate for the secondary filters. Mirrors exactly
+ * what the Comps page used to do client-side, including the "missing value is
+ * excluded" behaviour — an undefined field fails `gte`, so size/date filters
+ * drop comps that lack the field, as before.
+ */
+function compFilterPredicate(q: any, f: CompFilters) {
+  const preds: any[] = [];
+
+  if (f.state) preds.push(q.eq(q.field("state"), f.state));
+
+  if (f.assetTypes && f.assetTypes.length > 0) {
+    const eqs = f.assetTypes.map((a) => q.eq(q.field("assetType"), a));
+    preds.push(eqs.length === 1 ? eqs[0] : q.or(...eqs));
+  }
+
+  // Date is type-dependent: leases use leaseDate, sales use saleDate.
+  if (f.dateFrom) {
+    preds.push(
+      q.or(
+        q.and(q.eq(q.field("type"), "lease"), q.gte(q.field("leaseDate"), f.dateFrom)),
+        q.and(q.eq(q.field("type"), "sale"),  q.gte(q.field("saleDate"),  f.dateFrom)),
+      )
+    );
+  }
+
+  if (f.nlaMin != null || f.nlaMax != null) {
+    preds.push(q.gt(q.field("nlaSqm"), 0));
+    if (f.nlaMin != null) preds.push(q.gte(q.field("nlaSqm"), f.nlaMin));
+    if (f.nlaMax != null) preds.push(q.lte(q.field("nlaSqm"), f.nlaMax));
+  }
+
+  if (f.landMin != null || f.landMax != null) {
+    preds.push(q.gt(q.field("landAreaSqm"), 0));
+    if (f.landMin != null) preds.push(q.gte(q.field("landAreaSqm"), f.landMin));
+    if (f.landMax != null) preds.push(q.lte(q.field("landAreaSqm"), f.landMax));
+  }
+
+  return preds.length === 1 ? preds[0] : q.and(...preds);
+}
+
 // ─── Queries ────────────────────────────────────────────────────────────────
 
-/** All comps — paginated, optionally filtered by type. Max 500. */
+/**
+ * Comps near a property — matched by suburb, narrowed by asset type / comp type.
+ *
+ * `suburb` is required: this is the property-side matcher (Property → Comps tab),
+ * not a general browse. The general browse is `getCompsPaginated` below. It
+ * previously carried unreachable "browse-all" branches that took 6,000–12,000
+ * rows in one read; no caller ever hit them, and they were a hazard sitting in
+ * a table headed for ~260k rows, so they're gone.
+ */
 export const getComps = query({
   args: {
+    suburb: v.string(),
     type: v.optional(compTypeValidator),
-    suburb: v.optional(v.string()),
     assetType: v.optional(v.string()),
-    source: v.optional(v.string()),
   },
-  handler: async (ctx, { type, suburb, assetType, source }) => {
+  handler: async (ctx, { suburb, type, assetType }) => {
     await requireStaffOrAdmin(ctx);
 
-    // Use most specific index available
-    if (suburb && assetType && type) {
+    // Most specific index available.
+    if (assetType && type) {
       return ctx.db
         .query("comps")
         .withIndex("by_suburb_assetType_type", q =>
@@ -111,56 +202,32 @@ export const getComps = query({
         )
         .take(500);
     }
-    if (suburb && type) {
-      return ctx.db
-        .query("comps")
-        .withIndex("by_suburb_and_type", q =>
-          q.eq("suburb", suburb).eq("type", type)
-        )
-        .take(500);
-    }
-    if (suburb) {
-      return ctx.db
-        .query("comps")
-        .withIndex("by_suburb", q => q.eq("suburb", suburb))
-        .take(500);
-    }
-    // Source-filtered browse (e.g. only curated team comps, or only Arealytics).
-    // Indexed so it stays fast even with ~260k Arealytics rows in the table.
-    if (source) {
-      let q = ctx.db
-        .query("comps")
-        .withIndex("by_source", ix => ix.eq("source", source))
-        .order("desc");
-      const rows = await q.take(type ? 12000 : 6000);
-      return type ? rows.filter(r => r.type === type) : rows;
-    }
-    // Browse-all branches: newest first so freshly-imported comps surface.
-    // With the Arealytics archive loaded the table is large — the Comps page
-    // defaults to a source filter; this unfiltered path is the "All sources" view.
     if (type) {
       return ctx.db
         .query("comps")
-        .withIndex("by_type", q => q.eq("type", type))
-        .order("desc")
-        .take(6000);
+        .withIndex("by_suburb_and_type", q => q.eq("suburb", suburb).eq("type", type))
+        .take(500);
     }
-
-    return ctx.db.query("comps").order("desc").take(6000);
+    return ctx.db
+      .query("comps")
+      .withIndex("by_suburb", q => q.eq("suburb", suburb))
+      .take(500);
   },
 });
 
 /**
- * Paginated browse for the Comps page. Indexed by source/type and ordered
- * newest-first. Scales to the full ~260k table — the client loads 50 at a time.
+ * Paginated browse for the Comps page. Indexed by source/type, ordered
+ * newest-first, with the secondary filters applied server-side so each page of
+ * 50 is 50 rows that actually match. Scales to the full ~260k table.
  */
 export const getCompsPaginated = query({
   args: {
     paginationOpts: paginationOptsValidator,
     type: v.optional(compTypeValidator),
     source: v.optional(v.string()),
+    ...compFilterArgs,
   },
-  handler: async (ctx, { paginationOpts, type, source }) => {
+  handler: async (ctx, { paginationOpts, type, source, ...filters }) => {
     await requireStaffOrAdmin(ctx);
     let q;
     if (source) {
@@ -171,6 +238,7 @@ export const getCompsPaginated = query({
     } else {
       q = ctx.db.query("comps").order("desc");
     }
+    if (hasCompFilters(filters)) q = q.filter(f => compFilterPredicate(f, filters));
     return await q.paginate(paginationOpts);
   },
 });
@@ -185,19 +253,20 @@ export const searchComps = query({
     query: v.string(),
     type: v.optional(compTypeValidator),
     source: v.optional(v.string()),
+    ...compFilterArgs,
   },
-  handler: async (ctx, { paginationOpts, query, type, source }) => {
+  handler: async (ctx, { paginationOpts, query, type, source, ...filters }) => {
     await requireStaffOrAdmin(ctx);
-    const result = await ctx.db
+    let q = ctx.db
       .query("comps")
       .withSearchIndex("search_address", s => {
         let b = s.search("address", query);
         if (type) b = b.eq("type", type);
         if (source) b = b.eq("source", source);
         return b;
-      })
-      .paginate(paginationOpts);
-    return result;
+      });
+    if (hasCompFilters(filters)) q = q.filter(f => compFilterPredicate(f, filters));
+    return await q.paginate(paginationOpts);
   },
 });
 
