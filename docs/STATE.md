@@ -44,7 +44,7 @@
 - **Photo extraction** (`utils/pdfPhotos.js`): per-image decode needs a mandatory ~2s timeout (pdf.js never fires the callback for undecodable images → silent infinite hang); rank candidates by JPEG byte size not pixel area; reject blank/near-white images; bounded work (≤12 photos, ≤50 images, ≤25 pages).
 - **Photo/video delete orphans the storage file** — delete only drops the id from the array; the underlying Convex file remains (deliberate, avoids breaking shared refs). A cleanup pass could reclaim these later.
 - **Two Convex deployments** — always deploy to both (see WORKFLOW.md). `colorless-condor-502` is the one Vercel prod actually reads.
-- **Deploys are manual; the live site can lag the repo.** Latest prod deploy: **`oracle-aepi64jbq`** (2026-08-21, comp scanner), both domains aliased.
+- **Deploys are manual; the live site can lag the repo.** Latest prod deploy: **`oracle-dnjje2799`** (2026-09-01 — server-side comp filters, client-invite decoupling, header fix), both domains aliased and verified (`/`, `/portal`, `/comps` all 200 on the custom domain; live bundles confirmed to contain the changes).
 
 ## Outstanding — user actions (not code)
 
