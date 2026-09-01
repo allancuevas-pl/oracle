@@ -1,5 +1,6 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { compSearchText } from "./comps";
 
 /**
  * One-time migrations. Internal only — never callable from the client.
@@ -114,5 +115,42 @@ export const undoSeedInvitationsForClerkCutover = internalMutation({
     }
 
     return { dryRun: args.dryRun, removedCount: removed.length, removed };
+  },
+});
+
+/**
+ * Backfill `comps.searchText` for rows created before the field existed.
+ *
+ * The comps search index moved from `address` to a combined
+ * address+suburb+state+postcode blob so the search box matches suburbs
+ * (Will, Loom 27 Aug). Existing rows have no `searchText`, so without this
+ * they'd match nothing at all — a silent regression that looks like an empty
+ * database. Batched and idempotent: run until `remaining` is 0.
+ *
+ *   npx convex run migrations:backfillCompSearchText '{"dryRun":true}'
+ *   npx convex run migrations:backfillCompSearchText '{"dryRun":false}'
+ */
+export const backfillCompSearchText = internalMutation({
+  args: { dryRun: v.boolean(), batch: v.optional(v.number()) },
+  handler: async (ctx, { dryRun, batch }) => {
+    const limit = batch ?? 500;
+    const rows = await ctx.db.query("comps").take(limit);
+
+    let updated = 0;
+    let alreadySet = 0;
+    for (const row of rows) {
+      const next = compSearchText(row);
+      if (row.searchText === next) { alreadySet++; continue; }
+      if (!dryRun) await ctx.db.patch(row._id, { searchText: next });
+      updated++;
+    }
+
+    return {
+      dryRun,
+      scanned: rows.length,
+      updated,
+      alreadySet,
+      capHit: rows.length === limit,
+    };
   },
 });

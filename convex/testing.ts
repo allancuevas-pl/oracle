@@ -1,5 +1,6 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+import { compSearchText } from "./comps";
 
 export const insertMockUser = internalMutation({
   args: {
@@ -44,6 +45,9 @@ export const insertMockComp = internalMutation({
     return await ctx.db.insert("comps", {
       ...args,
       source: args.source ?? "historical_import",
+      // Mirror the real write path — comps without searchText don't just miss
+      // the search index, they break it.
+      searchText: compSearchText(args),
       verified: false,
       createdBy: "test",
     });

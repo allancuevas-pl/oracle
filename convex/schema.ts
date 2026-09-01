@@ -251,6 +251,13 @@ export default defineSchema({
     agentCompany: v.optional(v.string()),
     notes: v.optional(v.string()),
 
+    // Denormalised keyword blob for the comps search box: address + suburb +
+    // state + postcode, lowercased. Convex search indexes take a single
+    // searchField, and searching address alone meant typing a suburb returned
+    // nothing (Will, Loom 27 Aug). Maintained by createComp/createComps/
+    // updateComp via compSearchText(); backfilled by migrations.
+    searchText: v.optional(v.string()),
+
     // ── Audit ──
     updatedAt: v.optional(v.number()),     // ms timestamp of last edit
     updatedBy: v.optional(v.string()),     // clerkId of last editor
@@ -269,8 +276,8 @@ export default defineSchema({
     .index("by_linkedProperty", ["linkedPropertyId"])
     // Full-text search over address so the Comps browse can find a comp across
     // the ~260k-row table instantly, filterable by type/source.
-    .searchIndex("search_address", {
-      searchField: "address",
+    .searchIndex("search_text", {
+      searchField: "searchText",
       filterFields: ["type", "source"],
     }),
 

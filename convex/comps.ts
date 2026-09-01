@@ -89,6 +89,25 @@ const compWriteFields = {
   linkedExtractionId: v.optional(v.id("imExtractions")),
 };
 
+/**
+ * Keyword blob backing the comps search box.
+ *
+ * A Convex search index takes exactly one searchField, and ours indexed
+ * `address` alone — so typing a suburb returned nothing at all, even though
+ * suburb is the more natural way to look for comps (Will, Loom 27 Aug:
+ * "you can't search by suburb, you have to search by address... that search
+ * bar should be just whatever keyword goes in"). Concatenating the location
+ * fields into one indexed string makes all of them searchable at once.
+ */
+export function compSearchText(c: {
+  address?: string; suburb?: string; state?: string; postcode?: string;
+}): string {
+  return [c.address, c.suburb, c.state, c.postcode]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
 // ─── Secondary filters (server-side) ────────────────────────────────────────
 
 /**
@@ -259,8 +278,8 @@ export const searchComps = query({
     await requireStaffOrAdmin(ctx);
     let q = ctx.db
       .query("comps")
-      .withSearchIndex("search_address", s => {
-        let b = s.search("address", query);
+      .withSearchIndex("search_text", s => {
+        let b = s.search("searchText", query.toLowerCase());
         if (type) b = b.eq("type", type);
         if (source) b = b.eq("source", source);
         return b;
@@ -390,6 +409,7 @@ export const createComp = mutation({
       rentPerSqm,
       pricePerSqmBuild,
       pricePerSqmLand,
+      searchText: compSearchText(args),
       createdBy: identity.subject,
     });
   },
@@ -430,6 +450,7 @@ export const createComps = mutation({
         rentPerSqm,
         pricePerSqmBuild,
         pricePerSqmLand,
+        searchText: compSearchText(comp),
         createdBy: identity.subject,
       });
       ids.push(id);
@@ -471,12 +492,18 @@ export const updateComp = mutation({
         ? Math.round((fields.salePrice / fields.landAreaSqm) * 100) / 100
         : fields.pricePerSqmLand;
 
+    // searchText must reflect the document AFTER the patch — a partial update
+    // that only changes suburb still has to rebuild the whole blob.
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error("Comp not found");
+
     await ctx.db.patch(id, {
       ...fields,
       rentPa,
       rentPerSqm,
       pricePerSqmBuild,
       pricePerSqmLand,
+      searchText: compSearchText({ ...existing, ...fields }),
       updatedAt: Date.now(),
       updatedBy: identity.subject,
     });

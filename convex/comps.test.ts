@@ -174,6 +174,85 @@ describe("comps secondary filters (server-side)", () => {
   });
 });
 
+
+describe("comps keyword search", () => {
+  test("finds a comp by suburb, not just address", async () => {
+    const { t, staff } = await setup();
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "lease", address: "12 Flinders Way", suburb: "North Lakes", state: "QLD",
+    });
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "lease", address: "9 Other Road", suburb: "Southport", state: "QLD",
+    });
+
+    // The regression Will reported: this returned nothing when the index
+    // covered `address` alone.
+    const res = await staff.query(api.comps.searchComps, {
+      paginationOpts: page, query: "North Lakes",
+    });
+
+    expect(res.page.map((c) => c.address)).toEqual(["12 Flinders Way"]);
+  });
+
+  test("still finds a comp by address", async () => {
+    const { t, staff } = await setup();
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "sale", address: "558 Pacific Highway", suburb: "St Leonards", state: "NSW",
+    });
+    const res = await staff.query(api.comps.searchComps, {
+      paginationOpts: page, query: "Pacific",
+    });
+    expect(res.page).toHaveLength(1);
+  });
+
+  test("search is case-insensitive", async () => {
+    const { t, staff } = await setup();
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "lease", address: "1 Test St", suburb: "Eagle Farm", state: "QLD",
+    });
+    const res = await staff.query(api.comps.searchComps, {
+      paginationOpts: page, query: "EAGLE farm",
+    });
+    expect(res.page).toHaveLength(1);
+  });
+
+  test("matches on state too", async () => {
+    const { t, staff } = await setup();
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "sale", address: "1 A St", suburb: "Thomastown", state: "VIC",
+    });
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "sale", address: "2 B St", suburb: "Brendale", state: "QLD",
+    });
+    const res = await staff.query(api.comps.searchComps, {
+      paginationOpts: page, query: "VIC",
+    });
+    expect(res.page.map((c) => c.suburb)).toEqual(["Thomastown"]);
+  });
+
+  test("updateComp rebuilds searchText so a renamed suburb is findable", async () => {
+    const { t, staff } = await setup();
+    const id = await t.mutation(internal.testing.insertMockComp, {
+      type: "lease", address: "3 Change St", suburb: "Oldsuburb", state: "QLD",
+    });
+
+    // updateComp replaces the writable fields rather than patching, so the
+    // caller always sends address + suburb — the UI submits the whole form.
+    await staff.mutation(api.comps.updateComp, {
+      id, address: "3 Change St", suburb: "Newsuburb", state: "QLD",
+    });
+
+    const stale = await staff.query(api.comps.searchComps, {
+      paginationOpts: page, query: "Oldsuburb",
+    });
+    const fresh = await staff.query(api.comps.searchComps, {
+      paginationOpts: page, query: "Newsuburb",
+    });
+    expect(stale.page).toHaveLength(0);
+    expect(fresh.page).toHaveLength(1);
+  });
+});
+
 describe("getComps (property-side matcher)", () => {
   test("returns suburb matches narrowed by assetType + type", async () => {
     const { t, staff } = await setup();
