@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { X, ChevronDown, ChevronUp, Phone, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGoogleMaps } from '../../hooks/useGoogleMaps';
+import { formatDate } from '../../utils/format';
 
 const SOURCES = [
   { id: 'property_lions',  label: 'Property Lions' },
@@ -76,6 +77,15 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
   const { isLoaded: mapsLoaded, hasKey: hasMapsKey } = useGoogleMaps();
 
   const settings    = useQuery(api.settings.getSettings);
+
+  // Audit line: who last touched this comp, and when. Only fetched while
+  // editing — a new comp has no history to show.
+  const teamMembers = useQuery(api.team.getTeamMembers, isEdit ? {} : 'skip');
+  const editorName = useMemo(() => {
+    if (!existingComp?.updatedBy || !teamMembers) return null;
+    const m = teamMembers.find((t) => t.clerkId === existingComp.updatedBy);
+    return m ? ([m.firstName, m.lastName].filter(Boolean).join(' ') || 'Team member') : null;
+  }, [teamMembers, existingComp]);
   const createComp  = useMutation(api.comps.createComp);
   const updateComp  = useMutation(api.comps.updateComp);
   const deleteComp  = useMutation(api.comps.deleteComp);
@@ -432,7 +442,7 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-white/[0.06] flex items-center justify-between shrink-0">
-          <div>
+          <div className="flex flex-col gap-1.5">
             {isEdit && (
               <button
                 onClick={handleDelete}
@@ -443,6 +453,15 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
                 <Trash2 className="w-3.5 h-3.5" />
                 {confirmDelete ? 'Confirm delete' : 'Delete'}
               </button>
+            )}
+            {isEdit && (
+              <p className="text-[10px] text-brand-100/30 tabular-nums">
+                {existingComp?.updatedAt
+                  ? `Last modified ${formatDate(existingComp.updatedAt)}${editorName ? ` by ${editorName}` : ''}`
+                  : existingComp?._creationTime
+                    ? `Added ${formatDate(existingComp._creationTime)} · never edited`
+                    : null}
+              </p>
             )}
           </div>
           <div className="flex gap-3">
