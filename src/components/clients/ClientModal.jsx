@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useMutation, useAction } from 'convex/react';
+import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +19,6 @@ const clientSchema = z.object({
 export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
   const createClient = useMutation(api.clients.createClient);
   const updateClient = useMutation(api.clients.updateClient);
-  const sendPortalInvite = useAction(api.team.inviteTeamMember);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
@@ -69,19 +68,11 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
         toast.success("Client created");
         if (onCreated) onCreated({ _id: newId, ...payload });
         onClose();
-        // Auto-send portal invite if email provided — fire-and-forget
-        if (payload.email) {
-          sendPortalInvite({ email: payload.email, role: 'client', clientRecordId: newId })
-            .then(() => toast.success(`Portal invite sent to ${payload.email}`))
-            .catch((err) => {
-              const msg = err.message || '';
-              if (msg.includes('email address is taken') || msg.includes('already')) {
-                toast.success(`${payload.email} already has an account — role updated, they can sign in now`);
-              } else {
-                toast.error(`Client saved but invite failed: ${msg}`);
-              }
-            });
-        }
+        // NOTE: adding a client deliberately does NOT send a portal invite.
+        // Staff invite from the client record (Portal Access panel) when the
+        // client is actually ready for it. Auto-sending on create surprised
+        // clients with an unexpected sign-in email before anyone had told them
+        // a portal existed — Will reported those landing as spam.
       }
     } catch (err) {
       console.error(err);
@@ -163,6 +154,11 @@ export function ClientModal({ isOpen, onClose, editingClient, onCreated }) {
                     className={`w-full bg-[#111] border ${errors.email ? 'border-red-500/50' : 'border-brand-800/50'} rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20`}
                   />
                   {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
+                  {!editingClient && (
+                    <p className="text-xs text-brand-100/40 mt-1">
+                      No email is sent now. Invite them to the portal from the client record when you're ready.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="client-phone" className="block text-sm font-medium text-brand-100/70 mb-1">Phone</label>
