@@ -332,6 +332,7 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
                     tags={settings.assetTypes}
                     selected={selectedAssetTypes}
                     onToggle={(tag) => toggleTag(tag, selectedAssetTypes, setSelectedAssetTypes)}
+                    allowOther
                   />
                   <div className="grid grid-cols-2 gap-6">
                     <TagPicker
@@ -352,6 +353,7 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
                     tags={settings.strategies}
                     selected={selectedStrategies}
                     onToggle={(tag) => toggleTag(tag, selectedStrategies, setSelectedStrategies)}
+                    allowOther
                   />
                 </>
               )}
