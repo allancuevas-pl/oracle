@@ -4,7 +4,8 @@ import { api } from '../../../convex/_generated/api';
 import { X, Loader2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { CustomSelect } from '../ui/CustomSelect';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
@@ -40,7 +41,7 @@ export function ContactModal({ isOpen, onClose, editingContact }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
     resolver: zodResolver(contactSchema),
     defaultValues: { name: '', category: 'agent', company: '', email: '', phone: '', state: '', suburb: '', specialty: '', notes: '' },
   });
@@ -134,9 +135,20 @@ export function ContactModal({ isOpen, onClose, editingContact }) {
                 </div>
                 <div>
                   <label htmlFor="c-category" className={labelCls}>Category *</label>
-                  <select id="c-category" {...register('category')} className={inputCls(errors.category)}>
-                    {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomSelect
+                        id="c-category"
+                        variant="form"
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={CATEGORIES}
+                        error={!!errors.category}
+                      />
+                    )}
+                  />
                 </div>
               </div>
 
@@ -166,10 +178,20 @@ export function ContactModal({ isOpen, onClose, editingContact }) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="c-state" className={labelCls}>State</label>
-                  <select id="c-state" {...register('state')} className={inputCls()}>
-                    <option value="">Not specified</option>
-                    {AU_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  <Controller
+                    name="state"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomSelect
+                        id="c-state"
+                        variant="form"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Not specified"
+                        options={[{ value: '', label: 'Not specified' }, ...AU_STATES.map((s) => ({ value: s, label: s }))]}
+                      />
+                    )}
+                  />
                 </div>
                 <div>
                   <label htmlFor="c-suburb" className={labelCls}>Suburb</label>

@@ -7,6 +7,7 @@ import { QuickAddCompModal } from '../components/comps/QuickAddCompModal';
 import { CompScannerModal } from '../components/comps/CompScannerModal';
 import { CompFilters } from '../components/comps/CompFilters';
 import { SkeletonTable } from '../components/ui/Loading';
+import { CustomSelect } from '../components/ui/CustomSelect';
 import { rowEntrance } from '../components/ui/motion';
 import { toast } from 'sonner';
 
@@ -250,14 +251,14 @@ export function Comps() {
           </div>
 
           {/* Source filter — keeps the curated set distinct from the 257k Arealytics archive */}
-          <select
+          <CustomSelect
+            variant="compact"
+            ariaLabel="Comp source"
             value={sourceFilter}
-            onChange={e => setSourceFilter(e.target.value)}
-            className="bg-white/[0.03] border border-white/[0.06] rounded-md px-3 py-1.5 text-xs font-medium text-brand-100/60 focus:outline-none focus:border-brand-500/40 hover:text-brand-100/80 transition-colors"
-            title="Comp source"
-          >
-            {SOURCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+            onChange={setSourceFilter}
+            options={SOURCE_OPTIONS}
+            className="w-44"
+          />
 
           {/* Type tabs */}
           <div className="flex rounded-md border border-white/[0.06] overflow-hidden">
@@ -469,16 +470,15 @@ export function Comps() {
           <div className="w-px h-5 bg-white/[0.08]" />
 
           <span className="text-brand-100/40 text-xs whitespace-nowrap">Add to property:</span>
-          <select
+          <CustomSelect
+            variant="compact"
+            ariaLabel="Property to link the selected comps to"
             value={assignPropId}
-            onChange={e => setAssignPropId(e.target.value)}
-            className="bg-white/[0.05] border border-white/[0.10] rounded-md px-3 py-1.5 text-xs text-brand-100/70 focus:outline-none focus:border-brand-500/40 min-w-[180px] max-w-[260px]"
-          >
-            <option value="">Pick a property…</option>
-            {(properties ?? []).map(p => (
-              <option key={p._id} value={p._id}>{p.address}</option>
-            ))}
-          </select>
+            onChange={setAssignPropId}
+            placeholder="Pick a property…"
+            options={(properties ?? []).map(p => ({ value: p._id, label: p.address }))}
+            className="min-w-[180px] max-w-[260px]"
+          />
 
           <button
             onClick={handleAssign}

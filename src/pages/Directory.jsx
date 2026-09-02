@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { CustomSelect } from '../components/ui/CustomSelect';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../convex/_generated/api';
@@ -134,14 +135,15 @@ export function Directory() {
                 className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md pl-9 pr-3 py-1.5 text-sm text-brand-50 focus:border-brand-500/50 focus:outline-none transition-colors"
               />
             </div>
-            <select
+            <CustomSelect
+              variant="compact"
+              ariaLabel="Filter by state"
               value={stateFilter}
-              onChange={(e) => setStateFilter(e.target.value)}
-              className="bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-1.5 text-sm text-brand-100/70 focus:border-brand-500/50 focus:outline-none"
-            >
-              <option value="">All states</option>
-              {AU_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+              onChange={setStateFilter}
+              placeholder="All states"
+              options={[{ value: '', label: 'All states' }, ...AU_STATES.map((s) => ({ value: s, label: s }))]}
+              className="w-36"
+            />
           </div>
           <div className="text-sm text-brand-100/50 shrink-0">
             {loading ? 'Loading...' : `${filtered.length} contact${filtered.length !== 1 ? 's' : ''}`}

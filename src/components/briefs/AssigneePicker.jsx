@@ -141,6 +141,7 @@ export function AssigneePicker({ briefId, enrichedAssignees = [] }) {
           <div>
             <label className="block text-[10px] text-brand-100/40 mb-1 uppercase tracking-wider">Staff Member</label>
             <CustomSelect
+              ariaLabel="Staff member to assign"
               value={selectedUserId}
               onChange={setSelectedUserId}
               options={available.map(u => ({ value: u._id, label: userName(u) }))}
@@ -156,6 +157,7 @@ export function AssigneePicker({ briefId, enrichedAssignees = [] }) {
           <div>
             <label className="block text-[10px] text-brand-100/40 mb-1 uppercase tracking-wider">Role</label>
             <CustomSelect
+              ariaLabel="Assignee role"
               value={selectedRole}
               onChange={setSelectedRole}
               options={ROLE_OPTIONS}

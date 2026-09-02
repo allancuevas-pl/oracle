@@ -218,6 +218,7 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
                   </div>
                 ) : (
                   <CustomSelect
+                    ariaLabel="Client"
                     value={selectedClientId}
                     onChange={(clientId) => {
                       const client = clients?.find(c => c._id === clientId);
@@ -242,6 +243,7 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
                   control={control}
                   render={({ field }) => (
                     <CustomSelect
+                      ariaLabel="Brief stage"
                       value={field.value}
                       onChange={field.onChange}
                       options={['Triage', 'Active Search', 'Offer Submitted', 'Due Diligence']}
@@ -258,6 +260,7 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
                   control={control}
                   render={({ field }) => (
                     <CustomSelect
+                      ariaLabel="Brief priority"
                       value={field.value}
                       onChange={field.onChange}
                       options={['High', 'Medium', 'Low']}

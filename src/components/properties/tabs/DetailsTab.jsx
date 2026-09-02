@@ -214,6 +214,7 @@ export function DetailsTab({ property, updateProperty }) {
       <section className="space-y-3 pb-5 border-b border-white/[0.04]">
         <h2 className="text-[10px] font-semibold uppercase tracking-widest text-brand-500">Listing Status</h2>
         <CustomSelect
+          ariaLabel="Listing status"
           value={property.status}
           onChange={(value) => updateProperty({ id: property._id, status: value })}
           options={['On Market', 'Off Market', 'Under Offer', 'Sold', 'Archived']}

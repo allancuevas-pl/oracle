@@ -81,6 +81,7 @@ function MemberRow({ member, isSelf, isAdmin, onRoleChange, onRemove }) {
       </div>
       {isAdmin && !isSelf ? (
         <CustomSelect
+          ariaLabel={`Role for ${member.email}`}
           value={member.role}
           onChange={handleRoleChange}
           options={[
@@ -243,6 +244,7 @@ export function TeamSection({ currentUser }) {
               autoComplete="off"
             />
             <CustomSelect
+              ariaLabel="Role for the invited team member"
               value={inviteRole}
               onChange={setInviteRole}
               options={[

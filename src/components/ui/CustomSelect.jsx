@@ -15,6 +15,14 @@ import { motion, AnimatePresence } from 'framer-motion';
  *   error        — boolean — highlights border red
  *   disabled     — boolean — dims and prevents interaction
  *   className    — added to the outer wrapper div
+ *   id           — id for the button, so a visible <label htmlFor> associates
+ *   ariaLabel    — accessible name when there is no visible label
+ *   ariaLabelledBy — id of an existing visible label element
+ *
+ * A Listbox button is not a native <select>, so a `<label htmlFor>` alone does
+ * NOT name it — screen readers would announce an unlabelled button. Pass `id`
+ * (matching the label's htmlFor) or one of the aria props whenever this
+ * replaces a labelled native select.
  */
 export function CustomSelect({
   value,
@@ -25,6 +33,9 @@ export function CustomSelect({
   error = false,
   disabled = false,
   className = '',
+  id,
+  ariaLabel,
+  ariaLabelledBy,
 }) {
   // Normalise every option to { value, label }
   const normOpts = options.map((o) =>
@@ -79,7 +90,10 @@ export function CustomSelect({
         {({ open }) => (
           <>
             <Listbox.Button
-              className={`relative flex items-center w-full ${buttonStyles} ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+              id={id}
+              aria-label={ariaLabel}
+              aria-labelledby={ariaLabelledBy}
+              className={`relative flex items-center w-full ${buttonStyles} ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50`}
             >
               {/* Priority dot — left of text */}
               {variant === 'priority' && !showPlaceholder && (

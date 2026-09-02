@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { CustomSelect } from '../../ui/CustomSelect';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import { Upload, FileText, Download, Trash2, Loader2, Lock, Eye, FolderLock } from 'lucide-react';
@@ -123,15 +124,16 @@ export function FilesTab({ property }) {
                 </div>
 
                 {/* Category */}
-                <select
-                  value={f.category || ''}
-                  onChange={(e) => setCategory(f, e.target.value)}
-                  className="bg-[#0A0A0A] border border-brand-800/50 rounded-md px-2 py-1 text-xs text-brand-100/60 focus:outline-none focus:border-brand-500/40 hidden sm:block"
-                  title="Category"
-                >
-                  <option value="">Uncategorised</option>
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <div className="hidden sm:block w-40">
+                  <CustomSelect
+                    variant="compact"
+                    ariaLabel={`Category for ${f.name}`}
+                    value={f.category || ''}
+                    onChange={(v) => setCategory(f, v)}
+                    placeholder="Uncategorised"
+                    options={[{ value: '', label: 'Uncategorised' }, ...CATEGORIES.map((c) => ({ value: c, label: c }))]}
+                  />
+                </div>
 
                 {/* Visibility toggle */}
                 <button

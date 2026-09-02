@@ -158,6 +158,7 @@ export function BriefView() {
                 <div>
                   <p className="text-[10px] text-brand-100/40 mb-1.5 uppercase tracking-wider">Stage</p>
                   <CustomSelect
+                    ariaLabel="Brief stage"
                     value={brief.stage}
                     onChange={async (value) => {
                       try {
@@ -173,6 +174,7 @@ export function BriefView() {
                 <div>
                   <p className="text-[10px] text-brand-100/40 mb-1.5 uppercase tracking-wider">Priority</p>
                   <CustomSelect
+                    ariaLabel="Brief priority"
                     value={brief.priority || 'Low'}
                     onChange={async (value) => {
                       try {
@@ -299,6 +301,7 @@ export function BriefView() {
                       </div>
                       <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <CustomSelect
+                          ariaLabel="Deal stage for this property"
                           value={match.status}
                           onChange={async (value) => {
                             try {

@@ -207,6 +207,7 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
                       control={control}
                       render={({ field }) => (
                         <CustomSelect
+                          ariaLabel="Asset type"
                           value={field.value}
                           onChange={field.onChange}
                           options={settings.assetTypes}
@@ -223,6 +224,7 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
                       control={control}
                       render={({ field }) => (
                         <CustomSelect
+                          ariaLabel="Listing status"
                           value={field.value}
                           onChange={field.onChange}
                           options={['Off Market', 'On Market', 'Under Offer', 'Sold']}

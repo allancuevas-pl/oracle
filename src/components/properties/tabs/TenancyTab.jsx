@@ -187,6 +187,7 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
         <div>
           <label className={LABEL_CLS}>Lease Type</label>
           <CustomSelect
+            ariaLabel="Lease type"
             value={data.leaseType || 'Net'}
             onChange={(v) => onChange({ leaseType: v })}
             options={['Net', 'Gross', 'Semi-Gross']}
@@ -196,6 +197,7 @@ function EditPanel({ data, onChange, onSave, onCancel, isNew }) {
         <div>
           <label className={LABEL_CLS}>Review Type</label>
           <CustomSelect
+            ariaLabel="Review type"
             value={data.reviewType || 'CPI'}
             onChange={(v) => onChange({ reviewType: v })}
             options={['CPI', 'Fixed %', 'Market', 'None']}

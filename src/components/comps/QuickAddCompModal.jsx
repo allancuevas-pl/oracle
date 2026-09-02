@@ -4,6 +4,7 @@ import { api } from '../../../convex/_generated/api';
 import { X, ChevronDown, ChevronUp, Phone, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGoogleMaps } from '../../hooks/useGoogleMaps';
+import { CustomSelect } from '../ui/CustomSelect';
 import { formatDate } from '../../utils/format';
 
 const SOURCES = [
@@ -275,10 +276,14 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
                 </Field>
               </div>
               <Field label="State">
-                <select className={inp} value={form.state} onChange={e => set('state', e.target.value)}>
-                  <option value="">—</option>
-                  {states.map(s => <option key={s}>{s}</option>)}
-                </select>
+                <CustomSelect
+                  variant="compact"
+                  ariaLabel="State"
+                  value={form.state}
+                  onChange={v => set('state', v)}
+                  placeholder="—"
+                  options={[{ value: '', label: '—' }, ...states.map(s => ({ value: s, label: s }))]}
+                />
               </Field>
               <Field label="Postcode">
                 <input className={inp} placeholder="4074" value={form.postcode} onChange={e => set('postcode', e.target.value)} />
@@ -289,16 +294,24 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
           {/* Property info */}
           <div className="grid grid-cols-4 gap-3">
             <Field label="Asset type">
-              <select className={inp} value={form.assetType} onChange={e => set('assetType', e.target.value)}>
-                <option value="">—</option>
-                {ASSET_TYPES.map(a => <option key={a}>{a}</option>)}
-              </select>
+              <CustomSelect
+                variant="compact"
+                ariaLabel="Asset type"
+                value={form.assetType}
+                onChange={v => set('assetType', v)}
+                placeholder="—"
+                options={[{ value: '', label: '—' }, ...ASSET_TYPES.map(a => ({ value: a, label: a }))]}
+              />
             </Field>
             <Field label="Grade">
-              <select className={inp} value={form.grade} onChange={e => set('grade', e.target.value)}>
-                <option value="">—</option>
-                {['Prime', 'A', 'B', 'C'].map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
+              <CustomSelect
+                variant="compact"
+                ariaLabel="Building grade"
+                value={form.grade}
+                onChange={v => set('grade', v)}
+                placeholder="—"
+                options={[{ value: '', label: '—' }, ...['Prime', 'A', 'B', 'C'].map(g => ({ value: g, label: g }))]}
+              />
             </Field>
             <Field label="NLA (sqm)">
               <input className={inp} type="number" placeholder="2 087" value={form.nlaSqm} onChange={e => set('nlaSqm', e.target.value)} />
@@ -336,10 +349,14 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
               </Field>
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Lease type">
-                  <select className={inp} value={form.leaseType} onChange={e => set('leaseType', e.target.value)}>
-                    <option value="">—</option>
-                    {LEASE_TYPES.map(t => <option key={t}>{t}</option>)}
-                  </select>
+                  <CustomSelect
+                    variant="compact"
+                    ariaLabel="Lease type"
+                    value={form.leaseType}
+                    onChange={v => set('leaseType', v)}
+                    placeholder="—"
+                    options={[{ value: '', label: '—' }, ...LEASE_TYPES.map(t => ({ value: t, label: t }))]}
+                  />
                 </Field>
                 <Field label="Lease date">
                   <input className={inp} type="date" value={form.leaseDate} onChange={e => set('leaseDate', e.target.value)} />
@@ -357,10 +374,14 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
                   <div className="grid grid-cols-3 gap-3">
                     <Field label="Term"><input className={inp} placeholder="3yr" value={form.leaseTerm} onChange={e => set('leaseTerm', e.target.value)} /></Field>
                     <Field label="Review type">
-                      <select className={inp} value={form.reviewType} onChange={e => set('reviewType', e.target.value)}>
-                        <option value="">—</option>
-                        {REVIEW_TYPES.map(r => <option key={r}>{r}</option>)}
-                      </select>
+                      <CustomSelect
+                        variant="compact"
+                        ariaLabel="Review type"
+                        value={form.reviewType}
+                        onChange={v => set('reviewType', v)}
+                        placeholder="—"
+                        options={[{ value: '', label: '—' }, ...REVIEW_TYPES.map(r => ({ value: r, label: r }))]}
+                      />
                     </Field>
                     <Field label="Rate %"><input className={inp} type="number" placeholder="3.5" step="0.1" value={form.reviewRate} onChange={e => set('reviewRate', e.target.value)} /></Field>
                   </div>
