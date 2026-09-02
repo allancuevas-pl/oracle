@@ -53,3 +53,51 @@ export const insertMockComp = internalMutation({
     });
   },
 });
+
+/**
+ * Build a complete client → brief → property → dealReport chain for portal
+ * access-control tests. Deal-vault files are added by the test via t.run(),
+ * which can store real blobs so ctx.storage.getUrl() resolves.
+ */
+export const seedPortalDeal = internalMutation({
+  args: {
+    clientEmail: v.optional(v.string()),   // omit to create a brief with NO client link
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const clientId = args.clientEmail
+      ? await ctx.db.insert("clients", {
+          name: "Test Client",
+          email: args.clientEmail,
+          createdBy: "test",
+        })
+      : undefined;
+
+    const briefId = await ctx.db.insert("briefs", {
+      clientName: "Test Client",
+      clientId,
+      stage: "Triage",
+      status: "active",
+      createdBy: "test",
+    });
+
+    const propertyId = await ctx.db.insert("properties", {
+      address: "1 Vault Street",
+      assetType: "Industrial",
+      status: "Off Market",
+      createdBy: "test",
+    });
+
+    await ctx.db.insert("dealReports", {
+      briefId,
+      propertyId,
+      clientName: "Test Client",
+      propertyAddress: "1 Vault Street",
+      token: args.token,
+      status: "sent",
+      createdBy: "test",
+    });
+
+    return { token: args.token, propertyId, briefId };
+  },
+});

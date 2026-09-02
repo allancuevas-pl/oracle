@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, FileText, Download } from 'lucide-react';
 import { PageLoader } from '../../components/ui/Loading';
 import { VideoCard } from '../../components/properties/PropertyVideos';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatFileSize } from '../../utils/format';
 
 // Reuse same helpers as ReportView
 const fmt$ = (v, fb = '—') => (v ? formatCurrency(v, fb) : fb);
@@ -127,6 +127,34 @@ export function ClientDealView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {data.videos.map((v) => (
               <VideoCard key={v.id} vid={v} src={v.kind === 'upload' ? v.url : undefined} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Deal documents — only files staff marked client-visible reach here;
+          internal ones are filtered server-side and never sent. */}
+      {data.files?.length > 0 && (
+        <div>
+          <SectionTitle>Documents</SectionTitle>
+          <div className="flex flex-col gap-2">
+            {data.files.map((f) => (
+              <a
+                key={f._id}
+                href={f.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 p-3 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-brand-500/30 hover:bg-white/[0.04] transition-colors"
+              >
+                <FileText className="w-4 h-4 text-brand-500/70 shrink-0" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-brand-50 truncate">{f.fileName}</p>
+                  <p className="text-[11px] text-brand-100/40">
+                    {[f.category, formatFileSize(f.size)].filter(Boolean).join(' · ') || 'Document'}
+                  </p>
+                </div>
+                <Download className="w-4 h-4 text-brand-100/30 group-hover:text-brand-400 shrink-0 transition-colors" aria-hidden />
+              </a>
             ))}
           </div>
         </div>

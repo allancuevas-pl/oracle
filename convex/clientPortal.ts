@@ -2,6 +2,9 @@ import { query } from "./_generated/server";
 import { v } from "convex/values";
 import { shapeDocsWithUrls, CLIENT_DOC_LIMIT } from "./clientDocuments";
 
+/** Cap on deal-vault files scanned per property for a client read. */
+const CLIENT_FILE_LIMIT = 200;
+
 /**
  * Returns all deal data visible to the currently logged-in client.
  * Requires: role === "client" in the users table.
@@ -94,13 +97,18 @@ export const getMyReport = query({
       .first();
     if (!report) return null;
 
-    // Verify access: the brief must belong to a client with this email
+    // Verify access: the brief must belong to a client with this email.
+    //
+    // This FAILS CLOSED. The previous version only checked when the brief had
+    // a clientId, so a brief without one skipped verification entirely and any
+    // client-role user holding the token got the whole report. 4 of 8 live
+    // briefs have no clientId, so that was a real exposure, and this payload
+    // now also carries client-visible deal-vault documents.
     const brief = await ctx.db.get(report.briefId);
-    if (brief?.clientId) {
-      const clientRecord = await ctx.db.get(brief.clientId);
-      const email = (identity.email || "").toLowerCase();
-      if (clientRecord?.email?.toLowerCase() !== email) return null;
-    }
+    const email = (identity.email || "").toLowerCase();
+    if (!brief || !brief.clientId || !email) return null;
+    const clientRecord = await ctx.db.get(brief.clientId);
+    if (!clientRecord?.email || clientRecord.email.toLowerCase() !== email) return null;
 
     const [property, feaso] = await Promise.all([
       ctx.db.get(report.propertyId),
@@ -115,6 +123,31 @@ export const getMyReport = query({
       .withIndex("by_linkedProperty", q => q.eq("linkedPropertyId", report.propertyId))
       .take(30);
 
+    // Deal-vault files the staff explicitly marked client-visible. Internal
+    // files are filtered out server-side — they must never reach the client,
+    // not even as metadata. Access to this property was established above.
+    const allFiles = await ctx.db
+      .query("dealFiles")
+      .withIndex("by_property", q => q.eq("propertyId", report.propertyId))
+      .take(CLIENT_FILE_LIMIT);
+    const files = (
+      await Promise.all(
+        allFiles
+          .filter(f => f.visibility === "client")
+          .map(async f => ({
+            _id: f._id,
+            fileName: f.fileName,
+            contentType: f.contentType,
+            size: f.size,
+            category: f.category,
+            uploadedAt: f.uploadedAt,
+            url: await ctx.storage.getUrl(f.storageId),
+          }))
+      )
+    )
+      .filter(f => f.url)
+      .sort((a, b) => b.uploadedAt - a.uploadedAt);
+
     // Resolve video sources: hosted links pass through; uploads → served URLs.
     const videos = await Promise.all(
       (property?.videos ?? []).map(async (vid) => ({
@@ -127,7 +160,7 @@ export const getMyReport = query({
       }))
     );
 
-    return { report, property, feaso, comps, brief, videos: videos.filter(v => v.url) };
+    return { report, property, feaso, comps, brief, files, videos: videos.filter(v => v.url) };
   },
 });
 
