@@ -5,7 +5,43 @@ import { X, Loader2, ScanLine, Upload, FileText, ArrowLeft, CheckCircle2 } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-const ACCEPT = 'application/pdf,image/png,image/jpeg,image/webp';
+const ACCEPT = '.pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.csv,application/pdf,image/png,image/jpeg,image/webp';
+
+/**
+ * Spreadsheets can't be sent to the model as a document — the API takes PDFs
+ * and images only. Will works in Excel (2026-09-02: "I can't upload Excel"),
+ * so a workbook is read in the browser, flattened to a tab-separated table and
+ * sent down the existing pasted-text path. Same extraction, no new backend.
+ */
+const isSpreadsheet = (f) => /\.(xlsx|xls|csv)$/i.test(f?.name || '');
+
+/** Rows -> TSV. Tabs survive commas inside addresses; the model reads either. */
+const rowsToText = (rows) =>
+  rows
+    .map((r) => r.map((c) => (c == null ? '' : String(c).trim())).join('\t'))
+    .filter((line) => line.replace(/\t/g, '').length > 0)
+    .join('\n');
+
+async function spreadsheetToText(file) {
+  if (/\.csv$/i.test(file.name)) return (await file.text()).trim();
+
+  // Loaded on demand — only needed when a workbook is actually dropped.
+  const { default: readXlsxFile } = await import('read-excel-file/browser');
+
+  // One call returns every sheet with its rows: [{ sheet, data: [[cell,...]] }].
+  const sheets = await readXlsxFile(file, { getSheets: true });
+
+  // Keep every sheet and label it with its tab name. Will's workbooks split
+  // leasing and sales across tabs, and the tab name is often the only thing
+  // saying which is which — dropping it would make the model guess the type.
+  return sheets
+    .map(({ sheet, data }) => {
+      const body = rowsToText(data || []);
+      return body ? `# Sheet: ${sheet}\n${body}` : '';
+    })
+    .filter(Boolean)
+    .join('\n\n');
+}
 const fmt = (n) => (n ? (n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : `$${n.toLocaleString()}`) : '—');
 
 export function CompScannerModal({ isOpen, onClose, onImported }) {
@@ -20,8 +56,20 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
   const [comps, setComps] = useState(null);        // null = input stage, [] = reviewed
   const [selected, setSelected] = useState(new Set());
   const [importing, setImporting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
-  const reset = () => { setFile(null); setText(''); setComps(null); setSelected(new Set()); setScanning(false); setImporting(false); };
+  const reset = () => { setFile(null); setText(''); setComps(null); setSelected(new Set()); setScanning(false); setImporting(false); setDragOver(false); };
+
+  // Will asked for drag-and-drop alongside the file picker (2026-09-02).
+  const accepts = (f) => isSpreadsheet(f) || /^(application\/pdf|image\/)/.test(f?.type || '');
+  const onDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (!f) return;
+    if (!accepts(f)) { toast.error('Drop a PDF, image, or spreadsheet (.xlsx / .csv).'); return; }
+    setFile(f);
+  };
   const close = () => { reset(); onClose(); };
 
   const scan = async () => {
@@ -29,14 +77,22 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
     setScanning(true);
     try {
       let storageId, mediaType;
-      if (file) {
+      let payloadText = text.trim();
+
+      if (file && isSpreadsheet(file)) {
+        const sheetText = await spreadsheetToText(file);
+        if (!sheetText) throw new Error('That spreadsheet looks empty.');
+        // Anything pasted as well is kept — it's usually context for the table.
+        payloadText = [payloadText, sheetText].filter(Boolean).join('\n\n');
+      } else if (file) {
         const url = await generateUploadUrl();
         const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': file.type }, body: file });
         if (!res.ok) throw new Error(`Upload failed: HTTP ${res.status}`);
         ({ storageId } = await res.json());
         mediaType = file.type;
       }
-      const result = await extractComps({ storageId, mediaType, text: text.trim() || undefined });
+
+      const result = await extractComps({ storageId, mediaType, text: payloadText || undefined });
       if (!result.comps.length) { toast.error('No comps found. Try a clearer table or paste the text.'); setScanning(false); return; }
       setComps(result.comps);
       setSelected(new Set(result.comps.map((_, i) => i)));
@@ -93,14 +149,30 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
               <div className="p-6 space-y-4 overflow-y-auto">
                 <p className="text-sm text-brand-100/50">Upload an agent's comp table (PDF or screenshot) or paste it as text. Claude extracts the comps for you to review before importing.</p>
 
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => fileRef.current?.click()}
-                  className={`w-full border border-dashed rounded-lg p-6 flex flex-col items-center gap-2 transition-colors ${file ? 'border-brand-500/40 bg-brand-500/[0.04]' : 'border-brand-800/50 hover:border-brand-500/30 hover:bg-white/[0.02]'}`}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileRef.current?.click(); } }}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={onDrop}
+                  className={`w-full cursor-pointer border border-dashed rounded-lg p-6 flex flex-col items-center gap-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
+                    dragOver ? 'border-brand-500/60 bg-brand-500/[0.07]'
+                    : file   ? 'border-brand-500/40 bg-brand-500/[0.04]'
+                             : 'border-brand-800/50 hover:border-brand-500/30 hover:bg-white/[0.02]'
+                  }`}
                 >
                   {file ? <FileText className="w-6 h-6 text-brand-400" /> : <Upload className="w-6 h-6 text-brand-100/40" />}
-                  <span className="text-sm text-brand-100/70">{file ? file.name : 'Click to upload a PDF or image'}</span>
-                  {file && <span className="text-xs text-brand-500/60">Ready to scan</span>}
-                </button>
+                  <span className="text-sm text-brand-100/70">
+                    {file ? file.name : dragOver ? 'Drop it here' : 'Drop a file here, or click to choose'}
+                  </span>
+                  <span className="text-xs text-brand-100/40">
+                    {file
+                      ? (isSpreadsheet(file) ? 'Spreadsheet · ready to scan' : 'Ready to scan')
+                      : 'Excel, CSV, PDF or image'}
+                  </span>
+                </div>
                 <input ref={fileRef} type="file" accept={ACCEPT} className="hidden"
                   onChange={(e) => setFile(e.target.files?.[0] || null)} />
 

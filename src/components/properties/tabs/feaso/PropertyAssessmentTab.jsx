@@ -293,12 +293,30 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
   );
 }
 
+/**
+ * Full location for the evidence tables: "12 Flinders Pde, North Lakes QLD 4509".
+ * These columns showed the street address alone, so two comps in different
+ * suburbs looked identical — Will flagged it on 2026-09-02 while comparing
+ * sales evidence. Suburb sits on a second line so the column stays scannable.
+ */
+function AddressCell({ comp, width }) {
+  const tail = [comp.suburb, comp.state, comp.postcode].filter(Boolean).join(' ');
+  return (
+    <td className={`px-4 py-2.5 text-sm text-brand-50 ${width}`}>
+      <span className="block truncate" title={tail ? `${comp.address}, ${tail}` : comp.address}>
+        {comp.address}
+      </span>
+      {tail && <span className="block truncate text-[11px] text-brand-100/40">{tail}</span>}
+    </td>
+  );
+}
+
 // ── Leasing comp row ───────────────────────────────────────────────────────────
 function LeaseCompRow({ comp, linkComp }) {
   const rentPsm = comp.rentPerSqm ?? (comp.rentPa && comp.nlaSqm ? Math.round(comp.rentPa / comp.nlaSqm) : null);
   return (
     <tr className="border-t border-white/[0.04] hover:bg-white/[0.01] group transition-colors">
-      <td className="px-4 py-2.5 text-sm text-brand-50 max-w-[220px] truncate">{comp.address}</td>
+      <AddressCell comp={comp} width="max-w-[220px]" />
       <td className="px-4 py-2.5 text-sm text-brand-300 tabular-nums whitespace-nowrap">
         {comp.nlaSqm ? comp.nlaSqm.toLocaleString() : '—'}
       </td>
@@ -323,7 +341,7 @@ function LeaseCompRow({ comp, linkComp }) {
 function SaleCompRow({ comp, linkComp }) {
   return (
     <tr className="border-t border-white/[0.04] hover:bg-white/[0.01] group transition-colors">
-      <td className="px-4 py-2.5 text-sm text-brand-50 max-w-[200px] truncate">{comp.address}</td>
+      <AddressCell comp={comp} width="max-w-[200px]" />
       <td className="px-4 py-2.5 text-sm text-brand-300 tabular-nums whitespace-nowrap">
         {comp.nlaSqm ? comp.nlaSqm.toLocaleString() : '—'}
       </td>

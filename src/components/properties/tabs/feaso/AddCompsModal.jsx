@@ -17,6 +17,20 @@ const fmtDate = (s) => {
   return isNaN(d) ? s : d.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
 };
 
+/**
+ * "12 Flinders Parade, North Lakes QLD 4509" — as much as the comp has.
+ *
+ * The suburb used to appear ONLY inside the amber "nearby" badge, so a
+ * same-suburb comp showed no location at all and a nearby one showed it as a
+ * tag. Will flagged both (2026-09-02: "it doesn't show the suburb" / "it shows
+ * up in a weird way"). The address line now always carries the full location
+ * and the badge says only whether it's nearby.
+ */
+function fullAddress(comp) {
+  const tail = [comp.suburb, comp.state, comp.postcode].filter(Boolean).join(' ');
+  return tail ? `${comp.address}, ${tail}` : comp.address;
+}
+
 function CompRow({ comp, linking, onLink }) {
   const isSale = comp.type === 'sale';
   const price = isSale ? comp.salePrice : comp.rentPa;
@@ -24,11 +38,11 @@ function CompRow({ comp, linking, onLink }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-white/[0.06] bg-white/[0.015] hover:border-brand-500/25 transition-colors">
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-brand-50 truncate flex items-center gap-1.5">
-          {comp.address}
-          {comp.sameSuburb === false && comp.suburb && (
+        <p className="text-sm text-brand-50 flex items-center gap-1.5">
+          <span className="truncate" title={fullAddress(comp)}>{fullAddress(comp)}</span>
+          {comp.sameSuburb === false && (
             <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-amber-400/80 bg-amber-900/15 border border-amber-800/30 px-1.5 py-px rounded">
-              {comp.suburb} · nearby
+              nearby
             </span>
           )}
         </p>
