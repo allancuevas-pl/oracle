@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { expect, test, describe } from "vitest";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
+import { ASSET_TYPES } from "./assetTypes";
 
 /**
  * Regression tests for the Comps browse filters.
@@ -273,5 +274,39 @@ describe("getComps (property-side matcher)", () => {
     });
 
     expect(res.map((c) => c.address)).toEqual(["match"]);
+  });
+});
+
+describe("asset types", () => {
+  test("Land is offered — Will's 2026-09-02 ask", () => {
+    expect(ASSET_TYPES).toContain("Land");
+  });
+
+  test("the canonical list is the only source, and has no duplicates", () => {
+    expect(new Set(ASSET_TYPES).size).toBe(ASSET_TYPES.length);
+    // The comp form, comp filters, settings seed and extraction prompt all
+    // import this — a comp can't be tagged with a type the filter won't match.
+    expect(ASSET_TYPES).toEqual(
+      expect.arrayContaining(["Industrial", "Retail", "Office", "Land"]),
+    );
+  });
+
+  test("a Land comp round-trips through create and filter", async () => {
+    const { t, staff } = await setup();
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "sale", address: "Lot 250 Magnesium St", suburb: "Narangba",
+      state: "QLD", assetType: "Land",
+    });
+    await t.mutation(internal.testing.insertMockComp, {
+      type: "sale", address: "1 Shed Rd", suburb: "Narangba",
+      state: "QLD", assetType: "Industrial",
+    });
+
+    const res = await staff.query(api.comps.getCompsPaginated, {
+      paginationOpts: page,
+      assetTypes: ["Land"],
+    });
+
+    expect(res.page.map((c) => c.address)).toEqual(["Lot 250 Magnesium St"]);
   });
 });

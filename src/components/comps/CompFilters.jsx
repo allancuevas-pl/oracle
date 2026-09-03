@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { ASSET_TYPES } from '../../../convex/assetTypes';
 import { X } from 'lucide-react';
 
-const ASSET_TYPES = [
-  'Industrial', 'Retail',
-  'Office',     'Hybrid',
-  'Mixed Use',  'Other',
-];
+
 
 const AU_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'NT', 'ACT'];
 

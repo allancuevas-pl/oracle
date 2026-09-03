@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireStaffOrAdmin, requireAdmin } from "./authz";
+import { ASSET_TYPES } from "./assetTypes";
 
 export const DEFAULT_ORACLE_MODEL = "claude-sonnet-4-5";
 
@@ -13,7 +14,7 @@ export const getSettings = query({
     // Auto-seed default settings if none exist
     if (!settings) {
       return {
-        assetTypes: ["Industrial", "Retail", "Office"],
+        assetTypes: [...ASSET_TYPES],
         strategies: [
           "Rental Reversion Upside",
           "Strata Subdivision",
@@ -48,7 +49,7 @@ export const setOracleModel = mutation({
       await ctx.db.patch(settings._id, { oracleModel: model });
     } else {
       await ctx.db.insert("settings", {
-        assetTypes: ["Industrial", "Retail", "Office"],
+        assetTypes: [...ASSET_TYPES],
         strategies: [
           "Rental Reversion Upside",
           "Strata Subdivision",

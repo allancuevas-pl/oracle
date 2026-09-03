@@ -1,6 +1,7 @@
 "use node";
 
 import { action } from "./_generated/server";
+import { ASSET_TYPES_PROMPT } from "./assetTypes";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import Anthropic from "@anthropic-ai/sdk";
@@ -22,7 +23,7 @@ Each comp object may include these fields (omit or null when not present):
 - suburb: suburb / locality
 - state: Australian state, 2-3 letters uppercase (NSW, VIC, QLD, WA, SA, TAS, NT, ACT)
 - postcode: 4-digit string
-- assetType: one of Industrial, Retail, Office, Hybrid, Other
+- assetType: one of ${ASSET_TYPES_PROMPT}
 - grade: building grade — one of "Prime", "A", "B", "C" — only if stated
 - nlaSqm: Net Lettable Area in sqm (number)
 - landAreaSqm: land area in sqm (number)

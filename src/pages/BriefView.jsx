@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { RecordWorkspace } from '../components/layout/RecordWorkspace';
-import { Pencil, Building2, Users, MoreHorizontal, Archive, Link2, X } from 'lucide-react';
+import { Pencil, Building2, Users, MoreHorizontal, Archive, Link2, X, Plus } from 'lucide-react';
 import { BriefModal } from '../components/briefs/BriefModal';
 import { MatchPropertyModal } from '../components/briefs/MatchPropertyModal';
 import { AssigneePicker } from '../components/briefs/AssigneePicker';
@@ -258,11 +258,25 @@ export function BriefView() {
         }
         centerColumn={
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-brand-500">Pipeline (Matched Properties)</h2>
-              <span className="px-2 py-0.5 rounded-full bg-brand-900/30 text-brand-400 text-xs font-bold border border-brand-800/50">
-                {matches?.length || 0} MATCHES
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="px-2 py-0.5 rounded-full bg-brand-900/30 text-brand-400 text-xs font-bold border border-brand-800/50">
+                  {matches?.length || 0} MATCHES
+                </span>
+                {/* Labelled twin of the toolbar's icon-only Match Property action,
+                    so the path is visible with or without existing matches. */}
+                {matches?.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsMatchModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-brand-500/10 border border-brand-500/25 text-brand-400 hover:bg-brand-500/20 hover:text-brand-300 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Property
+                  </button>
+                )}
+              </div>
             </div>
 
             {matches === undefined ? (
@@ -272,10 +286,21 @@ export function BriefView() {
                 <div className="w-12 h-12 rounded-full bg-brand-900/30 flex items-center justify-center mb-3">
                   <Link2 className="w-5 h-5 text-brand-500/50" />
                 </div>
-                <h3 className="text-brand-50 font-medium mb-1">No properties matched</h3>
-                <p className="text-sm text-brand-100/50 max-w-sm">
-                  Use the link icon in the toolbar to start evaluating commercial assets against this brief.
+                <h3 className="text-brand-50 font-medium mb-1">No properties yet</h3>
+                <p className="text-sm text-brand-100/50 max-w-sm mb-5">
+                  Add any property to this brief — it doesn't have to match the brief's criteria.
                 </p>
+                {/* This action existed only as an unlabelled icon in the toolbar.
+                    Will and Allan both failed to find it on a live call (2026-09-02)
+                    and concluded the feature was missing. It wasn't. */}
+                <button
+                  type="button"
+                  onClick={() => setIsMatchModalOpen(true)}
+                  className="flex items-center gap-2 bg-brand-500 text-brand-950 px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-400 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Property
+                </button>
               </div>
             ) : (
               <div className="space-y-3">

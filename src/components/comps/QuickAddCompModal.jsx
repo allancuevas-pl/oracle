@@ -5,6 +5,7 @@ import { X, ChevronDown, ChevronUp, Phone, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 import { CustomSelect } from '../ui/CustomSelect';
+import { ASSET_TYPES } from '../../../convex/assetTypes';
 import { formatDate } from '../../utils/format';
 
 const SOURCES = [
@@ -18,7 +19,7 @@ const SOURCES = [
 
 const LEASE_TYPES  = ['Net', 'Gross', 'Semi-Gross'];
 const REVIEW_TYPES = ['CPI', 'Fixed %', 'Market'];
-const ASSET_TYPES  = ['Industrial', 'Retail', 'Office', 'Hybrid', 'Mixed Use', 'Other'];
+
 
 const empty = {
   type: 'lease',

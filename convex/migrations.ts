@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { compSearchText } from "./comps";
+import { ASSET_TYPES } from "./assetTypes";
 
 /**
  * One-time migrations. Internal only — never callable from the client.
@@ -152,5 +153,42 @@ export const backfillCompSearchText = internalMutation({
       alreadySet,
       capHit: rows.length === limit,
     };
+  },
+});
+
+/**
+ * Add any missing canonical asset types to the stored settings row.
+ *
+ * `settings.assetTypes` is an admin-editable stored row, so changing the seed
+ * default in assetTypes.ts does NOT update a deployment that already has one —
+ * and both live deployments do, holding only the original three. Will asked
+ * for "Land" (2026-09-02) for development sites.
+ *
+ * Additive and idempotent by design: it appends what's missing and preserves
+ * any custom types an admin added, rather than overwriting with the canonical
+ * list. Run on BOTH deployments.
+ *
+ *   npx convex run migrations:syncAssetTypes '{"dryRun":true}'
+ *   npx convex run migrations:syncAssetTypes '{"dryRun":false}'
+ *   npx convex run --prod migrations:syncAssetTypes '{"dryRun":false}'
+ */
+export const syncAssetTypes = internalMutation({
+  args: { dryRun: v.boolean() },
+  handler: async (ctx, { dryRun }) => {
+    const settings = await ctx.db.query("settings").first();
+    if (!settings) {
+      // No row: getSettings serves the canonical seed default already.
+      return { dryRun, hadRow: false, added: [], result: [...ASSET_TYPES] };
+    }
+
+    const current = settings.assetTypes ?? [];
+    const missing = ASSET_TYPES.filter((t) => !current.includes(t));
+    const next = [...current, ...missing];
+
+    if (!dryRun && missing.length > 0) {
+      await ctx.db.patch(settings._id, { assetTypes: next });
+    }
+
+    return { dryRun, hadRow: true, before: current, added: missing, result: next };
   },
 });
