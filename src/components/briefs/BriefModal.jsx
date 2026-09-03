@@ -23,6 +23,9 @@ const briefSchema = z.object({
   others: z.string().optional(),
 });
 
+const DEFAULT_BUDGET = [5000000, 20000000];
+const DEFAULT_DURATION = [1, 3];
+
 export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient }) {
   // Skip subscriptions when closed — modal is always mounted, so without
   // 'skip' these fire even when the user isn't looking at the form.
@@ -40,8 +43,8 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
   const [selectedClientName, setSelectedClientName] = useState('');
 
   // Non-RHF State for complex inputs
-  const [budgetRange, setBudgetRange] = useState([5000000, 20000000]);
-  const [durationRange, setDurationRange] = useState([1, 3]);
+  const [budgetRange, setBudgetRange] = useState(DEFAULT_BUDGET);
+  const [durationRange, setDurationRange] = useState(DEFAULT_DURATION);
   const [selectedAssetTypes, setSelectedAssetTypes] = useState([]);
   const [selectedStrategies, setSelectedStrategies] = useState([]);
   const [selectedDebt, setSelectedDebt] = useState([]);
@@ -61,8 +64,16 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
   useEffect(() => {
     if (isOpen) {
       if (editingBrief) {
-        setBudgetRange([editingBrief.budgetMin || 0, editingBrief.budgetMax || 0]);
-        setDurationRange([editingBrief.durationMin || 0, editingBrief.durationMax || 0]);
+        setBudgetRange(
+          editingBrief.budgetMin != null && editingBrief.budgetMax != null
+            ? [editingBrief.budgetMin, editingBrief.budgetMax]
+            : DEFAULT_BUDGET,
+        );
+        setDurationRange(
+          editingBrief.durationMin != null && editingBrief.durationMax != null
+            ? [editingBrief.durationMin, editingBrief.durationMax]
+            : DEFAULT_DURATION,
+        );
         setSelectedAssetTypes(editingBrief.assetTypes || []);
         setSelectedStrategies(editingBrief.strategies || []);
         setSelectedDebt(editingBrief.debtStructure || []);
@@ -78,8 +89,8 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
           others: editingBrief.others || '',
         });
       } else {
-        setBudgetRange([5000000, 20000000]);
-        setDurationRange([1, 3]);
+        setBudgetRange(DEFAULT_BUDGET);
+        setDurationRange(DEFAULT_DURATION);
         setSelectedAssetTypes([]);
         setSelectedStrategies([]);
         setSelectedDebt([]);

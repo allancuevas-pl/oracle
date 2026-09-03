@@ -197,7 +197,7 @@ export function BriefView() {
               <div>
                 <p className="text-xs text-brand-100/50 mb-1">Budget Range</p>
                 <p className="text-sm text-brand-50 font-medium">
-                  {brief.budgetMin && brief.budgetMax
+                  {brief.budgetMin != null && brief.budgetMax != null
                     ? `${formatCurrency(brief.budgetMin)} – ${formatCurrency(brief.budgetMax)}`
                     : (brief.budget || <span className="text-brand-100/45 italic">Not specified</span>)}
                 </p>
@@ -206,7 +206,7 @@ export function BriefView() {
               <div>
                 <p className="text-xs text-brand-100/50 mb-1">Target Duration</p>
                 <p className="text-sm text-brand-50 font-medium">
-                  {brief.durationMin && brief.durationMax
+                  {brief.durationMin != null && brief.durationMax != null
                     ? `${brief.durationMin} to ${brief.durationMax} years`
                     : <span className="text-brand-100/45 italic">Not specified</span>}
                 </p>

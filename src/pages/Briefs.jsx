@@ -270,7 +270,7 @@ export function Briefs() {
                         {renderTags(brief.assetTypes || brief.assetType)}
                       </td>
                       <td className="px-4 py-4 text-brand-100/70 whitespace-nowrap">
-                        {brief.budgetMin && brief.budgetMax ? `${formatCurrency(brief.budgetMin)} - ${formatCurrency(brief.budgetMax)}` : (brief.budget || brief.estimatedValue)}
+                        {brief.budgetMin != null && brief.budgetMax != null ? `${formatCurrency(brief.budgetMin)} - ${formatCurrency(brief.budgetMax)}` : (brief.budget || brief.estimatedValue)}
                       </td>
                       <td className="px-4 py-4 text-brand-100/70 truncate max-w-[100px]">
                         {renderTags(brief.location)}

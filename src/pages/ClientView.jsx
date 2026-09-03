@@ -182,7 +182,7 @@ export function ClientView() {
                 {briefs.map((brief) => {
                   const startTime = brief.startDate ?? brief._creationTime ?? Date.now();
                   const daysOpen = Math.floor((Date.now() - startTime) / (1000 * 60 * 60 * 24));
-                  const budget = brief.budgetMin && brief.budgetMax
+                  const budget = brief.budgetMin != null && brief.budgetMax != null
                     ? `${formatCurrency(brief.budgetMin)} – ${formatCurrency(brief.budgetMax)}`
                     : null;
 
