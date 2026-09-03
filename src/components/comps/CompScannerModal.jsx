@@ -135,7 +135,7 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-            className="bg-[#0A0A0A]/95 border border-white/5 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col relative z-10 backdrop-blur-md max-h-[85vh]"
+            className={`bg-[#0A0A0A]/95 border border-white/5 rounded-xl shadow-2xl w-full ${comps ? 'max-w-6xl' : 'max-w-3xl'} flex flex-col relative z-10 backdrop-blur-md max-h-[85vh] transition-[max-width] duration-200`}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
               <h2 className="text-lg font-medium text-brand-50 tracking-tight flex items-center gap-2">
@@ -206,7 +206,7 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
                   <span className="text-sm text-brand-100/50">{selected.size} of {comps.length} selected</span>
                 </div>
                 <div className="flex-1 overflow-auto">
-                  <table className="w-full text-sm text-left">
+                  <table className="w-full min-w-[900px] text-sm text-left">
                     <thead className="text-xs text-brand-100/50 uppercase bg-[#0A0A0A]/50 sticky top-0 border-b border-brand-800/30 z-10">
                       <tr>
                         <th className="px-3 py-3 w-8"></th>
@@ -215,8 +215,10 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
                         <th className="px-3 py-3 font-semibold">Suburb</th>
                         <th className="px-3 py-3 font-semibold">State</th>
                         <th className="px-3 py-3 font-semibold">Asset / Grade</th>
-                        <th className="px-3 py-3 font-semibold">NLA</th>
+                        <th className="px-3 py-3 font-semibold whitespace-nowrap">NLA / Build</th>
+                        <th className="px-3 py-3 font-semibold">Land</th>
                         <th className="px-3 py-3 font-semibold">Rent / Price</th>
+                        <th className="px-3 py-3 font-semibold">Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-brand-800/20">
@@ -237,15 +239,17 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
                           <td className="px-3 py-2.5 text-brand-100/50">
                             {c.assetType || '—'}{c.grade ? <span className="ml-1 text-brand-400">· {c.grade}</span> : ''}
                           </td>
-                          <td className="px-3 py-2.5 text-brand-100/50">{c.nlaSqm ? `${c.nlaSqm.toLocaleString()} m²` : '—'}</td>
-                          <td className="px-3 py-2.5 text-brand-100/80 font-medium">{metric(c)}</td>
+                          <td className="px-3 py-2.5 text-brand-100/50 tabular-nums whitespace-nowrap">{c.nlaSqm ? `${c.nlaSqm.toLocaleString()} m²` : '—'}</td>
+                          <td className="px-3 py-2.5 text-brand-100/50 tabular-nums whitespace-nowrap">{c.landAreaSqm ? `${c.landAreaSqm.toLocaleString()} m²` : '—'}</td>
+                          <td className="px-3 py-2.5 text-brand-100/80 font-medium whitespace-nowrap">{metric(c)}</td>
+                          <td className="px-3 py-2.5 text-brand-100/50 tabular-nums whitespace-nowrap">{c.saleDate || c.leaseDate || '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 <div className="px-6 py-4 border-t border-brand-800/30 flex justify-between items-center">
-                  <span className="text-xs text-brand-100/40">Fine-tune individual comps after import via the comp editor.</span>
+                  <span className="text-xs text-brand-100/40">Untick anything wrong. Fine-tune individual comps after import via the comp editor.</span>
                   <button onClick={doImport} disabled={importing || selected.size === 0}
                     className="bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-brand-950 px-4 py-2 rounded-md text-sm font-semibold transition-colors flex items-center gap-2">
                     {importing && <Loader2 className="w-4 h-4 animate-spin" />}
