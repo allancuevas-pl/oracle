@@ -9,6 +9,7 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as assetTypes from "../assetTypes.js";
 import type * as authz from "../authz.js";
 import type * as briefs from "../briefs.js";
 import type * as clientDocuments from "../clientDocuments.js";
@@ -42,6 +43,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  assetTypes: typeof assetTypes;
   authz: typeof authz;
   briefs: typeof briefs;
   clientDocuments: typeof clientDocuments;
