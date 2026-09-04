@@ -2,6 +2,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { logSystemActivity } from "./activities";
 import { requireStaffOrAdmin } from "./authz";
+import { waleFromTenants } from "./wale";
 import { generateId } from "./utils";
 
 const PROPERTY_STATUS = v.union(
@@ -132,7 +133,17 @@ export const updatePropertyTenants = mutation({
     if (tenants.length > 100) {
       throw new Error("A property cannot have more than 100 tenants.");
     }
-    await ctx.db.patch(id, { tenants });
+
+    // WALE is derived from the tenancy schedule, so it has to be recomputed
+    // here. It used to be calculated once at IM-scan time and stored, which
+    // meant editing a lease expiry left the headline figure showing a stale
+    // number with no indication anything was out of date.
+    //
+    // Only overwrite when the schedule can actually produce a figure. A null
+    // means "not computable from this data" — a property whose WALE was
+    // entered by hand, or scanned from an IM with no schedule, keeps it.
+    const wales = waleFromTenants(tenants);
+    await ctx.db.patch(id, wales === null ? { tenants } : { tenants, wales });
   },
 });
 
