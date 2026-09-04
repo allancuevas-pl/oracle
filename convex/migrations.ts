@@ -192,3 +192,54 @@ export const syncAssetTypes = internalMutation({
     return { dryRun, hadRow: true, before: current, added: missing, result: next };
   },
 });
+
+/**
+ * Set a user's role by email. Internal-only maintenance tool.
+ *
+ * Added 2026-09-04 to allow UI smoke-testing from an account that was set up
+ * as a portal client. Reports the previous role so the change can be reverted
+ * exactly. Refuses to act on more than one matching row so a duplicated
+ * `users` record (two admin emails currently have two rows each — see
+ * STATE.md) can't be half-updated.
+ *
+ *   npx convex run migrations:setRoleByEmail '{"email":"...","role":"admin","dryRun":true}'
+ */
+export const setRoleByEmail = internalMutation({
+  args: {
+    email: v.string(),
+    role: v.union(
+      v.literal("admin"),
+      v.literal("staff"),
+      v.literal("client"),
+      v.literal("blocked"),
+    ),
+    dryRun: v.boolean(),
+    // Opt-in for an email that legitimately has duplicate rows (see STATE.md).
+    allowMultiple: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { email, role, dryRun, allowMultiple }) => {
+    const target = email.trim().toLowerCase();
+    const rows = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", target))
+      .take(10);
+
+    if (rows.length === 0) return { found: 0, changed: false };
+    if (rows.length > 1 && !allowMultiple) {
+      return {
+        found: rows.length,
+        changed: false,
+        error: "Multiple users rows for this email — pass allowMultiple to patch them all.",
+        roles: rows.map((r) => r.role),
+      };
+    }
+
+    const before = rows.map((r) => ({ clerkId: r.clerkId, role: r.role }));
+    if (!dryRun) {
+      for (const r of rows) {
+        if (r.role !== role) await ctx.db.patch(r._id, { role });
+      }
+    }
+    return { found: rows.length, before, after: role, changed: !dryRun };
+  },
+});
