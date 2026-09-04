@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { suggestCapRate } from '../../../../utils/capRate';
 import { Pencil, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -130,8 +131,11 @@ function OutputTile({ label, value, positive, negative, neutral }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export function ProjectFeasibilityTab({ property, feaso, save }) {
+export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
   const tenants     = property.tenants || [];
+  // Only ever a starting point — the team adopts the cap rate by hand. Shows
+  // nothing unless the linked sales evidence actually carries cap rates.
+  const capSuggestion = suggestCapRate(salesComps);
   const nla         = property.buildingArea;
   const la          = property.landArea;
   const currentRent = tenants.reduce((s, t) => s + (t.netFaceRent || 0), 0);
@@ -520,6 +524,32 @@ export function ProjectFeasibilityTab({ property, feaso, save }) {
             </span>
           )}
         </div>
+
+        {/* Suggestion from linked sales evidence. Deliberately not auto-applied
+            — the analyst adopts a rate, Oracle only points at what the comps say. */}
+        {capSuggestion && (
+          <div className="flex flex-wrap items-center gap-2 -mt-2 mb-4 px-4">
+            <span className="text-[11px] text-brand-100/40">
+              Comps suggest{' '}
+              <span className="text-brand-400 font-semibold tabular-nums">{capSuggestion.median}%</span>
+              {' '}— median of {capSuggestion.count} sales comp{capSuggestion.count === 1 ? '' : 's'}
+              {capSuggestion.count > 1 && (
+                <span className="text-brand-100/30 tabular-nums">
+                  {' '}({capSuggestion.min}%–{capSuggestion.max}%)
+                </span>
+              )}
+            </span>
+            {feaso.adoptedCapRate !== capSuggestion.median && (
+              <button
+                type="button"
+                onClick={() => save({ adoptedCapRate: capSuggestion.median })}
+                className="text-[11px] font-semibold text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
+              >
+                Use {capSuggestion.median}%
+              </button>
+            )}
+          </div>
+        )}
 
         {(!feaso.adoptedCapRate || !feaso.marketRentLow) && (
           <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-amber-900/10 border border-amber-700/20 mb-4">
