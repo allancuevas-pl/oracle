@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { formatCurrency } from '../../../utils/format';
 import { useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../../convex/_generated/api';
@@ -7,12 +8,6 @@ import { PropertyPhotos } from '../PropertyPhotos';
 import { Loader2, FileText, Building2, Pencil } from 'lucide-react';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
-const fmtMoney = (val) => {
-  if (val == null) return null;
-  if (val >= 1_000_000) return '$' + (val / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
-  if (val >= 1_000)     return '$' + Math.round(val / 1_000) + 'K';
-  return '$' + val.toLocaleString();
-};
 
 function DataRow({ label, value }) {
   return (
@@ -177,9 +172,9 @@ export function DetailsTab({ property, updateProperty }) {
   const metrics = {
     'NLA':          { value: nla ? `${nla.toLocaleString()} m²` : null,             editable: true,  field: 'buildingArea' },
     'Land':         { value: la  ? `${la.toLocaleString()} m²`  : null,             editable: true,  field: 'landArea' },
-    'Rent pa':      { value: netPassingRent > 0 ? fmtMoney(netPassingRent) : null,  editable: false, tooltip: 'Edit in Tenancy Schedule' },
+    'Rent pa':      { value: netPassingRent > 0 ? formatCurrency(netPassingRent) : null,  editable: false, tooltip: 'Edit in Tenancy Schedule' },
     'Rent/m²':      { value: rentPerSqm ? `$${rentPerSqm}/m²` : null,              editable: false, tooltip: 'Calculated — Rent ÷ NLA' },
-    'Asking price': { value: ap ? fmtMoney(ap) : null,                              editable: true,  field: 'askingPrice' },
+    'Asking price': { value: ap ? formatCurrency(ap) : null,                              editable: true,  field: 'askingPrice' },
     'Cap rate':     {
       value: capRateValue != null ? `${capRateValue.toFixed(2)}%` : null,
       sub:   capRateSub,
@@ -238,8 +233,8 @@ export function DetailsTab({ property, updateProperty }) {
         <section>
           <h2 className="text-[10px] font-semibold uppercase tracking-widest text-brand-500 mb-3">Financial Overview</h2>
           <div>
-            <DataRow label="Asking Price"     value={fmtMoney(property.askingPrice)} />
-            <DataRow label="Net Passing Rent" value={netPassingRent > 0 ? `${fmtMoney(netPassingRent)}/pa` : null} />
+            <DataRow label="Asking Price"     value={formatCurrency(property.askingPrice)} />
+            <DataRow label="Net Passing Rent" value={netPassingRent > 0 ? `${formatCurrency(netPassingRent)}/pa` : null} />
             <DataRow label="Stated Yield"     value={property.estimatedYield ? `${property.estimatedYield}%` : null} />
             <DataRow label="WALE"             value={waleDisplay} />
             <DataRow label="Occupancy"        value={occupancyPct !== null ? `${occupancyPct}%` : null} />

@@ -1,15 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { formatCurrency } from '../../../../utils/format';
 import { suggestCapRate } from '../../../../utils/capRate';
 import { Pencil, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
-const fmt$ = (v) => {
-  if (v == null) return '—';
-  if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
-  if (v >= 1_000) return '$' + Math.round(v / 1_000) + 'K';
-  return '$' + v.toLocaleString();
-};
 const fmtRaw = (v) => (v == null ? '—' : `$${Math.round(v).toLocaleString()}`);
 const fmtPct = (v, dec = 2) => (v == null ? '—' : `${Number(v).toFixed(dec)}%`);
 
@@ -264,10 +259,10 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
           </div>
           <div className="grid grid-cols-4 border-b border-white/[0.04] hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Price</div>
-            <div className="px-4 py-2.5 text-sm font-semibold text-brand-200 tabular-nums">{fmt$(askingPrice)}</div>
+            <div className="px-4 py-2.5 text-sm font-semibold text-brand-200 tabular-nums">{formatCurrency(askingPrice)}</div>
             <FeasoFieldCell
               value={feaso.offerPrice}
-              display={fmt$(offerPrice)}
+              display={formatCurrency(offerPrice)}
               onSave={(n) => save({ offerPrice: n })}
               highlight
             />
@@ -415,7 +410,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             <FeasoField
               label="Offer price"
               rawValue={feaso.offerPrice ?? property.askingPrice}
-              displayValue={fmt$(offerPrice)}
+              displayValue={formatCurrency(offerPrice)}
               hint={!feaso.offerPrice ? 'from asking price' : undefined}
               onSave={(n) => save({ offerPrice: n })}
               highlight
@@ -431,7 +426,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             <FeasoField
               label="Closing costs"
               rawValue={feaso.closingCosts}
-              displayValue={fmt$(closingCosts)}
+              displayValue={formatCurrency(closingCosts)}
               onSave={(n) => save({ closingCosts: n })}
             />
             <FeasoField
@@ -455,7 +450,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
               label="LTV ratio"
               rawValue={(feaso.ltvRatio ?? 0.5) * 100}
               displayValue={`${Math.round(ltvRatio * 100)}%`}
-              unit={loan != null ? `(loan ${fmt$(loan)})` : undefined}
+              unit={loan != null ? `(loan ${formatCurrency(loan)})` : undefined}
               onSave={(n) => save({ ltvRatio: n > 1 ? n / 100 : n })}
             />
             <FeasoField
@@ -483,7 +478,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             <FeasoField
               label="Works / makegood"
               rawValue={feaso.works}
-              displayValue={fmt$(works)}
+              displayValue={formatCurrency(works)}
               onSave={(n) => save({ works: n })}
             />
             <FeasoField
@@ -520,7 +515,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
           />
           {mrLowTotal && feaso.adoptedCapRate && (
             <span className="text-xs text-brand-100/45 ml-auto">
-              → new value {fmt$(mrLowTotal / (feaso.adoptedCapRate / 100))}
+              → new value {formatCurrency(mrLowTotal / (feaso.adoptedCapRate / 100))}
             </span>
           )}
         </div>
@@ -562,8 +557,8 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
         )}
 
         <div className="flex flex-wrap gap-3">
-          <OutputTile label="New Value"     value={newValue    ? fmt$(newValue)                   : null} neutral />
-          <OutputTile label="Net Profit"    value={netProfit   != null ? fmt$(netProfit)           : null} positive={netProfit > 0}     negative={netProfit < 0} />
+          <OutputTile label="New Value"     value={newValue    ? formatCurrency(newValue)                   : null} neutral />
+          <OutputTile label="Net Profit"    value={netProfit   != null ? formatCurrency(netProfit)           : null} positive={netProfit > 0}     negative={netProfit < 0} />
           <OutputTile label="Profit Margin" value={profitMargin != null ? `${profitMargin.toFixed(1)}%` : null} positive={profitMargin > 15}  negative={profitMargin < 0} />
           <OutputTile label="ROI"           value={roi         != null ? `${roi.toFixed(1)}%`      : null} positive={roi > 30}          negative={roi < 0} />
           <OutputTile label="IRR"           value={irr         != null ? `${irr.toFixed(1)}%`      : null} positive={irr > 15}          negative={irr < 0} />
@@ -581,11 +576,11 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             </div>
             <div>
               <p className="text-brand-100/45 mb-1">Equity Invested</p>
-              <p className="text-brand-200 font-semibold tabular-nums">{fmt$(equity)}</p>
+              <p className="text-brand-200 font-semibold tabular-nums">{formatCurrency(equity)}</p>
             </div>
             <div>
               <p className="text-brand-100/45 mb-1">Loan</p>
-              <p className="text-brand-200 font-semibold tabular-nums">{fmt$(loan)}</p>
+              <p className="text-brand-200 font-semibold tabular-nums">{formatCurrency(loan)}</p>
             </div>
           </div>
         )}

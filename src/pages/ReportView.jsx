@@ -7,7 +7,6 @@ import { formatCurrency } from '../utils/format';
 import { Spinner } from '../components/ui/Loading';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmt$ = (v, fb = '—') => (v ? formatCurrency(v, fb) : fb);
 const fmtPct = (v) => (v != null ? `${v}%` : '—');
 const fmtSqm = (v) => (v ? `${Math.round(v).toLocaleString()} m²` : '—');
 
@@ -138,7 +137,7 @@ export function ReportView() {
         <div>
           <SectionTitle>The Property</SectionTitle>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatBox label="Asking Price"   value={fmt$(property?.askingPrice)}  accent />
+            <StatBox label="Asking Price"   value={formatCurrency(property?.askingPrice)}  accent />
             <StatBox label="Building Area"  value={fmtSqm(property?.buildingArea)} />
             <StatBox label="Land Area"      value={fmtSqm(property?.landArea)} />
             <StatBox label="Est. Yield"     value={fmtPct(property?.estimatedYield)} />
@@ -150,9 +149,9 @@ export function ReportView() {
           <div>
             <SectionTitle>The Numbers</SectionTitle>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-              <StatBox label="Offer Price"  value={fmt$(offerPrice)}           />
-              <StatBox label="New Value"    value={fmt$(newValue)}    accent    />
-              <StatBox label="Net Profit"   value={fmt$(netProfit)}   accent={netProfit > 0} />
+              <StatBox label="Offer Price"  value={formatCurrency(offerPrice)}           />
+              <StatBox label="New Value"    value={formatCurrency(newValue)}    accent    />
+              <StatBox label="Net Profit"   value={formatCurrency(netProfit)}   accent={netProfit > 0} />
               <StatBox label="Proj. ROI"    value={roi ? `${roi.toFixed(1)}%` : '—'} accent={roi > 0} />
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -182,7 +181,7 @@ export function ReportView() {
                     <tr key={c._id} className="border-t border-white/[0.04]">
                       <td className="px-4 py-2.5 text-brand-100/80">{c.address}</td>
                       <td className="px-4 py-2.5 text-brand-100/50 text-right tabular-nums">{fmtSqm(c.nlaSqm)}</td>
-                      <td className="px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{fmt$(c.rentPa)}</td>
+                      <td className="px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{formatCurrency(c.rentPa)}</td>
                       <td className="px-4 py-2.5 font-semibold text-brand-500 text-right tabular-nums">
                         {c.rentPerSqm ? `$${Math.round(c.rentPerSqm)}` : '—'}
                       </td>
@@ -212,7 +211,7 @@ export function ReportView() {
                   {salesComps.map(c => (
                     <tr key={c._id} className="border-t border-white/[0.04]">
                       <td className="px-4 py-2.5 text-brand-100/80">{c.address}</td>
-                      <td className="px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{fmt$(c.salePrice)}</td>
+                      <td className="px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{formatCurrency(c.salePrice)}</td>
                       <td className="px-4 py-2.5 font-semibold text-brand-500 text-right tabular-nums">
                         {c.pricePerSqmBuild ? `$${Math.round(c.pricePerSqmBuild).toLocaleString()}` : '—'}
                       </td>

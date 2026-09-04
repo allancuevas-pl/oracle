@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrency } from '../../../../utils/format';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { AddCompsModal } from './AddCompsModal';
@@ -16,12 +17,6 @@ function AddCompsButton({ onClick }) {
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────────
-const fmt$ = (v) => {
-  if (v == null) return '—';
-  if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
-  if (v >= 1_000) return '$' + Math.round(v / 1_000) + 'K';
-  return '$' + v.toLocaleString();
-};
 const fmtPsm  = (v) => (v == null ? '—' : `$${Math.round(v).toLocaleString()}/m²`);
 const fmtPct  = (v) => (v == null ? '—' : `${Number(v).toFixed(2)}%`);
 
@@ -133,13 +128,13 @@ export function PropertyAssessmentTab({ property, leasingComps, salesComps, link
                     {la ? la.toLocaleString() : '—'}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-brand-200 tabular-nums whitespace-nowrap">
-                    {currentRent > 0 ? fmt$(currentRent) : '—'}
+                    {currentRent > 0 ? formatCurrency(currentRent) : '—'}
                   </td>
                   <td className="px-4 py-3 text-sm font-bold text-brand-500 tabular-nums whitespace-nowrap">
                     {rentPsm ? `$${rentPsm}` : '—'}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-brand-200 tabular-nums whitespace-nowrap">
-                    {fmt$(ap)}
+                    {formatCurrency(ap)}
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-brand-200 tabular-nums whitespace-nowrap">
                     {displayYield ? fmtPct(displayYield) : '—'}

@@ -22,10 +22,22 @@ export const formatDate = (ms) => {
 };
 
 export const formatCurrency = (val, fallback = '—') => {
-  if (!val) return fallback;
-  if (val >= 1_000_000) return '$' + (val / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (val >= 1_000)     return '$' + (val / 1_000).toFixed(0) + 'K';
-  return '$' + val.toLocaleString();
+  // Only a genuinely absent value is "—". A price of 0 is a real number and
+  // must render as $0 (see src/utils/number.js for the same rule on inputs).
+  if (val == null || !Number.isFinite(val)) return fallback;
+  // Two decimals, trailing zeros trimmed: $3.75M, not $3.8M. Five components
+  // had each forked their own copy to get this precision, which meant the
+  // same sale showed as $3.75M on one screen and $3.8M on another. For a
+  // valuation tool the precise form is the correct one, so it lives here now.
+  // Sign goes before the dollar: -$3.75M, not $-3.75M. Net profit can be
+  // negative and it is read at a glance.
+  const sign = val < 0 ? '-' : '';
+  const abs = Math.abs(val);
+  if (abs >= 1_000_000) {
+    return sign + '$' + (abs / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
+  }
+  if (abs >= 1_000) return sign + '$' + Math.round(abs / 1_000) + 'K';
+  return sign + '$' + abs.toLocaleString();
 };
 
 /**

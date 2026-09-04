@@ -5,15 +5,9 @@ import {
   CheckCircle2, Plus, Search, TrendingUp, Building2, Loader2, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { formatDate } from '../../../utils/format';
+import { formatDate, formatCurrency } from '../../../utils/format';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
-const fmt$ = (v) => {
-  if (v == null) return '—';
-  if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
-  if (v >= 1_000) return '$' + Math.round(v / 1_000) + 'K';
-  return '$' + v.toLocaleString();
-};
 const fmtSqm = (v) => (v == null ? '—' : `${Math.round(v).toLocaleString()} m²`);
 const fmtPct = (v) => (v == null ? '—' : `${(v * 100).toFixed(2)}%`);
 
@@ -111,7 +105,7 @@ function LeaseCompRow({ comp, isLinked, propertyId, onLink, memberMap }) {
         {fmtSqm(comp.nlaSqm)}
       </td>
       <td className="py-2.5 pr-4 text-sm text-brand-300 tabular-nums whitespace-nowrap">
-        {fmt$(comp.rentPa)}<span className="text-brand-100/45 text-[11px]">/pa</span>
+        {formatCurrency(comp.rentPa)}<span className="text-brand-100/45 text-[11px]">/pa</span>
       </td>
       <td className="py-2.5 pr-4 text-sm font-semibold tabular-nums whitespace-nowrap">
         <span className={rentPsm ? 'text-brand-500' : 'text-brand-100/45'}>
@@ -178,7 +172,7 @@ function SaleCompRow({ comp, isLinked, propertyId, onLink, memberMap }) {
         {fmtSqm(comp.landAreaSqm)}
       </td>
       <td className="py-2.5 pr-4 text-sm text-brand-300 tabular-nums whitespace-nowrap">
-        {fmt$(comp.salePrice)}
+        {formatCurrency(comp.salePrice)}
       </td>
       <td className="py-2.5 pr-4 text-sm font-semibold tabular-nums whitespace-nowrap">
         <span className={comp.pricePerSqmBuild ? 'text-brand-500' : 'text-brand-100/45'}>

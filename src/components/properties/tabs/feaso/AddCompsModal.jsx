@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
+import { formatCurrency } from '../../../../utils/format';
 import { useQuery } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { X, Plus, Check, Loader2, MapPin, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-const fmt$ = (v) => {
-  if (v == null) return '—';
-  if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
-  if (v >= 1_000) return '$' + Math.round(v / 1_000) + 'K';
-  return '$' + Number(v).toLocaleString();
-};
 const fmtSqm = (v) => (v == null ? '—' : `${Math.round(v).toLocaleString()} m²`);
 const fmtDate = (s) => {
   if (!s) return '';
@@ -48,7 +43,7 @@ function CompRow({ comp, linking, onLink }) {
         </p>
         <p className="text-[11px] text-brand-100/40 flex flex-wrap gap-x-2">
           <span>{fmtSqm(comp.nlaSqm)}</span>
-          <span className="text-brand-500 font-semibold">{fmt$(price)}{isSale ? '' : ' pa'}</span>
+          <span className="text-brand-500 font-semibold">{formatCurrency(price)}{isSale ? '' : ' pa'}</span>
           {psm ? <span>${Math.round(psm).toLocaleString()}/m²</span> : null}
           {comp.assetType ? <span>{comp.assetType}</span> : null}
           {fmtDate(comp.saleDate || comp.leaseDate) ? <span>{fmtDate(comp.saleDate || comp.leaseDate)}</span> : null}
