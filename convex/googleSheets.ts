@@ -1,6 +1,6 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { JWT } from "google-auth-library";
@@ -13,6 +13,19 @@ import { JWT } from "google-auth-library";
 // template id (GOOGLE_FEASO_TEMPLATE_ID) are documented in GOOGLE_SHEETS_SETUP.md.
 
 const ASSESS = "Property Assessment "; // NB: trailing space in the sheet title
+const FEAS   = "Project Feasibility";
+
+// Cell map for the Project Feasibility tab, read off the master template.
+// Row 4 is LAND and row 5 is BUILD — the reverse of the order these fields
+// appear in our schema, so don't reorder these without re-reading the sheet.
+const PF = {
+  rentLow:   "B3",  rentHigh:   "C3",   // "Market rent (net)"            $/sqm
+  landLow:   "B4",  landHigh:   "C4",   // "Market sale price based on land"
+  buildLow:  "B5",  buildHigh:  "C5",   // "Market sale price based on build"
+  offerPrice: "C8",                     // B8 is a formula off page 1 (asking)
+  projectYears: "C25",                  // "Project time" ... "Years"
+  tenancyRows: [14, 15, 16, 17, 18],    // Unit | Tenant | Size | ... | Current Rent
+};
 const num = (x: any): number | null => (typeof x === "number" && Number.isFinite(x) ? x : null);
 
 async function saToken(scopes: string[]) {
@@ -37,14 +50,15 @@ export const generateFeasoSheet = action({
     if (!templateId) throw new Error("GOOGLE_FEASO_TEMPLATE_ID is not set (the master PL FEASO template). See docs/GOOGLE_SHEETS_SETUP.md.");
     if (!sharedDriveId) throw new Error("GOOGLE_SHARED_DRIVE_ID is not set. See docs/GOOGLE_SHEETS_SETUP.md.");
 
-    const [property, comps] = await Promise.all([
+    const [property, comps, feaso] = await Promise.all([
       ctx.runQuery(api.properties.getProperty, { id: propertyId }),
       ctx.runQuery(api.comps.getCompsByProperty, { propertyId }),
+      ctx.runQuery(api.feasos.getFeasoForProperty, { propertyId }),
     ]);
     if (!property) throw new Error("Property not found.");
 
     const token = await saToken(["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]);
-    const { id, url } = await cloneAndFill(token, templateId, sharedDriveId, property, comps || []);
+    const { id, url } = await cloneAndFill(token, templateId, sharedDriveId, property, comps || [], feaso);
     await ctx.runMutation(internal.properties.setFeasoSheet, { id: propertyId, url, sheetId: id });
     return { url };
   },
@@ -53,7 +67,7 @@ export const generateFeasoSheet = action({
 // Copy the master template into the Shared Drive, then overwrite the subject
 // property + comparable-evidence cells. Everything else (Feasibility, Cashflow,
 // formatting, cross-sheet formulas) is inherited from the template untouched.
-async function cloneAndFill(token: string, templateId: string, sharedDriveId: string, property: any, comps: any[]) {
+async function cloneAndFill(token: string, templateId: string, sharedDriveId: string, property: any, comps: any[], feaso?: any) {
   const auth = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
   const title = `FEASO — ${property.address}${property.suburb ? `, ${property.suburb}` : ""}`;
 
@@ -122,6 +136,55 @@ async function cloneAndFill(token: string, templateId: string, sharedDriveId: st
   });
 
   // 4. Write everything (USER_ENTERED so dates + formulas evaluate).
+  // ── Project Feasibility tab ────────────────────────────────────────────────
+  // The generator used to write ONLY the Property Assessment tab, so tabs 2-4
+  // kept whatever the master template held — which is a PREVIOUS DEAL's figures
+  // and, in the tenancy block, a previous client's tenant names. Will spotted
+  // the stale min/max rents on 2026-09-02 ("that's from a previous campaign").
+  // Anything Oracle actually knows is now written; anything it doesn't is
+  // cleared rather than left showing another deal's numbers.
+  const tenants: any[] = Array.isArray(property.tenants) ? property.tenants : [];
+
+  if (feaso) {
+    const pf: Array<[string, any]> = [
+      [PF.rentLow,      num(feaso.marketRentLow)],
+      [PF.rentHigh,     num(feaso.marketRentHigh)],
+      [PF.landLow,      num(feaso.salePricePerSqmLandLow)],
+      [PF.landHigh,     num(feaso.salePricePerSqmLandHigh)],
+      [PF.buildLow,     num(feaso.salePricePerSqmBuildLow)],
+      [PF.buildHigh,    num(feaso.salePricePerSqmBuildHigh)],
+      [PF.offerPrice,   num(feaso.offerPrice)],
+      [PF.projectYears, num(feaso.projectDurationYears)],
+    ];
+    // Write "" for anything unset — an empty cell is honest, a stale one isn't.
+    for (const [cell, value] of pf) {
+      data.push({ range: `'${FEAS}'!${cell}`, values: [[value ?? ""]] });
+    }
+  }
+
+  // Tenancy schedule. Columns I / J / L are template formulas and are left
+  // alone; only the literal columns are touched.
+  PF.tenancyRows.forEach((row, i) => {
+    const t = tenants[i];
+    data.push({
+      range: `'${FEAS}'!A${row}:H${row}`,
+      values: [[
+        t?.suite ?? "",
+        t?.tenantName ?? "",
+        num(t?.lettableArea) ?? "",
+        "",                        // D "Site" — not modelled in Oracle
+        t?.leaseEnd ?? "",
+        t?.options ?? "",
+        t?.reviewType ? `${t.reviewType}${t.reviewRate ? ` ${t.reviewRate}%` : ""}` : "",
+        num(t?.netFaceRent) ?? "",
+      ]],
+    });
+    // K / M are the per-tenancy market-rent assumptions ($/sqm) that drive the
+    // J and L formulas. Feed them from the adopted range so the block is live.
+    data.push({ range: `'${FEAS}'!K${row}`, values: [[feaso ? num(feaso.marketRentLow) ?? "" : ""]] });
+    data.push({ range: `'${FEAS}'!M${row}`, values: [[feaso ? num(feaso.marketRentHigh) ?? "" : ""]] });
+  });
+
   const writeRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchUpdate`, {
     method: "POST", headers: auth,
     body: JSON.stringify({ valueInputOption: "USER_ENTERED", data }),
@@ -130,3 +193,68 @@ async function cloneAndFill(token: string, templateId: string, sharedDriveId: st
 
   return { id, url };
 }
+
+/**
+ * READ-ONLY maintenance tool: dump a FEASO sheet's structure.
+ *
+ * Needed to map Oracle's `feasos` fields onto the Project Feasibility tab.
+ * `generateFeasoSheet` currently writes ONLY the Property Assessment tab, so
+ * tabs 2-4 keep whatever the template holds — which Will found to be a prior
+ * deal's numbers (2026-09-02). This reports, per tab, which cells carry a
+ * literal value versus a formula, so we can tell what must be written by
+ * Oracle and what recalculates on its own.
+ *
+ * Reads only. Keep it — re-run it whenever the master template's layout
+ * changes, to re-derive the PF cell map above.
+ */
+export const inspectFeasoTemplate = internalAction({
+  args: { tab: v.optional(v.string()), spreadsheetId: v.optional(v.string()) },
+  handler: async (_ctx, args): Promise<any> => {
+    const templateId = args.spreadsheetId ?? process.env.GOOGLE_FEASO_TEMPLATE_ID;
+    if (!templateId) throw new Error("GOOGLE_FEASO_TEMPLATE_ID is not set.");
+    const token = await saToken(["https://www.googleapis.com/auth/spreadsheets.readonly"]);
+
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${templateId}` +
+        `?includeGridData=true` +
+        `&fields=sheets(properties(title,gridProperties),data(rowData(values(userEnteredValue,formattedValue))))`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (!res.ok) throw new Error(`Sheets read failed: ${res.status} ${await res.text()}`);
+    const doc = await res.json();
+
+    const col = (i: number) => String.fromCharCode(65 + (i % 26));
+    const out: any[] = [];
+    for (const sheet of doc.sheets ?? []) {
+      const title = sheet.properties?.title ?? "?";
+      const rows = sheet.data?.[0]?.rowData ?? [];
+      let literals = 0, formulas = 0;
+      const sample: string[] = [];
+      rows.forEach((row: any, r: number) => {
+        (row.values ?? []).forEach((cell: any, c: number) => {
+          const uev = cell.userEnteredValue;
+          if (!uev) return;
+          const ref = `${col(c)}${r + 1}`;
+          if (uev.formulaValue) {
+            formulas++;
+            if (sample.length < 200) sample.push(`${ref} FORMULA ${String(uev.formulaValue).slice(0, 44)}`);
+          } else {
+            const val = uev.numberValue ?? uev.stringValue ?? uev.boolValue;
+            // Numeric literals are the dangerous ones — a prior deal's figures.
+            if (typeof uev.numberValue === "number") {
+              literals++;
+              if (sample.length < 200) sample.push(`${ref} NUM ${val}  (${cell.formattedValue ?? ""})`);
+            } else if (typeof uev.stringValue === "string" && uev.stringValue.trim()) {
+              // Labels — needed to know which row is which before writing values.
+              if (sample.length < 200) sample.push(`${ref} TEXT "${uev.stringValue.slice(0, 46)}"`);
+            }
+          }
+        });
+      });
+      out.push({ tab: title, numericLiterals: literals, formulas, sample });
+    }
+    return out;
+  },
+});
+
+
