@@ -18,6 +18,14 @@ export const extractIM = action({
     storageId: v.string(),
   },
   handler: async (ctx, args) => {
+    // Every other action guards itself this way; this one never did, so any
+    // signed-in user — including a client- or blocked-role account — could
+    // invoke it and spend Anthropic credits on a stored PDF.
+    const user = await ctx.runQuery(api.users.getCurrentUser, {});
+    if (!user || (user.role !== "admin" && user.role !== "staff")) {
+      throw new Error("Only staff or admins can run an IM extraction");
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       await ctx.runMutation(internal.imExtraction.markFailed, {

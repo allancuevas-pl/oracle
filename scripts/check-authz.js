@@ -31,18 +31,25 @@ function checkFile(filePath) {
   const fileName = path.basename(filePath);
 
   // Extract all exported queries and mutations along with their name
-  const regex = /export const (\w+) = (query|mutation)\(\{/g;
+  // Actions were outside this gate entirely, which is how imExtractionAction
+  // shipped with no auth check at all — and actions are where the Anthropic,
+  // Clerk and Google Drive calls live.
+  const regex = /export const (\w+) = (query|mutation|action)\(\{/g;
   let match;
 
   while ((match = regex.exec(content)) !== null) {
     const fnName = match[1];
+    const fnKind = match[2];
     const functionStart = match.index;
     const handlerIndex = content.indexOf('handler:', functionStart);
 
     if (handlerIndex !== -1) {
       // Widen the window — handlers with arg destructuring push the auth
       // call past the original 150-char cutoff.
-      const handlerSnippet = content.substring(handlerIndex, handlerIndex + 250);
+      // Actions often destructure several args before the guard, so give them
+      // a wider window than queries/mutations.
+      const windowSize = fnKind === 'action' ? 600 : 250;
+      const handlerSnippet = content.substring(handlerIndex, handlerIndex + windowSize);
 
       let hasAuthz;
       let reason;
@@ -65,6 +72,17 @@ function checkFile(filePath) {
         // Intentionally public — token-gated, not Clerk-gated. Skip auth check.
         hasAuthz = true;
         reason = '';
+      } else if (fnKind === 'action') {
+        // Actions have no ctx.db, so they cannot call requireStaffOrAdmin.
+        // The established pattern here is to fetch the caller via a query and
+        // check the role explicitly — that must be present and must actually
+        // compare a role, not merely look the user up.
+        const looksUpCaller = handlerSnippet.includes('getCurrentUser');
+        const checksRole = /role\s*!==?\s*["'](admin|staff)["']/.test(handlerSnippet)
+          || handlerSnippet.includes('requireStaffOrAdmin')
+          || handlerSnippet.includes('requireAdmin');
+        hasAuthz = looksUpCaller && checksRole;
+        reason = `action '${fnName}' is missing an auth gate. Actions cannot use requireStaffOrAdmin (no ctx.db) — fetch the caller with api.users.getCurrentUser and reject unless role is admin/staff.`;
       } else {
         // requireAdmin is a superset restriction of requireStaffOrAdmin — both are valid.
         hasAuthz = handlerSnippet.includes('requireStaffOrAdmin') || handlerSnippet.includes('requireAdmin');
