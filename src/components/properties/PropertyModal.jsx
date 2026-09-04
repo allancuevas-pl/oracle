@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { toFormString } from '../../utils/number';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { X, Building, MapPin, Loader2 } from 'lucide-react';
@@ -53,11 +54,14 @@ export function PropertyModal({ isOpen, onClose, editingProperty }) {
         address: editingProperty.address || '',
         assetType: editingProperty.assetType || 'Retail',
         status: editingProperty.status || 'Off Market',
-        askingPrice: editingProperty.askingPrice ? String(editingProperty.askingPrice) : '',
-        estimatedYield: editingProperty.estimatedYield ? String(editingProperty.estimatedYield) : '',
-        landArea: editingProperty.landArea ? String(editingProperty.landArea) : '',
-        buildingArea: editingProperty.buildingArea ? String(editingProperty.buildingArea) : '',
-        wales: editingProperty.wales ? String(editingProperty.wales) : '',
+        // toFormString, not `x ? String(x) : ''` — a stored 0 (expired WALE,
+        // 0% yield, bare land with no building) loaded as blank, and saving
+        // that blank deleted the field.
+        askingPrice: toFormString(editingProperty.askingPrice),
+        estimatedYield: toFormString(editingProperty.estimatedYield),
+        landArea: toFormString(editingProperty.landArea),
+        buildingArea: toFormString(editingProperty.buildingArea),
+        wales: toFormString(editingProperty.wales),
         description: editingProperty.description || '',
       });
     } else {

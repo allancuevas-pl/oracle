@@ -7,6 +7,7 @@ import { useGoogleMaps } from '../../hooks/useGoogleMaps';
 import { CustomSelect } from '../ui/CustomSelect';
 import { ASSET_TYPES } from '../../../convex/assetTypes';
 import { formatDate } from '../../utils/format';
+import { toNumberOrUndefined } from '../../utils/number';
 
 const SOURCES = [
   { id: 'property_lions',  label: 'Property Lions' },
@@ -161,9 +162,11 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
     postcode:   form.postcode || undefined,
     assetType:  form.assetType || undefined,
     grade:      form.grade || undefined,
-    nlaSqm:     nla || undefined,
-    landAreaSqm: parseFloat(form.landAreaSqm) || undefined,
-    rentPa:     rentPa || undefined,
+    // toNumberOrUndefined, not `|| undefined` — a typed 0 was being turned
+    // into undefined, and Convex's patch removes any key set to undefined.
+    nlaSqm:     toNumberOrUndefined(nla),
+    landAreaSqm: toNumberOrUndefined(form.landAreaSqm),
+    rentPa:     toNumberOrUndefined(rentPa),
     rentInputFormat: form.rentInputFormat,
     leaseType:  form.leaseType || undefined,
     leaseDate:  form.leaseDate || undefined,
@@ -171,10 +174,10 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
     leaseTerm:  form.leaseTerm || undefined,
     incentives: form.incentives || undefined,
     reviewType: form.reviewType || undefined,
-    reviewRate: parseFloat(form.reviewRate) || undefined,
-    salePrice:  salePrice || undefined,
+    reviewRate: toNumberOrUndefined(form.reviewRate),
+    salePrice:  toNumberOrUndefined(salePrice),
     saleDate:   form.saleDate || undefined,
-    capRate:    parseFloat(form.capRate) || undefined,
+    capRate:    toNumberOrUndefined(form.capRate),
     source:     form.source || undefined,
     verified:   form.verified || undefined,
     agentName:  form.agentName || undefined,
