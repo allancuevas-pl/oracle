@@ -64,6 +64,56 @@ export const generateFeasoSheet = action({
   },
 });
 
+
+/**
+ * Is a failed Drive/Sheets response worth retrying?
+ *
+ * Drive returns 403 for BOTH "you may not do this" and "you are going too
+ * fast" — only the `reason` distinguishes them. Regenerating a FEASO twice in
+ * a couple of minutes is enough to trip the per-user limit, which surfaced as
+ * a hard failure with a raw stack trace in the UI (seen live 2026-09-04).
+ * A permissions 403 must NOT be retried; a rate-limit one should.
+ */
+export function isRetryableGoogleError(status: number, body: string): boolean {
+  if (status === 429 || status >= 500) return true;
+  if (status !== 403) return false;
+  return /rateLimitExceeded|userRateLimitExceeded|backendError|quotaExceeded/i.test(body);
+}
+
+/** Fetch with backoff on Google's transient failures. */
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  attempts = 4,
+): Promise<{ res: Response; body: string }> {
+  let lastBody = "";
+  for (let i = 0; i < attempts; i++) {
+    const res = await fetch(url, init);
+    if (res.ok) return { res, body: "" };
+    lastBody = await res.text();
+    if (i === attempts - 1 || !isRetryableGoogleError(res.status, lastBody)) {
+      return { res, body: lastBody };
+    }
+    // 1s, 2s, 4s — Drive's user rate limit is per 100s but usually clears fast.
+    await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+  }
+  throw new Error("unreachable");
+}
+
+/** Turn a Google API failure into something a person can act on. */
+function googleErrorMessage(status: number, body: string): string {
+  if (isRetryableGoogleError(status, body)) {
+    return "Google is rate-limiting us right now. Wait a minute and try again — nothing was lost.";
+  }
+  if (status === 403) {
+    return "Google refused the request (403). Check the service account is still a member of the ORACLE FEASO Shared Drive.";
+  }
+  if (status === 404) {
+    return "The FEASO master template wasn't found. Check GOOGLE_FEASO_TEMPLATE_ID.";
+  }
+  return `Google Sheets error (${status}). ${body.slice(0, 200)}`;
+}
+
 // Copy the master template into the Shared Drive, then overwrite the subject
 // property + comparable-evidence cells. Everything else (Feasibility, Cashflow,
 // formatting, cross-sheet formulas) is inherited from the template untouched.
@@ -72,11 +122,11 @@ async function cloneAndFill(token: string, templateId: string, sharedDriveId: st
   const title = `FEASO — ${property.address}${property.suburb ? `, ${property.suburb}` : ""}`;
 
   // 1. Clone the template (stays inside the Shared Drive).
-  const copyRes = await fetch(
+  const { res: copyRes, body: copyBody } = await fetchWithRetry(
     `https://www.googleapis.com/drive/v3/files/${templateId}/copy?supportsAllDrives=true&fields=id,webViewLink`,
     { method: "POST", headers: auth, body: JSON.stringify({ name: title, parents: [sharedDriveId] }) }
   );
-  if (!copyRes.ok) throw new Error(`Template copy failed (${copyRes.status}): ${await copyRes.text()}`);
+  if (!copyRes.ok) throw new Error(googleErrorMessage(copyRes.status, copyBody));
   const file = await copyRes.json();
   const id = file.id as string;
   const url = file.webViewLink || `https://docs.google.com/spreadsheets/d/${id}/edit`;
@@ -185,11 +235,11 @@ async function cloneAndFill(token: string, templateId: string, sharedDriveId: st
     data.push({ range: `'${FEAS}'!M${row}`, values: [[feaso ? num(feaso.marketRentHigh) ?? "" : ""]] });
   });
 
-  const writeRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchUpdate`, {
+  const { res: writeRes, body: writeBody } = await fetchWithRetry(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchUpdate`, {
     method: "POST", headers: auth,
     body: JSON.stringify({ valueInputOption: "USER_ENTERED", data }),
   });
-  if (!writeRes.ok) throw new Error(`Sheet populate failed (${writeRes.status}): ${await writeRes.text()}`);
+  if (!writeRes.ok) throw new Error(googleErrorMessage(writeRes.status, writeBody));
 
   return { id, url };
 }
