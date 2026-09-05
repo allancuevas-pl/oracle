@@ -9,7 +9,7 @@ import { formatCurrency, formatFileSize } from '../../utils/format';
 
 // Reuse same helpers as ReportView
 const fmtPct = (v) => (v != null ? `${v}%` : '—');
-const fmtSqm = (v) => (v ? `${Math.round(v).toLocaleString()} m²` : '—');
+const fmtSqm = (v) => (v != null ? `${Math.round(v).toLocaleString()} m²` : '—');
 
 function StatBox({ label, value, accent }) {
   return (
@@ -181,21 +181,21 @@ export function ClientDealView() {
       {leasingComps.length > 0 && (
         <div>
           <SectionTitle>Leasing Evidence</SectionTitle>
-          <div className="rounded-xl border border-white/[0.07] overflow-hidden">
+          <div className="rounded-xl border border-white/[0.07] overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead><tr className="bg-white/[0.02] border-b border-white/[0.05]">
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45">Address</th>
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">NLA</th>
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">Rent pa</th>
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">$/m²</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45">Address</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">NLA</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">Rent pa</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">$/m²</th>
               </tr></thead>
               <tbody>
                 {leasingComps.map(c => (
                   <tr key={c._id} className="border-t border-white/[0.04]">
-                    <td className="px-4 py-2.5 text-brand-100/80">{c.address}</td>
-                    <td className="px-4 py-2.5 text-brand-100/50 text-right tabular-nums">{fmtSqm(c.nlaSqm)}</td>
-                    <td className="px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{formatCurrency(c.rentPa)}</td>
-                    <td className="px-4 py-2.5 font-semibold text-brand-500 text-right tabular-nums">
+                    <td className="px-3 sm:px-4 py-2.5 text-brand-100/80">{c.address}</td>
+                    <td className="px-3 sm:px-4 py-2.5 text-brand-100/50 text-right tabular-nums">{fmtSqm(c.nlaSqm)}</td>
+                    <td className="px-3 sm:px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{formatCurrency(c.rentPa)}</td>
+                    <td className="px-3 sm:px-4 py-2.5 font-semibold text-brand-500 text-right tabular-nums">
                       {c.rentPerSqm ? `$${Math.round(c.rentPerSqm)}` : '—'}
                     </td>
                   </tr>
@@ -210,23 +210,23 @@ export function ClientDealView() {
       {salesComps.length > 0 && (
         <div>
           <SectionTitle>Sales Evidence</SectionTitle>
-          <div className="rounded-xl border border-white/[0.07] overflow-hidden">
+          <div className="rounded-xl border border-white/[0.07] overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead><tr className="bg-white/[0.02] border-b border-white/[0.05]">
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45">Address</th>
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">Sale Price</th>
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">$/m²</th>
-                <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">Cap Rate</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45">Address</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">Sale Price</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">$/m²</th>
+                <th className="px-3 sm:px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-100/45 text-right">Cap Rate</th>
               </tr></thead>
               <tbody>
                 {salesComps.map(c => (
                   <tr key={c._id} className="border-t border-white/[0.04]">
-                    <td className="px-4 py-2.5 text-brand-100/80">{c.address}</td>
-                    <td className="px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{formatCurrency(c.salePrice)}</td>
-                    <td className="px-4 py-2.5 font-semibold text-brand-500 text-right tabular-nums">
+                    <td className="px-3 sm:px-4 py-2.5 text-brand-100/80">{c.address}</td>
+                    <td className="px-3 sm:px-4 py-2.5 text-brand-100/70 text-right tabular-nums">{formatCurrency(c.salePrice)}</td>
+                    <td className="px-3 sm:px-4 py-2.5 font-semibold text-brand-500 text-right tabular-nums">
                       {c.pricePerSqmBuild ? `$${Math.round(c.pricePerSqmBuild).toLocaleString()}` : '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-brand-100/50 text-right tabular-nums">
+                    <td className="px-3 sm:px-4 py-2.5 text-brand-100/50 text-right tabular-nums">
                       {c.capRate ? fmtPct(c.capRate) : '—'}
                     </td>
                   </tr>

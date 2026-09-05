@@ -22,6 +22,17 @@ function DealCard({ report }) {
 
   const needsDecision = report.status === 'sent' || report.status === 'viewed';
 
+  // Only metrics we actually hold — an absent one is simply not shown, rather
+  // than suppressing its neighbours.
+  const metrics = [
+    property?.askingPrice != null
+      && { label: 'Asking Price', value: formatCurrency(property.askingPrice), accent: true },
+    property?.assetType
+      && { label: 'Asset Type', value: property.assetType },
+    property?.buildingArea != null
+      && { label: 'Building', value: `${Math.round(property.buildingArea).toLocaleString()} m²` },
+  ].filter(Boolean);
+
   return (
     <div
       onClick={() => navigate(`/client/deal/${report.token}`)}
@@ -44,27 +55,23 @@ function DealCard({ report }) {
         </div>
       </div>
 
-      {/* Key metric */}
-      {property?.askingPrice && (
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">Asking Price</p>
-            <p className="text-lg font-bold text-brand-500 tabular-nums">
-              {formatCurrency(property.askingPrice)}
-            </p>
-          </div>
-          {property?.assetType && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">Asset Type</p>
-              <p className="text-sm font-medium text-brand-100/70">{property.assetType}</p>
+      {/* Key metrics.
+          The whole block used to hang off `property?.askingPrice &&`, so a deal
+          with no asking price showed NO metrics at all — not the asset type,
+          not the building area, even though both were there. 9 of the 14 live
+          properties have no asking price, including the one deal currently
+          shared with a client. Each metric now stands on its own, and the
+          checks are null-checks: a building area of 0 is real on bare land. */}
+      {metrics.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          {metrics.map(({ label, value, accent }) => (
+            <div key={label}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">{label}</p>
+              <p className={accent
+                ? 'text-lg font-bold text-brand-500 tabular-nums'
+                : 'text-sm font-medium text-brand-100/70'}>{value}</p>
             </div>
-          )}
-          {property?.buildingArea && (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-brand-100/45">Building</p>
-              <p className="text-sm font-medium text-brand-100/70">{Math.round(property.buildingArea).toLocaleString()} m²</p>
-            </div>
-          )}
+          ))}
         </div>
       )}
 
