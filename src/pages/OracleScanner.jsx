@@ -6,6 +6,7 @@ import { CompScannerModal } from '../components/comps/CompScannerModal';
 import { ExtractionView } from '../components/oracle/ExtractionView';
 import { Spinner } from '../components/ui/Loading';
 import { extractPhotosFromPdf } from '../utils/pdfPhotos';
+import { rowProps } from '../utils/rowProps';
 
 function timeAgo(ms) {
   const diff = Date.now() - ms;
@@ -183,6 +184,7 @@ export function OracleScanner() {
       {/* Drop zone */}
       {phase === 'drop' && (
         <div
+          {...rowProps(() => fileRef.current?.click(), 'Choose a PDF to scan')}
           onDragOver={(e) => { e.preventDefault(); setHover(true); }}
           onDragLeave={() => setHover(false)}
           onDrop={(e) => {
@@ -191,7 +193,6 @@ export function OracleScanner() {
             const file = e.dataTransfer.files?.[0];
             if (file) handleFile(file);
           }}
-          onClick={() => fileRef.current?.click()}
           className={`cursor-pointer border-2 border-dashed rounded-xl py-20 text-center transition-all ${
             hover
               ? 'border-brand-500/60 bg-brand-500/[0.04]'

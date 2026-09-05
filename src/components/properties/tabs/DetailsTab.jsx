@@ -6,6 +6,7 @@ import { api } from '../../../../convex/_generated/api';
 import { CustomSelect } from '../../ui/CustomSelect';
 import { PropertyPhotos } from '../PropertyPhotos';
 import { Loader2, FileText, Building2, Pencil } from 'lucide-react';
+import { rowProps } from '../../../utils/rowProps';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ function MetricTile({ label, value, highlight, sub, editable, tooltip, onSave })
   return (
     <div
       className={`px-4 py-3 bg-[#0A0A0A] relative group ${editable ? 'cursor-pointer' : ''}`}
-      onClick={!editing ? startEdit : undefined}
+      {...(editable && !editing ? rowProps(startEdit, `Edit ${label}`) : {})}
       title={!editable && tooltip ? tooltip : undefined}
     >
       <p className="text-[10px] uppercase tracking-widest text-brand-100/45 mb-1 flex items-center gap-1">
@@ -280,7 +281,7 @@ export function DetailsTab({ property, updateProperty }) {
             {matches.map((match) => (
               <div
                 key={match._id}
-                onClick={() => navigate(`/briefs/${match.briefId}`)}
+                {...rowProps(() => navigate(`/briefs/${match.briefId}`), `Open brief for ${match.brief?.clientName ?? 'this deal'}`)}
                 className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-white/[0.05] bg-white/[0.01] hover:bg-white/[0.04] hover:border-brand-500/20 cursor-pointer transition-all group"
               >
                 <div className="flex items-center gap-3 min-w-0">

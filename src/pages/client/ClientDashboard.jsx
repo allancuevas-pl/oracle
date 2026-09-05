@@ -5,6 +5,7 @@ import { api } from '../../../convex/_generated/api';
 import { Building2, CheckCircle2, XCircle, Clock, ArrowRight, ShieldCheck, FileText, Download } from 'lucide-react';
 import { PageLoader } from '../../components/ui/Loading';
 import { formatCurrency, formatDate, formatFileSize } from '../../utils/format';
+import { rowProps } from '../../utils/rowProps';
 
 const STATUS = {
   sent:     { label: 'Awaiting your review', icon: Clock,         color: 'text-brand-400',   bg: 'bg-brand-900/20 border-brand-800/30' },
@@ -35,7 +36,7 @@ function DealCard({ report }) {
 
   return (
     <div
-      onClick={() => navigate(`/client/deal/${report.token}`)}
+      {...rowProps(() => navigate(`/client/deal/${report.token}`), `Open the deal for ${property?.address ?? report.propertyAddress}`)}
       className="group cursor-pointer rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.12] transition-all p-5 flex flex-col gap-4"
     >
       {/* Header */}

@@ -30,3 +30,51 @@ export function rowProps(onActivate, label) {
     'aria-label': label,
   };
 }
+
+/**
+ * Props for a sortable column header.
+ *
+ * Deliberately NOT `rowProps`: a `<th role="button">` stops being a
+ * `columnheader`, which is worse for a screen-reader user than the mouse-only
+ * header we started with — it breaks the table's structure to fix one control.
+ * So this keeps the native role and adds only what is missing: focus, key
+ * activation, and `aria-sort` so the current sort is actually announced.
+ */
+export function sortHeaderProps(onSort, label, { active, direction } = {}) {
+  return {
+    onClick: onSort,
+    onKeyDown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onSort(e);
+      }
+    },
+    tabIndex: 0,
+    'aria-label': label,
+    'aria-sort': active ? (direction === 'desc' ? 'descending' : 'ascending') : 'none',
+  };
+}
+
+/**
+ * Props for a div or cell that is really a checkbox.
+ *
+ * Several selection controls here are a styled `<div>` with a tick icon. They
+ * toggle on click and nothing else: no focus, no Space, and a screen reader
+ * gets no hint that anything is selectable, let alone what is currently
+ * selected. `role="checkbox"` + `aria-checked` is the minimum that fixes both.
+ */
+export function toggleProps(onToggle, label, checked) {
+  return {
+    onClick: onToggle,
+    onKeyDown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onToggle(e);
+      }
+    },
+    role: 'checkbox',
+    'aria-checked': !!checked,
+    tabIndex: 0,
+    'aria-label': label,
+  };
+}

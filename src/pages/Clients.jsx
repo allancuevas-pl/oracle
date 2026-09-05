@@ -7,6 +7,7 @@ import { ClientModal } from '../components/clients/ClientModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SkeletonTable } from '../components/ui/Loading';
 import { rowEntrance } from '../components/ui/motion';
+import { rowProps } from '../utils/rowProps';
 
 export function Clients() {
   const navigate = useNavigate();
@@ -93,7 +94,7 @@ export function Clients() {
                       key={client._id}
                       {...rowEntrance(index)}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      onClick={() => navigate(`/clients/${client._id}`)}
+                      {...rowProps(() => navigate(`/clients/${client._id}`), `Open ${client.name}`)}
                       className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
                     >
                       <td className="px-6 py-4">

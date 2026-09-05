@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { formatCurrency } from '../utils/format';
 import { daysOpen } from '../utils/briefDate';
 import { useGoBack } from '../hooks/useGoBack';
+import { rowProps } from '../utils/rowProps';
 
 
 export function ClientView() {
@@ -191,7 +192,7 @@ export function ClientView() {
                   return (
                     <div
                       key={brief._id}
-                      onClick={() => navigate(`/briefs/${brief._id}`)}
+                      {...rowProps(() => navigate(`/briefs/${brief._id}`), `Open brief ${brief.briefId ?? ''}`.trim())}
                       className="border border-brand-800/50 rounded-lg bg-[#111] p-4 hover:border-brand-500/30 transition-all cursor-pointer group"
                     >
                       <div className="flex items-start justify-between">

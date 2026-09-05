@@ -13,6 +13,7 @@ import { SkeletonTable } from '../components/ui/Loading';
 import { rowEntrance } from '../components/ui/motion';
 
 import { formatCurrency } from '../utils/format';
+import { rowProps, sortHeaderProps } from '../utils/rowProps';
 
 export function Briefs() {
   const navigate = useNavigate();
@@ -168,63 +169,63 @@ export function Briefs() {
             <table className="w-full text-sm text-left tabular-nums">
               <thead className="text-xs text-brand-100/50 bg-[#0A0A0A]/50 uppercase border-b border-brand-800/40">
                 <tr>
-                  <th 
-                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group w-20 text-center"
-                    onClick={() => handleSort('priority')}
+                  <th
+                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group w-20 text-center focus-within:text-white"
+                    {...sortHeaderProps(() => handleSort('priority'), `Sort by priority`, { active: sortField === 'priority', direction: sortDir })}
                   >
                     <div className="flex items-center justify-center space-x-1">
                       <span>Priority</span>
                       <ArrowUpDown className={`w-3 h-3 ${sortField === 'priority' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
-                  <th 
-                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group"
-                    onClick={() => handleSort('clientName')}
+                  <th
+                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
+                    {...sortHeaderProps(() => handleSort('clientName'), `Sort by clientName`, { active: sortField === 'clientName', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Client</span>
                       <ArrowUpDown className={`w-3 h-3 ${sortField === 'clientName' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
-                  <th 
-                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group"
-                    onClick={() => handleSort('stage')}
+                  <th
+                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
+                    {...sortHeaderProps(() => handleSort('stage'), `Sort by stage`, { active: sortField === 'stage', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Stage</span>
                       <ArrowUpDown className={`w-3 h-3 ${sortField === 'stage' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
-                  <th 
-                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group"
-                    onClick={() => handleSort('daysOpen')}
+                  <th
+                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
+                    {...sortHeaderProps(() => handleSort('daysOpen'), `Sort by daysOpen`, { active: sortField === 'daysOpen', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Days Open</span>
                       <ArrowUpDown className={`w-3 h-3 ${sortField === 'daysOpen' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
-                  <th 
-                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group"
-                    onClick={() => handleSort('assetType')}
+                  <th
+                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
+                    {...sortHeaderProps(() => handleSort('assetType'), `Sort by assetType`, { active: sortField === 'assetType', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Asset Types</span>
                       <ArrowUpDown className={`w-3 h-3 ${sortField === 'assetType' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
-                  <th 
-                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group"
-                    onClick={() => handleSort('budget')}
+                  <th
+                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
+                    {...sortHeaderProps(() => handleSort('budget'), `Sort by budget`, { active: sortField === 'budget', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Budget Range</span>
                       <ArrowUpDown className={`w-3 h-3 ${sortField === 'budget' ? 'text-brand-500' : 'text-brand-100/45 group-hover:text-brand-100/70'}`} />
                     </div>
                   </th>
-                  <th 
-                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group"
-                    onClick={() => handleSort('location')}
+                  <th
+                    className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
+                    {...sortHeaderProps(() => handleSort('location'), `Sort by location`, { active: sortField === 'location', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Location</span>
@@ -245,7 +246,7 @@ export function Briefs() {
                       key={brief._id}
                       {...rowEntrance(index)}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      onClick={() => navigate('/briefs/' + brief._id)}
+                      {...rowProps(() => navigate('/briefs/' + brief._id), `Open ${brief.clientName}'s brief`)}
                       className="border-b border-brand-800/20 hover:bg-brand-900/10 transition-colors cursor-pointer group"
                     >
                       <td className="px-4 py-4 w-20">

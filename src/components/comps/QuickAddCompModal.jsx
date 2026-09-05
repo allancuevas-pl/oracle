@@ -8,6 +8,7 @@ import { CustomSelect } from '../ui/CustomSelect';
 import { ASSET_TYPES } from '../../../convex/assetTypes';
 import { formatDate } from '../../utils/format';
 import { toNumberOrUndefined } from '../../utils/number';
+import { toggleProps } from '../../utils/rowProps';
 
 const SOURCES = [
   { id: 'property_lions',  label: 'Property Lions' },
@@ -434,8 +435,8 @@ export function QuickAddCompModal({ isOpen, onClose, existingComp, defaultProper
               ))}
             </div>
             <label className="flex items-center gap-2 cursor-pointer mt-1">
-              <div onClick={() => set('verified', !form.verified)}
-                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${form.verified ? 'bg-brand-500 border-brand-500' : 'border-white/20'}`}>
+              <div {...toggleProps(() => set('verified', !form.verified), 'Verbally verified', form.verified)}
+                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${form.verified ? 'bg-brand-500 border-brand-500' : 'border-white/20'}`}>
                 {form.verified && <Check className="w-2.5 h-2.5 text-brand-950" />}
               </div>
               <span className="text-xs text-brand-100/50">Verbally verified</span>

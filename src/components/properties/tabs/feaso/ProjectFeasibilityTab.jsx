@@ -3,6 +3,7 @@ import { formatCurrency } from '../../../../utils/format';
 import { suggestCapRate } from '../../../../utils/capRate';
 import { Pencil, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { rowProps } from '../../../../utils/rowProps';
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
 const fmtRaw = (v) => (v == null ? '—' : `$${Math.round(v).toLocaleString()}`);
@@ -212,11 +213,13 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
             <FeasoFieldCell
               value={feaso.marketRentLow}
+              label="market rent low"
               display={feaso.marketRentLow ? `$${feaso.marketRentLow}/m²` : null}
               onSave={(n) => save({ marketRentLow: n })}
             />
             <FeasoFieldCell
               value={feaso.marketRentHigh}
+              label="market rent high"
               display={feaso.marketRentHigh ? `$${feaso.marketRentHigh}/m²` : null}
               onSave={(n) => save({ marketRentHigh: n })}
             />
@@ -227,11 +230,13 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
             <FeasoFieldCell
               value={feaso.salePricePerSqmLandLow}
+              label="land $/m² low"
               display={feaso.salePricePerSqmLandLow ? `$${Math.round(feaso.salePricePerSqmLandLow).toLocaleString()}` : null}
               onSave={(n) => save({ salePricePerSqmLandLow: n })}
             />
             <FeasoFieldCell
               value={feaso.salePricePerSqmLandHigh}
+              label="land $/m² high"
               display={feaso.salePricePerSqmLandHigh ? `$${Math.round(feaso.salePricePerSqmLandHigh).toLocaleString()}` : null}
               onSave={(n) => save({ salePricePerSqmLandHigh: n })}
             />
@@ -242,11 +247,13 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
             <FeasoFieldCell
               value={feaso.salePricePerSqmBuildLow}
+              label="build $/m² low"
               display={feaso.salePricePerSqmBuildLow ? `$${Math.round(feaso.salePricePerSqmBuildLow).toLocaleString()}` : null}
               onSave={(n) => save({ salePricePerSqmBuildLow: n })}
             />
             <FeasoFieldCell
               value={feaso.salePricePerSqmBuildHigh}
+              label="build $/m² high"
               display={feaso.salePricePerSqmBuildHigh ? `$${Math.round(feaso.salePricePerSqmBuildHigh).toLocaleString()}` : null}
               onSave={(n) => save({ salePricePerSqmBuildHigh: n })}
             />
@@ -262,6 +269,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
             <div className="px-4 py-2.5 text-sm font-semibold text-brand-200 tabular-nums">{formatCurrency(askingPrice)}</div>
             <FeasoFieldCell
               value={feaso.offerPrice}
+              label="offer price"
               display={formatCurrency(offerPrice)}
               onSave={(n) => save({ offerPrice: n })}
               highlight
@@ -590,7 +598,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
 }
 
 // ── Inline cell editor for the benchmark table grid ───────────────────────────
-function FeasoFieldCell({ value, display, onSave, highlight }) {
+function FeasoFieldCell({ value, display, onSave, highlight, label = "this figure" }) {
   const [editing, setEditing]   = useState(false);
   const [inputVal, setInputVal] = useState('');
   const inputRef                = useRef(null);
@@ -606,7 +614,8 @@ function FeasoFieldCell({ value, display, onSave, highlight }) {
   };
 
   return (
-    <div className="px-4 py-2.5 group cursor-pointer" onClick={!editing ? () => { setInputVal(value != null ? String(value) : ''); setEditing(true); } : undefined}>
+    <div className="px-4 py-2.5 group cursor-pointer"
+      {...(!editing ? rowProps(() => { setInputVal(value != null ? String(value) : ''); setEditing(true); }, label ? `Edit ${label}` : "Edit value") : {})}>
       {editing ? (
         <input
           ref={inputRef}

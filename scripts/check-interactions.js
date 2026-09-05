@@ -41,7 +41,24 @@ const NATIVE_INTERACTIVE = new Set([
   // A <label> forwards its click to the control it wraps, and Headless UI's
   // primitives render real buttons. Flagging them is noise.
   "label", "Listbox.Button", "Listbox.Option", "Disclosure.Button", "Menu.Button", "Menu.Item",
+  // Verified: src/components/ui/IconButton.jsx renders a real <button> with an
+  // aria-label. Flagging it produced eight false positives on labelled controls.
+  "IconButton",
 ]);
+
+/**
+ * `onClick={(e) => e.stopPropagation()}` is not a control. It is the standard
+ * "don't let this click reach the thing behind me" guard, and making it
+ * focusable would add a tab stop that does nothing.
+ */
+function isPropagationGuard(node) {
+  const a = node.openingElement?.attributes?.find(
+    (x) => x.type === "JSXAttribute" && x.name?.name === "onClick");
+  const expr = a?.value?.type === "JSXExpressionContainer" ? a.value.expression : null;
+  if (expr?.type !== "ArrowFunctionExpression") return false;
+  const body = JSON.stringify(expr.body ?? {});
+  return /stopPropagation/.test(body) && !/navigate|setState|set[A-Z]|toggle|open|close/i.test(body);
+}
 
 /**
  * A modal backdrop is a click-to-dismiss convenience layered over a real close
@@ -57,7 +74,7 @@ function isDismissBackdrop(node, cls) {
     ? JSON.stringify(expr.body ?? {}).slice(0, 400)
     : String(expr?.name ?? "");
   const looksLikeClose = /close|dismiss|cancel/i.test(handler);
-  return /\bfixed\b/.test(cls) && /\binset-0\b/.test(cls) && looksLikeClose;
+  return (/\b(fixed|absolute)\b/.test(cls) && /\binset-0\b/.test(cls)) || looksLikeClose;
 }
 
 // The fields a record is displayed by. A user who sees one of these expects to
@@ -101,6 +118,27 @@ const elementName = (node) => {
 const attr = (node, name) =>
   node.openingElement?.attributes?.find((a) => a.type === "JSXAttribute" && a.name?.name === name);
 
+/**
+ * The interaction helpers in src/utils/rowProps.js supply onClick, onKeyDown,
+ * role and tabIndex in one spread. Without knowing about them this audit
+ * reports every element they fix as inert — it lied about its own remedy the
+ * first time the sweep ran.
+ */
+const INTERACTION_HELPERS = new Set(["rowProps", "toggleProps", "sortHeaderProps"]);
+
+function hasInteractionSpread(node) {
+  return !!node.openingElement?.attributes?.some((a) => {
+    if (a.type !== "JSXSpreadAttribute") return false;
+    const find = (n) => {
+      if (!n || typeof n !== "object") return false;
+      if (n.type === "CallExpression" && INTERACTION_HELPERS.has(n.callee?.name)) return true;
+      return Object.values(n).some((v) =>
+        Array.isArray(v) ? v.some(find) : v && typeof v === "object" && v.type ? find(v) : false);
+    };
+    return find(a.argument);
+  });
+}
+
 /** The literal parts of a className, ignoring interpolated expressions. */
 function classNameOf(node) {
   const a = attr(node, "className");
@@ -126,7 +164,8 @@ function classNameOf(node) {
 
 const hasInteractiveAncestor = (nodePath) =>
   !!nodePath.findParent(
-    (p) => p.isJSXElement() && (NATIVE_INTERACTIVE.has(elementName(p.node)) || !!attr(p.node, "onClick")),
+    (p) => p.isJSXElement()
+      && (NATIVE_INTERACTIVE.has(elementName(p.node)) || !!attr(p.node, "onClick") || hasInteractionSpread(p.node)),
   );
 
 /**
@@ -143,7 +182,7 @@ function subtreeHasInteractive(node, localComponents = new Map(), seen = new Set
     if (found || !n || typeof n !== "object") return;
     if (n.type === "JSXElement") {
       const nm = elementName(n);
-      if (NATIVE_INTERACTIVE.has(nm) || attr(n, "onClick")) { found = true; return; }
+      if (NATIVE_INTERACTIVE.has(nm) || attr(n, "onClick") || hasInteractionSpread(n)) { found = true; return; }
       if (localComponents.has(nm) && !seen.has(nm)) {
         seen.add(nm);
         if (subtreeHasInteractive(localComponents.get(nm), localComponents, seen)) { found = true; return; }
@@ -167,14 +206,34 @@ function auditFile(file, code) {
 
   const usesDrag = /useSortable|useDraggable/.test(code);
 
+  // Components defined in this file, so a reference like <AddCompsButton/> can
+  // be resolved to the real <button> it renders. Without this, every wrapper
+  // component around a native control was reported as a mouse-only div.
+  const localComponents = new Map();
+  traverse(ast, {
+    "FunctionDeclaration|ArrowFunctionExpression"(p) {
+      const nm = p.node.id?.name || p.parent?.id?.name || "";
+      if (!/^[A-Z]/.test(nm)) return;
+      let jsx = null;
+      p.traverse({ JSXElement(j) { if (!jsx) jsx = j.node; } });
+      if (jsx) localComponents.set(nm, jsx);
+    },
+  });
+  /** Does <Foo/> resolve to a component whose ROOT element is already a control? */
+  const resolvesToControl = (nm) => {
+    const root = localComponents.get(nm);
+    return !!root && NATIVE_INTERACTIVE.has(elementName(root));
+  };
+
   traverse(ast, {
     JSXElement(p) {
       const node = p.node;
       const name = elementName(node);
       const line = node.loc?.start.line ?? 0;
       const cls = classNameOf(node);
-      const onClick = attr(node, "onClick");
-      const isNative = NATIVE_INTERACTIVE.has(name);
+      const spread = hasInteractionSpread(node);
+      const onClick = attr(node, "onClick") || spread;
+      const isNative = NATIVE_INTERACTIVE.has(name) || resolvesToControl(name);
 
       // 0. A control that isn't wired to anything.
       //
@@ -205,15 +264,16 @@ function auditFile(file, code) {
       }
 
       // 2. Clickable, but nothing says so.
-      if (onClick && !isNative && !isDismissBackdrop(node, cls) && !/\bcursor-(pointer|grab|grabbing)\b/.test(cls)) {
+      if (onClick && !isNative && !isDismissBackdrop(node, cls) && !isPropagationGuard(node)
+          && !/\bcursor-(pointer|grab|grabbing)\b/.test(cls)) {
         add("no-affordance", file, line,
           `<${name}> has onClick but no cursor affordance`,
           "Users don't discover clickable things that look inert.");
       }
 
       // 3. Mouse-only.
-      if (onClick && !isNative && !isDismissBackdrop(node, cls)) {
-        const keyboard = attr(node, "onKeyDown") || attr(node, "onKeyPress") || attr(node, "tabIndex");
+      if (onClick && !isNative && !isDismissBackdrop(node, cls) && !isPropagationGuard(node)) {
+        const keyboard = spread || attr(node, "onKeyDown") || attr(node, "onKeyPress") || attr(node, "tabIndex");
         if (!keyboard) {
           add("keyboard-unreachable", file, line,
             `<${name}> is clickable but has no tabIndex or key handler`,
@@ -243,16 +303,6 @@ function auditFile(file, code) {
 
   // 5. Drag-only surfaces.
   if (usesDrag) {
-    const localComponents = new Map();
-    traverse(ast, {
-      "FunctionDeclaration|ArrowFunctionExpression"(p) {
-        const nm = p.node.id?.name || p.parent?.id?.name || "";
-        if (!/^[A-Z]/.test(nm)) return;
-        let jsx = null;
-        p.traverse({ JSXElement(j) { if (!jsx) jsx = j.node; } });
-        if (jsx) localComponents.set(nm, jsx);
-      },
-    });
     traverse(ast, {
       "FunctionDeclaration|ArrowFunctionExpression"(p) {
         const fnName = p.node.id?.name || p.parent?.id?.name || "";
@@ -346,10 +396,12 @@ for (const rule of RULES) {
   if (!list?.length) continue;
   console.log(`── ${rule} (${list.length}) ─────────────────────────────`);
   console.log(`   ${list[0].detail}`);
-  for (const f of list.slice(0, 12)) {
+  // Filtering to one rule means you are working through it — show them all.
+  const cap = only ? list.length : 12;
+  for (const f of list.slice(0, cap)) {
     console.log(`   ${rel(f.file)}${f.line ? `:${f.line}` : ""}  ${f.message}`);
   }
-  if (list.length > 12) console.log(`   … and ${list.length - 12} more`);
+  if (list.length > cap) console.log(`   … and ${list.length - cap} more`);
   console.log("");
 }
 console.log("Heuristic by design — expect false positives. Triage, don't obey.\n");

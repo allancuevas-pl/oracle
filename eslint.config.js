@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // convex/_generated is written by `npx convex dev` — linting generated
+  // code just reports on the generator, and it churns on every codegen.
+  globalIgnores(['dist', 'convex/_generated']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

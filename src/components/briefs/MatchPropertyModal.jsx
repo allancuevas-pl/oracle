@@ -101,7 +101,7 @@ export function MatchPropertyModal({ isOpen, onClose, briefId }) {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                       key={property._id} 
-                      className="flex items-center justify-between p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-brand-500/30 transition-all group cursor-pointer"
+                      className="flex items-center justify-between p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-brand-500/30 transition-all group"
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/5">

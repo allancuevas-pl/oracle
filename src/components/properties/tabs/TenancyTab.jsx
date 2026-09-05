@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Pencil, Trash2, Check, X, Users, DollarSign, TrendingUp, Building } from 'lucide-react';
 import { toast } from 'sonner';
 import { CustomSelect } from '../../ui/CustomSelect';
+import { rowProps } from '../../../utils/rowProps';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -419,7 +420,7 @@ export function TenancyTab({ property, updateTenants }) {
                             ? 'bg-brand-900/10'
                             : 'hover:bg-white/[0.02] cursor-pointer'
                         }`}
-                        onClick={() => !isEditing && handleEdit(tenant)}
+                        {...(!isEditing ? rowProps(() => handleEdit(tenant), `Edit tenancy ${tenant.tenantName ?? ''}`.trim()) : {})}
                       >
                         <td className="px-4 py-3 font-medium text-brand-50 whitespace-nowrap">
                           {isNew ? (

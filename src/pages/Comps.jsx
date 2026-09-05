@@ -10,6 +10,8 @@ import { SkeletonTable } from '../components/ui/Loading';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { rowEntrance } from '../components/ui/motion';
 import { toast } from 'sonner';
+import { rowProps } from '../utils/rowProps';
+import { toggleProps } from '../utils/rowProps';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const TYPE_TABS = ['All', 'Lease', 'Sale'];
@@ -371,12 +373,13 @@ export function Comps() {
                   const isSelected = selected.has(c._id);
                   return (
                     <motion.tr {...rowEntrance(i)} key={c._id}
-                      onClick={() => openEdit(c)}
+                      {...rowProps(() => openEdit(c), `Edit comp at ${c.address}`)}
                       className={`border-b border-white/[0.03] transition-colors cursor-pointer ${
                         isSelected ? 'bg-brand-500/5 hover:bg-brand-500/8' : 'hover:bg-brand-900/10'
                       }`}
                     >
-                      <td className="pl-4 pr-2 py-3 w-8" onClick={e => toggleSelect(e, c._id)}>
+                      <td className="pl-4 pr-2 py-3 w-8 cursor-pointer"
+                        {...toggleProps(e => toggleSelect(e, c._id), `Select comp at ${c.address}`, isSelected)}>
                         <CheckboxCell checked={isSelected} />
                       </td>
                       {tab === 'All' && (

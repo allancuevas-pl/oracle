@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { formatCurrency } from '../utils/format';
 import { daysOpen } from '../utils/briefDate';
 import { useGoBack } from '../hooks/useGoBack';
+import { rowProps } from '../utils/rowProps';
 
 export function BriefView() {
   const { id } = useParams();
@@ -137,7 +138,7 @@ export function BriefView() {
             {/* Client link */}
             {brief.client && (
               <div
-                onClick={() => navigate(`/clients/${brief.client._id}`)}
+                {...rowProps(() => navigate(`/clients/${brief.client._id}`), `Open ${brief.client.name}`)}
                 className="flex items-center space-x-3 p-3 rounded-lg border border-brand-500/20 bg-brand-500/5 hover:bg-brand-500/10 cursor-pointer transition-colors group"
               >
                 <div className="w-8 h-8 rounded-full bg-brand-500/10 border border-brand-500/20 flex items-center justify-center shrink-0">
@@ -309,7 +310,7 @@ export function BriefView() {
                 {matches.map((match) => (
                   <div
                     key={match._id}
-                    onClick={() => navigate(`/properties/${match.property?._id}`)}
+                    {...rowProps(() => navigate(`/properties/${match.property?._id}`), `Open ${match.property?.address ?? 'property'}`)}
                     className="border border-brand-800/50 rounded-lg bg-[#111] overflow-hidden transition-all hover:border-brand-500/30 cursor-pointer group"
                   >
                     <div className="p-4 flex items-start justify-between">

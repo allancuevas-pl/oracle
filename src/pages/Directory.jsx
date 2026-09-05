@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SkeletonTable } from '../components/ui/Loading';
 import { rowEntrance } from '../components/ui/motion';
 import { ContactModal } from '../components/directory/ContactModal';
+import { rowProps } from '../utils/rowProps';
 
 const AU_STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'NT', 'ACT'];
 
@@ -180,7 +181,7 @@ export function Directory() {
                         key={`${e.kind}-${e.id}`}
                         {...rowEntrance(Math.min(index, 20))}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        onClick={() => openRow(e)}
+                        {...rowProps(() => openRow(e), `Open ${e.name}`)}
                         className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
                       >
                         <td className="px-6 py-4">

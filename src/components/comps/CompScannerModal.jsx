@@ -4,6 +4,7 @@ import { api } from '../../../convex/_generated/api';
 import { X, Loader2, ScanLine, Upload, FileText, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { toggleProps } from '../../utils/rowProps';
 
 const ACCEPT = '.pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.csv,application/pdf,image/png,image/jpeg,image/webp';
 
@@ -230,7 +231,7 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
                     </thead>
                     <tbody className="divide-y divide-brand-800/20">
                       {comps.map((c, i) => (
-                        <tr key={i} onClick={() => toggle(i)}
+                        <tr key={i} {...toggleProps(() => toggle(i), `Include ${c.address ?? `row ${i + 1}`}`, selected.has(i))}
                           className={`cursor-pointer transition-colors ${selected.has(i) ? 'bg-brand-500/[0.04]' : 'opacity-50 hover:opacity-80'}`}>
                           <td className="px-3 py-2.5">
                             <div className={`w-4 h-4 rounded border flex items-center justify-center ${selected.has(i) ? 'bg-brand-500 border-brand-500' : 'border-brand-800/60'}`}>

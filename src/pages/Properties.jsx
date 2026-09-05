@@ -9,6 +9,7 @@ import { SkeletonTable } from '../components/ui/Loading';
 import { rowEntrance } from '../components/ui/motion';
 
 import { formatCurrency } from '../utils/format';
+import { rowProps } from '../utils/rowProps';
 
 export function Properties() {
   const navigate = useNavigate();
@@ -131,7 +132,7 @@ export function Properties() {
                       key={prop._id}
                       {...rowEntrance(index)}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      onClick={() => navigate(`/properties/${prop._id}`)}
+                      {...rowProps(() => navigate(`/properties/${prop._id}`), `Open ${prop.address}`)}
                       className="hover:bg-brand-900/10 transition-colors cursor-pointer group"
                     >
                       <td className="pl-6 pr-2 py-3">

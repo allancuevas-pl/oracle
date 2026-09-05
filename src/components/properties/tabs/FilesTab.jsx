@@ -6,6 +6,7 @@ import { Upload, FileText, Download, Trash2, Loader2, Lock, Eye, FolderLock } fr
 import { Spinner } from '../../ui/Loading';
 import { formatDate, formatFileSize } from '../../../utils/format';
 import { toast } from 'sonner';
+import { rowProps } from '../../../utils/rowProps';
 
 const CATEGORIES = ['Contract', 'Loan', 'Legal', 'DD', 'Other'];
 
@@ -87,7 +88,7 @@ export function FilesTab({ property }) {
 
       {/* Dropzone */}
       <div
-        onClick={() => inputRef.current?.click()}
+        {...rowProps(() => inputRef.current?.click(), 'Choose files to upload')}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
