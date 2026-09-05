@@ -14,6 +14,7 @@ import { PageLoader, Spinner } from '../components/ui/Loading';
 import { toast } from 'sonner';
 
 import { formatCurrency } from '../utils/format';
+import { daysOpen } from '../utils/briefDate';
 
 
 export function ClientView() {
@@ -180,8 +181,7 @@ export function ClientView() {
             ) : (
               <div className="space-y-3">
                 {briefs.map((brief) => {
-                  const startTime = brief.startDate ?? brief._creationTime ?? Date.now();
-                  const daysOpen = Math.floor((Date.now() - startTime) / (1000 * 60 * 60 * 24));
+                  const openFor = daysOpen(brief.startDate ?? brief._creationTime);
                   const budget = brief.budgetMin != null && brief.budgetMax != null
                     ? `${formatCurrency(brief.budgetMin)} – ${formatCurrency(brief.budgetMax)}`
                     : null;
@@ -221,7 +221,7 @@ export function ClientView() {
                           }`}>
                             {brief.priority || 'Low'}
                           </span>
-                          <p className="text-xs text-brand-100/40 mt-1">{daysOpen}d open</p>
+                          <p className="text-xs text-brand-100/40 mt-1">{openFor}d open</p>
                         </div>
                       </div>
                     </div>

@@ -118,6 +118,10 @@ export const updateBrief = mutation({
     clientName: v.optional(v.string()),
     stage: v.optional(v.string()),
     priority: v.optional(v.string()),
+    // The date the mandate actually opened. Set at creation, but a brief is
+    // routinely entered into Oracle weeks after the client engaged — and it
+    // drives the "Opened N days ago" headline, so it has to be correctable.
+    startDate: v.optional(v.number()),
     capital: v.optional(v.number()),
     budgetMin: v.optional(v.number()),
     budgetMax: v.optional(v.number()),

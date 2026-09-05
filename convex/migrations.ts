@@ -290,3 +290,29 @@ export const normaliseCompDates = internalMutation({
     return { dryRun, scanned: rows.length, changed, details, capHit: rows.length === limit };
   },
 });
+
+/**
+ * Backfill `matches.statusChangedAt`.
+ *
+ * A match carried no timestamp of any kind, so nothing could tell how long a
+ * deal had sat in its stage. Existing rows have no record of when they last
+ * moved, so `_creationTime` is used — deliberately the earliest defensible
+ * value, which makes an old deal look at least as stale as it really is rather
+ * than resetting everything to "just moved" and hiding the very deals the flag
+ * exists to surface.
+ *
+ *   npx convex run migrations:backfillMatchStatusChangedAt '{"dryRun":true}'
+ */
+export const backfillMatchStatusChangedAt = internalMutation({
+  args: { dryRun: v.boolean(), batch: v.optional(v.number()) },
+  handler: async (ctx, { dryRun, batch }) => {
+    const rows = await ctx.db.query("matches").take(batch ?? 1000);
+    let updated = 0, alreadySet = 0;
+    for (const row of rows) {
+      if (row.statusChangedAt != null) { alreadySet++; continue; }
+      if (!dryRun) await ctx.db.patch(row._id, { statusChangedAt: row._creationTime });
+      updated++;
+    }
+    return { dryRun, scanned: rows.length, updated, alreadySet };
+  },
+});

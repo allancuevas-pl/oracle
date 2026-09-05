@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { CustomSelect } from '../ui/CustomSelect';
 import { ClientModal } from '../clients/ClientModal';
 import { useForm, Controller } from 'react-hook-form';
+import { toDateInput, fromDateInput } from '../../utils/briefDate';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
@@ -85,6 +86,10 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
           stage: editingBrief.stage || 'Triage',
           priority: editingBrief.priority || 'Medium',
           capital: editingBrief.capital ? editingBrief.capital.toLocaleString() : '',
+          // Fall back to the record's creation time: 4 of the 9 live briefs
+          // predate the startDate field, and showing them blank would invite
+          // saving a blank over a date the header is already deriving from.
+          startDate: toDateInput(editingBrief.startDate ?? editingBrief._creationTime),
           targets: editingBrief.targets || '',
           others: editingBrief.others || '',
         });
@@ -103,6 +108,7 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
           stage: 'Triage',
           priority: 'Medium',
           capital: '',
+          startDate: toDateInput(Date.now()),
           targets: '',
           others: '',
         });
@@ -142,6 +148,7 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
       location: selectedLocations,
       assetTypes: selectedAssetTypes,
       strategies: selectedStrategies,
+      startDate: fromDateInput(data.startDate),
       targets: data.targets,
       others: data.others,
     };
@@ -396,6 +403,11 @@ export function BriefModal({ isOpen, onClose, editingBrief, preselectedClient })
                     placeholder="3,500,000" 
                   />
                 </div>
+              </div>
+              <div>
+                <label htmlFor="brief-start-date" className="block text-sm font-medium text-brand-100/70 mb-1">Date Opened</label>
+                <input id="brief-start-date" {...register("startDate")} type="date" className="w-full bg-[#0A0A0A] border border-brand-800/50 rounded-md px-3 py-2 text-sm text-brand-50 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50" />
+                <p className="text-[11px] text-brand-100/35 mt-1">When the mandate opened — drives &ldquo;Opened N days ago&rdquo;.</p>
               </div>
               <div>
                 <label htmlFor="brief-targets" className="block text-sm font-medium text-brand-100/70 mb-1">Financial Targets</label>

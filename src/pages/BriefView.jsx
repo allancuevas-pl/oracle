@@ -13,6 +13,7 @@ import { PulseFeed } from '../components/ui/PulseFeed';
 import { PageLoader, Spinner } from '../components/ui/Loading';
 import { toast } from 'sonner';
 import { formatCurrency } from '../utils/format';
+import { daysOpen } from '../utils/briefDate';
 
 export function BriefView() {
   const { id } = useParams();
@@ -58,15 +59,14 @@ export function BriefView() {
     return Array.isArray(v) ? v.join(", ") : v;
   };
 
-  const startTime = brief.startDate ?? brief._creationTime ?? Date.now();
-  const daysOpen = Math.floor((Date.now() - startTime) / (1000 * 60 * 60 * 24));
+  const openFor = daysOpen(brief.startDate ?? brief._creationTime);
   const subtitlePrefix = brief.briefId ? `${brief.briefId} · ` : "";
 
   return (
     <>
       <RecordWorkspace
         title={brief.client ? brief.client.name : brief.clientName}
-        subtitle={`${subtitlePrefix}${brief.client?.company ? brief.client.company + ' · ' : ''}Opened ${daysOpen} day${daysOpen !== 1 ? 's' : ''} ago`}
+        subtitle={`${subtitlePrefix}${brief.client?.company ? brief.client.company + ' · ' : ''}Opened ${openFor} day${openFor !== 1 ? 's' : ''} ago`}
         onBack={() => navigate('/briefs')}
         actions={
           <>

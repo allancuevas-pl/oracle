@@ -104,6 +104,7 @@ export const createMatch = mutation({
       briefId: args.briefId,
       propertyId: args.propertyId,
       status: args.status as any,
+      statusChangedAt: Date.now(),
       createdBy: identity.subject,
     });
   },
@@ -146,7 +147,10 @@ export const updateMatch = mutation({
       throw new Error("Match not found");
     }
 
-    await ctx.db.patch(id, updates);
+    // Stamp the move, but only on a real transition — re-saving a note must
+    // not make a deal look freshly worked.
+    const movedStage = updates.status != null && updates.status !== existing.status;
+    await ctx.db.patch(id, movedStage ? { ...updates, statusChangedAt: Date.now() } : updates);
 
     // Audit log: status transitions (e.g. "Shortlisted" → "Under Review")
     // are written to the activities feed for both the brief and the property,

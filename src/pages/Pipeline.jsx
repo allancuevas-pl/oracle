@@ -35,6 +35,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { stalenessOf, formatStageAge } from '../utils/dealAge';
 
 // ─── Stage Definitions ────────────────────────────────────────────
 // Neutral treatment for all 8 progression stages — one consistent visual
@@ -102,6 +103,9 @@ function DealCard({ match, isDragging = false, usersMap = {} }) {
   const { property, brief } = match;
   const resolvedId = resolveStage(match.status);
   const stage = STAGES.find((s) => s.id === resolvedId);
+  // Null when the deal is finished or has no timestamp yet — a flag that nags
+  // should say nothing rather than guess.
+  const age = stalenessOf(match, stage);
 
   return (
     <div
@@ -162,6 +166,20 @@ function DealCard({ match, isDragging = false, usersMap = {} }) {
             <span className="text-brand-600 text-[10px] shrink-0">#{brief.briefId}</span>
           )}
         </div>
+        {age && (
+          <span
+            title={age.isStale
+              ? `No movement for ${age.days} days — over the ${age.threshold}-day mark for ${stage?.label}`
+              : `${age.days} days in ${stage?.label}`}
+            className={`text-[10px] shrink-0 ml-2 px-1.5 py-0.5 rounded-full border tabular-nums ${
+              age.isStale
+                ? 'text-amber-300/90 bg-amber-500/10 border-amber-500/25'
+                : 'text-brand-100/35 bg-transparent border-transparent'
+            }`}
+          >
+            {formatStageAge(age.days)}
+          </span>
+        )}
         <Link
           to={`/briefs/${match.briefId}`}
           onClick={(e) => e.stopPropagation()}

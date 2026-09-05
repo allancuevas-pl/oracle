@@ -307,6 +307,9 @@ export default defineSchema({
       v.literal("Accepted")
     ),
     notes: v.optional(v.string()),
+    // When the deal last moved stage. There was no timestamp on a match at
+    // all, so "this deal hasn't moved in a month" was not answerable.
+    statusChangedAt: v.optional(v.number()),
     createdBy: v.string(), // clerkId
   })
     .index("by_brief", ["briefId"])
