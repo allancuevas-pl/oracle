@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
 /**
  * Interaction audit — finds the class of bug that unit tests cannot see.
  *
