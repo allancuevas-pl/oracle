@@ -6,7 +6,9 @@ export const insertMockUser = internalMutation({
   args: {
     clerkId: v.string(),
     email: v.string(),
-    role: v.union(v.literal("staff"), v.literal("client"), v.literal("admin")),
+    // "blocked" is included deliberately: the role tests need to assert that a
+    // revoked account really is locked out, not just absent.
+    role: v.union(v.literal("staff"), v.literal("client"), v.literal("admin"), v.literal("blocked")),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("users", {

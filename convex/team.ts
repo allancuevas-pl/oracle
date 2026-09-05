@@ -1,4 +1,5 @@
 import { action, internalMutation, mutation, query } from "./_generated/server";
+import { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { requireAdmin, requireStaffOrAdmin } from "./authz";
@@ -26,6 +27,25 @@ export const getPendingInvitations = query({
     return await ctx.db.query("pendingInvitations").take(100);
   },
 });
+
+/**
+ * Every `users` row for an email — deliberately not `.first()`.
+ *
+ * `storeUser` keys off Clerk's `subject`, so one person signing in a second way
+ * (Google after a password account) gets a SECOND users row. Three live emails
+ * are already in that state. Every role path here resolves by email, so taking
+ * `.first()` meant a revoke or a promotion landed on one row and left the other
+ * untouched — a revoked client could sign in the other way and still read their
+ * deal. Role writes must cover all of them.
+ *
+ * Capped: a legitimate email has 1-2 rows; anything approaching 20 is a bug.
+ */
+async function usersForEmail(ctx: MutationCtx, email: string) {
+  return await ctx.db
+    .query("users")
+    .withIndex("by_email", (q) => q.eq("email", email.trim().toLowerCase()))
+    .take(20);
+}
 
 // ─── Internal mutations (called from server-side actions only) ────────────────
 
@@ -65,18 +85,18 @@ export const upsertUserRole = internalMutation({
     role: v.union(v.literal("admin"), v.literal("staff"), v.literal("client")),
   },
   handler: async (ctx, { email, role }) => {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", email))
-      .first();
-    if (!user) return;
-    // Guard: a client-portal invite must never demote an existing CRM user.
-    // E.g. creating a client record with an admin's email shouldn't strip their
-    // admin access. Team-role invites (staff/admin) are explicit and allowed.
-    if (role === "client" && (user.role === "staff" || user.role === "admin")) {
-      return;
+    // EVERY row for this email, not just the first — see usersForEmail.
+    const users = await usersForEmail(ctx, email);
+    for (const user of users) {
+      // Guard: a client-portal invite must never demote an existing CRM user.
+      // E.g. creating a client record with an admin's email shouldn't strip their
+      // admin access. Team-role invites (staff/admin) are explicit and allowed.
+      // Applied per row, since duplicate rows can hold different roles.
+      if (role === "client" && (user.role === "staff" || user.role === "admin")) {
+        continue;
+      }
+      await ctx.db.patch(user._id, { role });
     }
-    await ctx.db.patch(user._id, { role });
   },
 });
 
@@ -119,7 +139,23 @@ export const removeMember = mutation({
     if (caller._id === args.userId) {
       throw new Error("Cannot remove yourself from the team");
     }
-    await ctx.db.patch(args.userId, { role: "blocked" });
+
+    const target = await ctx.db.get(args.userId);
+    if (!target) throw new Error("User not found");
+
+    // Refuse a self-removal routed through a duplicate row of your own account.
+    if (target.email && caller.email && target.email.toLowerCase() === caller.email.toLowerCase()) {
+      throw new Error("Cannot remove yourself from the team");
+    }
+
+    // Block EVERY identity for this email, not just the row the caller passed.
+    // Revoking one row while another stayed live was a real hole — the person
+    // simply signed in the other way and kept their access.
+    const rows = target.email ? await usersForEmail(ctx, target.email) : [];
+    const ids = new Set([args.userId, ...rows.map((r) => r._id)]);
+    for (const id of ids) {
+      await ctx.db.patch(id, { role: "blocked" });
+    }
   },
 });
 

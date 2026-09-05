@@ -34,6 +34,7 @@ import type * as team from "../team.js";
 import type * as testing from "../testing.js";
 import type * as users from "../users.js";
 import type * as utils from "../utils.js";
+import type * as wale from "../wale.js";
 
 import type {
   ApiFromModules,
@@ -68,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   testing: typeof testing;
   users: typeof users;
   utils: typeof utils;
+  wale: typeof wale;
 }>;
 
 /**
