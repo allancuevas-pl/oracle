@@ -136,9 +136,14 @@ export function SaveCompsModal({ isOpen, onClose, data, extractionId }) {
     if (toSave.length === 0) return;
     setSaving(true);
     try {
-      await createComps({ comps: toSave });
+      const res = await createComps({ comps: toSave });
       setSaved(true);
-      toast.success(`${toSave.length} comp${toSave.length > 1 ? 's' : ''} saved to database`);
+      const made = res?.created ?? toSave.length;
+      const dupes = res?.skipped ?? 0;
+      toast.success(
+        `${made} comp${made !== 1 ? 's' : ''} saved to database` +
+        (dupes ? ` · ${dupes} already there, skipped` : '')
+      );
       setTimeout(onClose, 800);
     } catch (e) {
       toast.error('Save failed', { description: e.message });

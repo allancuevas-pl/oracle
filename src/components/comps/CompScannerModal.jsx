@@ -111,8 +111,15 @@ export function CompScannerModal({ isOpen, onClose, onImported }) {
     if (!chosen.length) { toast.error('Select at least one comp.'); return; }
     setImporting(true);
     try {
-      await createComps({ comps: chosen });
-      toast.success(`Imported ${chosen.length} comp${chosen.length !== 1 ? 's' : ''}`);
+      const res = await createComps({ comps: chosen });
+      // Exact re-imports are skipped server-side; say so rather than reporting
+      // a count the user can't reconcile with what lands in the table.
+      const made = res?.created ?? chosen.length;
+      const dupes = res?.skipped ?? 0;
+      toast.success(
+        `Imported ${made} comp${made !== 1 ? 's' : ''}` +
+        (dupes ? ` · ${dupes} already in the database, skipped` : '')
+      );
       onImported?.();
       close();
     } catch (err) {

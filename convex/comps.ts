@@ -2,6 +2,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { requireStaffOrAdmin } from "./authz";
+import { normaliseCompDateFields } from "./compDates";
 
 // ─── Maintenance (CLI-only via `npx convex run`) ─────────────────────────────
 
@@ -203,6 +204,38 @@ function compFilterPredicate(q: any, f: CompFilters) {
  * rows in one read; no caller ever hit them, and they were a hazard sitting in
  * a table headed for ~260k rows, so they're gone.
  */
+/**
+ * A comp's identity, for spotting the same evidence imported twice.
+ *
+ * The scanner had no duplicate check at all, so re-scanning an agent's table —
+ * or scanning two workbook tabs that overlap — inserted everything again. It
+ * has already happened: 8 of the 142 live comps are redundant copies, all from
+ * the 2026-07-28 import, including "21 Magnesium Street" three times.
+ *
+ * The key is deliberately STRICT. A building routinely has several genuine
+ * tenancies leased in the same month, so address + date is not enough — 21
+ * Magnesium Street has a real 945sqm and a real 950sqm record. Tenant, area and
+ * money must all match before two rows are called the same event. Anything less
+ * exact is left alone: a false "already imported" silently discards evidence,
+ * which is worse than a duplicate an analyst can see and delete.
+ */
+export function compIdentityKey(c: {
+  type?: string; address?: string; suburb?: string; tenant?: string;
+  leaseDate?: string; saleDate?: string; nlaSqm?: number;
+  rentPa?: number; salePrice?: number;
+}): string {
+  const text = (v?: string) => (v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const num = (v?: number) => (typeof v === "number" && Number.isFinite(v) ? String(v) : "");
+  return [
+    text(c.type), text(c.address), text(c.suburb), text(c.tenant),
+    text(c.leaseDate), text(c.saleDate),
+    num(c.nlaSqm), num(c.rentPa), num(c.salePrice),
+  ].join("|");
+}
+
+/** Cap on same-suburb rows scanned when checking an import for duplicates. */
+const DUPLICATE_SCAN_LIMIT = 500;
+
 export const getComps = query({
   args: {
     suburb: v.string(),
@@ -377,10 +410,15 @@ export const getComp = query({
 /** Create a single comp. Accepts raw rent input and converts monthly → annual. */
 export const createComp = mutation({
   args: compWriteFields,
-  handler: async (ctx, args) => {
+  handler: async (ctx, rawArgs) => {
     await requireStaffOrAdmin(ctx);
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+
+    // A date field holds an ISO date or nothing. Text that isn't a date ("Upon
+    // Completion") sorts ABOVE real dates in the recency filter's string
+    // comparison, so it would present as the most recent evidence available.
+    const args = normaliseCompDateFields(rawArgs);
 
     // Normalise rent: convert monthly to annual if needed
     let rentPa = args.rentPa;
@@ -425,8 +463,37 @@ export const createComps = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
+    // Duplicate guard. Candidates come from the suburb+type index, so this is
+    // a handful of rows per import even once the table is large.
+    const seen = new Set<string>();
+    const suburbsChecked = new Set<string>();
+    for (const c of comps) {
+      const bucket = `${(c.suburb ?? "").trim().toLowerCase()}|${c.type}`;
+      if (suburbsChecked.has(bucket)) continue;
+      suburbsChecked.add(bucket);
+      const existing = await ctx.db
+        .query("comps")
+        .withIndex("by_suburb_and_type", (q) =>
+          q.eq("suburb", c.suburb).eq("type", c.type),
+        )
+        .take(DUPLICATE_SCAN_LIMIT);
+      for (const row of existing) seen.add(compIdentityKey(row));
+    }
+
     const ids: string[] = [];
-    for (const comp of comps) {
+    const skipped: string[] = [];
+    for (const rawComp of comps) {
+      const comp = normaliseCompDateFields(rawComp);
+
+      // Skip an exact re-import, and also a repeat within this same batch —
+      // overlapping workbook tabs produce both.
+      const key = compIdentityKey(comp);
+      if (seen.has(key)) {
+        skipped.push(comp.address);
+        continue;
+      }
+      seen.add(key);
+
       let rentPa = comp.rentPa;
       if (rentPa && comp.rentInputFormat === "monthly") {
         rentPa = rentPa * 12;
@@ -455,7 +522,9 @@ export const createComps = mutation({
       });
       ids.push(id);
     }
-    return ids;
+    // Callers get the counts so the UI can say what actually happened —
+    // silently importing 9 of 12 would be its own kind of lie.
+    return { ids, created: ids.length, skipped: skipped.length, skippedAddresses: skipped };
   },
 });
 
@@ -469,10 +538,22 @@ export const updateComp = mutation({
         .map(([k, v]) => [k, v])
     ) as Omit<typeof compWriteFields, "type">,
   },
-  handler: async (ctx, { id, ...fields }) => {
+  handler: async (ctx, { id, ...rawFields }) => {
     await requireStaffOrAdmin(ctx);
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error("Comp not found");
+
+    // Same rule on edit as on create — a hand-typed date gets the same
+    // treatment as a scanned one. An unparseable value clears the field
+    // (patch removes an undefined key) and is preserved in notes. Seed the
+    // notes from the stored record, or appending would wipe what's there.
+    const fields = normaliseCompDateFields({
+      ...rawFields,
+      notes: rawFields.notes ?? existing.notes,
+    });
 
     // Re-derive calculated fields on update
     let rentPa = fields.rentPa;
@@ -494,9 +575,6 @@ export const updateComp = mutation({
 
     // searchText must reflect the document AFTER the patch — a partial update
     // that only changes suburb still has to rebuild the whole blob.
-    const existing = await ctx.db.get(id);
-    if (!existing) throw new Error("Comp not found");
-
     await ctx.db.patch(id, {
       ...fields,
       rentPa,

@@ -1,6 +1,7 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { compSearchText } from "./comps";
+import { normaliseCompDateFields, COMP_DATE_FIELDS } from "./compDates";
 import { ASSET_TYPES } from "./assetTypes";
 
 /**
@@ -241,5 +242,51 @@ export const setRoleByEmail = internalMutation({
       }
     }
     return { found: rows.length, before, after: role, changed: !dryRun };
+  },
+});
+
+/**
+ * Clear non-date text out of comp date fields, preserving it in `notes`.
+ *
+ * Five live comps hold text where a date belongs — three "Upon Completion",
+ * one "Q4 25", one "Q1 26", all in `leaseDate`. The browse recency filter
+ * compares dates with a Convex `gte`, which on strings is LEXICOGRAPHIC: "U"
+ * and "Q" both sort above "2", so those comps pass every "since" filter and
+ * present as the most recent evidence available, while a real 2019 comp is
+ * correctly excluded. Exactly backwards, in a valuation tool.
+ *
+ * The write paths now normalise on the way in (convex/compDates.ts); this
+ * cleans what is already stored. Idempotent — the note line is only added once.
+ *
+ *   npx convex run migrations:normaliseCompDates '{"dryRun":true}'
+ *   npx convex run migrations:normaliseCompDates '{"dryRun":false}'
+ */
+export const normaliseCompDates = internalMutation({
+  args: { dryRun: v.boolean(), batch: v.optional(v.number()) },
+  handler: async (ctx, { dryRun, batch }) => {
+    const limit = batch ?? 1000;
+    const rows = await ctx.db.query("comps").take(limit);
+
+    let changed = 0;
+    const details: Array<{ address: string; field: string; was: string; now: string | null }> = [];
+
+    for (const row of rows) {
+      const next = normaliseCompDateFields(row);
+      const touched = COMP_DATE_FIELDS.filter((f) => row[f] !== next[f]);
+      if (touched.length === 0) continue;
+
+      for (const f of touched) {
+        details.push({ address: row.address, field: f, was: row[f]!, now: next[f] ?? null });
+      }
+      if (!dryRun) {
+        await ctx.db.patch(row._id, {
+          ...Object.fromEntries(touched.map((f) => [f, next[f]])),
+          notes: next.notes,
+        });
+      }
+      changed++;
+    }
+
+    return { dryRun, scanned: rows.length, changed, details, capHit: rows.length === limit };
   },
 });

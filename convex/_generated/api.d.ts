@@ -15,6 +15,7 @@ import type * as briefs from "../briefs.js";
 import type * as clientDocuments from "../clientDocuments.js";
 import type * as clientPortal from "../clientPortal.js";
 import type * as clients from "../clients.js";
+import type * as compDates from "../compDates.js";
 import type * as compExtractionAction from "../compExtractionAction.js";
 import type * as comps from "../comps.js";
 import type * as contacts from "../contacts.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   clientDocuments: typeof clientDocuments;
   clientPortal: typeof clientPortal;
   clients: typeof clients;
+  compDates: typeof compDates;
   compExtractionAction: typeof compExtractionAction;
   comps: typeof comps;
   contacts: typeof contacts;
