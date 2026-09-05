@@ -171,7 +171,7 @@ export function Briefs() {
                 <tr>
                   <th
                     className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group w-20 text-center focus-within:text-white"
-                    {...sortHeaderProps(() => handleSort('priority'), `Sort by priority`, { active: sortField === 'priority', direction: sortDir })}
+                    {...sortHeaderProps(() => handleSort('priority'), 'Sort by priority', { active: sortField === 'priority', direction: sortDir })}
                   >
                     <div className="flex items-center justify-center space-x-1">
                       <span>Priority</span>
@@ -180,7 +180,7 @@ export function Briefs() {
                   </th>
                   <th
                     className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
-                    {...sortHeaderProps(() => handleSort('clientName'), `Sort by clientName`, { active: sortField === 'clientName', direction: sortDir })}
+                    {...sortHeaderProps(() => handleSort('clientName'), 'Sort by client', { active: sortField === 'clientName', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Client</span>
@@ -189,7 +189,7 @@ export function Briefs() {
                   </th>
                   <th
                     className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
-                    {...sortHeaderProps(() => handleSort('stage'), `Sort by stage`, { active: sortField === 'stage', direction: sortDir })}
+                    {...sortHeaderProps(() => handleSort('stage'), 'Sort by stage', { active: sortField === 'stage', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Stage</span>
@@ -198,7 +198,7 @@ export function Briefs() {
                   </th>
                   <th
                     className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
-                    {...sortHeaderProps(() => handleSort('daysOpen'), `Sort by daysOpen`, { active: sortField === 'daysOpen', direction: sortDir })}
+                    {...sortHeaderProps(() => handleSort('daysOpen'), 'Sort by days open', { active: sortField === 'daysOpen', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Days Open</span>
@@ -207,7 +207,7 @@ export function Briefs() {
                   </th>
                   <th
                     className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
-                    {...sortHeaderProps(() => handleSort('assetType'), `Sort by assetType`, { active: sortField === 'assetType', direction: sortDir })}
+                    {...sortHeaderProps(() => handleSort('assetType'), 'Sort by asset types', { active: sortField === 'assetType', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Asset Types</span>
@@ -216,7 +216,7 @@ export function Briefs() {
                   </th>
                   <th
                     className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
-                    {...sortHeaderProps(() => handleSort('budget'), `Sort by budget`, { active: sortField === 'budget', direction: sortDir })}
+                    {...sortHeaderProps(() => handleSort('budget'), 'Sort by budget range', { active: sortField === 'budget', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Budget Range</span>
@@ -225,7 +225,7 @@ export function Briefs() {
                   </th>
                   <th
                     className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer hover:text-white transition-colors group focus-within:text-white"
-                    {...sortHeaderProps(() => handleSort('location'), `Sort by location`, { active: sortField === 'location', direction: sortDir })}
+                    {...sortHeaderProps(() => handleSort('location'), 'Sort by location', { active: sortField === 'location', direction: sortDir })}
                   >
                     <div className="flex items-center space-x-1">
                       <span>Location</span>
