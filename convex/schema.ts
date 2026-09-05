@@ -445,6 +445,14 @@ export default defineSchema({
     salePricePerSqmBuildHigh: v.optional(v.number()),
     salePricePerSqmLandLow: v.optional(v.number()),
     salePricePerSqmLandHigh: v.optional(v.number()),
+  // The rate the analyst ADOPTS, as distinct from the min/max evidence range.
+  // The Project Feasibility tab has always had an "Adopted" column and it was
+  // never a field — every row rendered the static string "$/m²" under that
+  // heading, so there was nowhere to put the number. Will asked for this on
+  // 2026-09-02; it was logged as "needs reproduction" and then dropped.
+  adoptedMarketRent: v.optional(v.number()),        // $/m²
+  adoptedLandRate: v.optional(v.number()),          // $/m²
+  adoptedBuildRate: v.optional(v.number()),         // $/m²
     adoptedCapRate: v.optional(v.number()),         // % e.g. 5.5 — drives new value calc
 
     // Project inputs

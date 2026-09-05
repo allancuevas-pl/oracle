@@ -4,6 +4,7 @@ import { suggestCapRate } from '../../../../utils/capRate';
 import { Pencil, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { rowProps } from '../../../../utils/rowProps';
+import { suggestAdopted, effectiveRate } from '../../../../utils/adopted';
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
 const fmtRaw = (v) => (v == null ? '—' : `$${Math.round(v).toLocaleString()}`);
@@ -127,7 +128,7 @@ function OutputTile({ label, value, positive, negative, neutral }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
+export function ProjectFeasibilityTab({ property, feaso, salesComps, save, saveProperty }) {
   const tenants     = property.tenants || [];
   // Only ever a starting point — the team adopts the cap rate by hand. Shows
   // nothing unless the linked sales evidence actually carries cap rates.
@@ -142,6 +143,14 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
   const duration    = feaso.projectDurationYears;
 
   // ── Market rent totals ────────────────────────────────────────────────────
+  // The rate the model runs on: the adopted rate once an analyst commits one,
+  // otherwise the LOW end of the evidence range. Low, not the midpoint — the
+  // valuation stays conservative until somebody adopts a number on purpose.
+  // Nothing on screen moves for an existing feaso, because none has an adopted
+  // rate yet; the number only changes when a human sets one.
+  const rentRate    = effectiveRate(feaso.adoptedMarketRent, feaso.marketRentLow);
+  const mrAdopted   = rentRate != null && nla ? rentRate * nla : null;
+
   const mrLowTotal  = feaso.marketRentLow  && nla ? feaso.marketRentLow  * nla : null;
   const mrHighTotal = feaso.marketRentHigh && nla ? feaso.marketRentHigh * nla : null;
 
@@ -163,10 +172,10 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
 
   // ── Project costs ──────────────────────────────────────────────────────────
   const leasingCostsPct  = feaso.leasingCostsPct ?? 11;
-  const leasingCosts     = mrLowTotal ? mrLowTotal * (leasingCostsPct / 100) : null;
+  const leasingCosts     = mrAdopted ? mrAdopted * (leasingCostsPct / 100) : null;
   const incentivesPct    = feaso.incentivesPct ?? 15;
   const incentiveTerm    = feaso.incentiveTermYears ?? 5;
-  const incentives       = mrLowTotal ? mrLowTotal * (incentivesPct / 100) * incentiveTerm : null;
+  const incentives       = mrAdopted ? mrAdopted * (incentivesPct / 100) * incentiveTerm : null;
   const interestRatePct  = feaso.interestRatePct ?? 6.5;
   const interest         = loan && duration ? loan * (interestRatePct / 100) * duration : null;
   const works            = feaso.works ?? null;
@@ -180,7 +189,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
 
   // ── Outputs ───────────────────────────────────────────────────────────────
   const adoptedCapRate = feaso.adoptedCapRate;
-  const newValue       = mrLowTotal && adoptedCapRate ? mrLowTotal / (adoptedCapRate / 100) : null;
+  const newValue       = mrAdopted && adoptedCapRate ? mrAdopted / (adoptedCapRate / 100) : null;
   const netProfit      = newValue != null && totalCosts != null ? newValue - totalCosts : null;
   const profitMargin   = newValue && netProfit != null ? (netProfit / newValue) * 100 : null;
   const equity         = totalCosts != null && loan != null ? totalCosts - loan : null;
@@ -210,7 +219,15 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
           {/* Market rent row */}
           <div className="grid grid-cols-4 border-b border-white/[0.04] hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Market rent (net)</div>
-            <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
+            <FeasoFieldCell
+              value={feaso.adoptedMarketRent}
+              label="adopted market rent"
+              display={feaso.adoptedMarketRent != null ? `$${feaso.adoptedMarketRent}/m²` : null}
+              suggestion={suggestAdopted(feaso.marketRentLow, feaso.marketRentHigh)}
+              suggestionLabel={(() => { const sv = suggestAdopted(feaso.marketRentLow, feaso.marketRentHigh); return sv == null ? null : `$${sv}/m²`; })()}
+              onSave={(n) => save({ adoptedMarketRent: n })}
+              highlight
+            />
             <FeasoFieldCell
               value={feaso.marketRentLow}
               label="market rent low"
@@ -227,7 +244,15 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
           {/* Market sale price — land */}
           <div className="grid grid-cols-4 border-b border-white/[0.04] hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Sale price (land)</div>
-            <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
+            <FeasoFieldCell
+              value={feaso.adoptedLandRate}
+              label="adopted land rate"
+              display={feaso.adoptedLandRate != null ? `$${Math.round(feaso.adoptedLandRate).toLocaleString()}` : null}
+              suggestion={suggestAdopted(feaso.salePricePerSqmLandLow, feaso.salePricePerSqmLandHigh)}
+              suggestionLabel={(() => { const sv = suggestAdopted(feaso.salePricePerSqmLandLow, feaso.salePricePerSqmLandHigh); return sv == null ? null : `$${Math.round(sv).toLocaleString()}`; })()}
+              onSave={(n) => save({ adoptedLandRate: n })}
+              highlight
+            />
             <FeasoFieldCell
               value={feaso.salePricePerSqmLandLow}
               label="land $/m² low"
@@ -244,7 +269,15 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
           {/* Market sale price — build */}
           <div className="grid grid-cols-4 hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Sale price (build)</div>
-            <div className="px-4 py-2.5 text-xs text-brand-100/45">$/m²</div>
+            <FeasoFieldCell
+              value={feaso.adoptedBuildRate}
+              label="adopted build rate"
+              display={feaso.adoptedBuildRate != null ? `$${Math.round(feaso.adoptedBuildRate).toLocaleString()}` : null}
+              suggestion={suggestAdopted(feaso.salePricePerSqmBuildLow, feaso.salePricePerSqmBuildHigh)}
+              suggestionLabel={(() => { const sv = suggestAdopted(feaso.salePricePerSqmBuildLow, feaso.salePricePerSqmBuildHigh); return sv == null ? null : `$${Math.round(sv).toLocaleString()}`; })()}
+              onSave={(n) => save({ adoptedBuildRate: n })}
+              highlight
+            />
             <FeasoFieldCell
               value={feaso.salePricePerSqmBuildLow}
               label="build $/m² low"
@@ -266,7 +299,12 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
           </div>
           <div className="grid grid-cols-4 border-b border-white/[0.04] hover:bg-white/[0.01] items-center">
             <div className="px-4 py-2.5 text-xs text-brand-100/50">Price</div>
-            <div className="px-4 py-2.5 text-sm font-semibold text-brand-200 tabular-nums">{formatCurrency(askingPrice)}</div>
+            <FeasoFieldCell
+              value={askingPrice}
+              label="asking price"
+              display={askingPrice != null ? formatCurrency(askingPrice) : null}
+              onSave={(n) => saveProperty?.({ askingPrice: n })}
+            />
             <FeasoFieldCell
               value={feaso.offerPrice}
               label="offer price"
@@ -598,7 +636,7 @@ export function ProjectFeasibilityTab({ property, feaso, salesComps, save }) {
 }
 
 // ── Inline cell editor for the benchmark table grid ───────────────────────────
-function FeasoFieldCell({ value, display, onSave, highlight, label = "this figure" }) {
+function FeasoFieldCell({ value, display, onSave, highlight, label = "this figure", suggestion, suggestionLabel }) {
   const [editing, setEditing]   = useState(false);
   const [inputVal, setInputVal] = useState('');
   const inputRef                = useRef(null);
@@ -628,7 +666,21 @@ function FeasoFieldCell({ value, display, onSave, highlight, label = "this figur
         />
       ) : (
         <span className={`text-sm font-semibold tabular-nums flex items-center gap-1 ${highlight ? 'text-brand-500' : display ? 'text-brand-200' : 'text-brand-100/40 italic text-xs font-normal'}`}>
-          {display ?? 'Click to add'}
+          {display ?? (
+            // Nothing adopted yet. Offer the midpoint of the evidence range —
+            // never applied automatically, the same rule the adopted cap rate
+            // follows. The analyst commits the number, not Oracle.
+            suggestion != null ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onSave(suggestion); }}
+                title="Adopt the midpoint of the evidence range"
+                className="text-[11px] font-normal not-italic text-brand-500/80 hover:text-brand-400 underline decoration-dotted underline-offset-2"
+              >
+                Use {suggestionLabel ?? suggestion}
+              </button>
+            ) : 'Click to add'
+          )}
           <Pencil className="w-2.5 h-2.5 text-brand-100/40 opacity-0 group-hover:opacity-100 transition-opacity" />
         </span>
       )}

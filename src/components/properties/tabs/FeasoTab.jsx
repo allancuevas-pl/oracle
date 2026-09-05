@@ -19,12 +19,16 @@ export function FeasoTab({ property }) {
 
   const upsertFeaso = useMutation(api.feasos.upsertFeaso);
   const linkComp    = useMutation(api.comps.linkCompToProperty);
+  const updateProperty = useMutation(api.properties.updateProperty);
   const generateSheet = useAction(api.googleSheets.generateFeasoSheet);
 
   const feasoData   = useQuery(api.feasos.getFeasoForProperty, { propertyId: property._id });
   const linkedComps = useQuery(api.comps.getCompsByProperty,   { propertyId: property._id });
 
   const save = (updates) => upsertFeaso({ propertyId: property._id, ...updates });
+  // The asking price lives on the property, not the feaso. Will was on this tab
+  // trying to correct it and had to go to the Details tab to do it (2026-09-02).
+  const saveProperty = (updates) => updateProperty({ id: property._id, ...updates });
 
   const sheetUrl = generatedUrl ?? property.feasoSheetUrl ?? null;
   const sheetId = sheetUrl ? (sheetUrl.match(/\/d\/([A-Za-z0-9_-]+)/)?.[1] ?? null) : null;
@@ -93,6 +97,7 @@ export function FeasoTab({ property }) {
           leasingComps={leasingComps}
           salesComps={salesComps}
           save={save}
+          saveProperty={saveProperty}
         />
       )}
       {activeTab === 'sheet' && !sheetUrl && (
