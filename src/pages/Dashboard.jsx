@@ -5,6 +5,7 @@ import { api } from '../../convex/_generated/api';
 import { ArrowUpRight, TrendingUp, Users, Building2 } from 'lucide-react';
 import { Spinner } from '../components/ui/Loading';
 import { formatCurrency } from '../utils/format';
+import { rowProps } from '../utils/rowProps';
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -112,8 +113,11 @@ export function Dashboard() {
                 {stats.recentBriefs.map((brief) => (
                   <tr
                     key={brief._id}
-                    onClick={() => navigate(`/briefs/${brief._id}`)}
-                    className="border-b border-brand-800/20 hover:bg-brand-900/10 transition-colors cursor-pointer"
+                    {...rowProps(
+                      () => navigate(`/briefs/${brief._id}`),
+                      `Open ${brief.clientName}'s brief`,
+                    )}
+                    className="border-b border-brand-800/20 hover:bg-brand-900/10 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-500/60"
                   >
                     <td className="px-6 py-4 font-medium text-brand-50">{brief.clientName}</td>
                     <td className="px-6 py-4 text-brand-100/70">{brief.assetTarget}</td>

@@ -176,6 +176,27 @@ function auditFile(file, code) {
       const onClick = attr(node, "onClick");
       const isNative = NATIVE_INTERACTIVE.has(name);
 
+      // 0. A control that isn't wired to anything.
+      //
+      // The walkthrough found the notifications bell: a <button> with a hover
+      // state and aria-label="Notifications" and no onClick at all. This audit
+      // MISSED it, because it treated every <button> as interactive by
+      // definition. A button is a promise too.
+      if ((name === "button" || name === "IconButton") && !onClick) {
+        const submits = attr(node, "type")?.value?.value === "submit";
+        const formish = !!attr(node, "form") || !!attr(node, "onSubmit");
+        const delegated = !!attr(node, "as") || !!attr(node, "href") || !!attr(node, "to");
+        // The already-selected segment of a toggle or tab group legitimately
+        // does nothing when clicked — that is the convention, not a defect.
+        const selected = ["aria-pressed", "aria-selected", "aria-current", "disabled"].some(
+          (a) => attr(node, a)?.value?.value === "true" || attr(node, a)?.value === null);
+        if (!submits && !formish && !delegated && !selected) {
+          add("dead-control", file, line,
+            `<${name}> has no onClick, type="submit" or href — it does nothing`,
+            "Renders as a control, hovers like a control, does nothing.");
+        }
+      }
+
       // 1. Dressed as clickable, does nothing.
       if (/\bcursor-pointer\b/.test(cls) && !onClick && !isNative && !hasInteractiveAncestor(p)) {
         add("looks-clickable", file, line,
@@ -315,7 +336,7 @@ const shown = only ? findings.filter((f) => f.rule === only) : findings;
 const byRule = shown.reduce((acc, f) => ((acc[f.rule] ||= []).push(f), acc), {});
 
 const RULES = [
-  "looks-clickable", "unlinked-record", "drag-only",
+  "dead-control", "looks-clickable", "unlinked-record", "drag-only",
   "no-affordance", "keyboard-unreachable", "orphan-route", "no-back",
 ];
 

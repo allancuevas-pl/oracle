@@ -31,8 +31,11 @@ export function RecordWorkspace({
       {/* 1. Header Area */}
       <div className="flex-none bg-[#0A0A0A] border-b border-white/5 px-6 lg:px-8 py-5 flex items-center justify-between z-10 sticky top-0 shadow-sm backdrop-blur-md">
         <div className="flex items-center space-x-4">
-          <button 
+          <button
             onClick={handleBack}
+            type="button"
+            aria-label="Go back"
+            title="Go back"
             className="p-1.5 rounded-md bg-white/[0.02] hover:bg-white/[0.06] text-brand-100/50 hover:text-brand-400 transition-all border border-white/5 shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />

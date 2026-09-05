@@ -95,6 +95,9 @@ export function PropertyView() {
             <div className="flex items-center space-x-4 min-w-0">
               <button
                 onClick={goBack}
+                type="button"
+                aria-label="Go back"
+                title="Go back"
                 className="p-1.5 rounded-md bg-white/[0.02] hover:bg-white/[0.06] text-brand-100/50 hover:text-brand-400 transition-all border border-white/5 shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
