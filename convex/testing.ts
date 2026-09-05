@@ -1,4 +1,4 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { compSearchText } from "./comps";
 
@@ -104,3 +104,29 @@ export const seedPortalDeal = internalMutation({
   },
 });
 
+
+/**
+ * Everything cloneAndFill needs, read straight from the DB.
+ *
+ * `generateFeasoSheet` composes authed public queries, which have no identity
+ * when driven from the CLI — so verifying a template change end-to-end needs
+ * this. Internal, read-only.
+ */
+export const feasoBundle = internalQuery({
+  args: { propertyId: v.id("properties") },
+  handler: async (ctx, { propertyId }) => {
+    const property = await ctx.db.get(propertyId);
+    if (!property) throw new Error("Property not found");
+    const [comps, feaso] = await Promise.all([
+      ctx.db
+        .query("comps")
+        .withIndex("by_linkedProperty", (q) => q.eq("linkedPropertyId", propertyId))
+        .take(50),
+      ctx.db
+        .query("feasos")
+        .withIndex("by_propertyId", (q) => q.eq("propertyId", propertyId))
+        .first(),
+    ]);
+    return { property, comps, feaso };
+  },
+});

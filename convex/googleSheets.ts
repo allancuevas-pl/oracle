@@ -26,6 +26,96 @@ const PF = {
   projectYears: "C25",                  // "Project time" ... "Years"
   tenancyRows: [14, 15, 16, 17, 18],    // Unit | Tenant | Size | ... | Current Rent
 };
+const CASH   = "Cashflow Inputs & Analysis";
+const OUT    = "Outgoings";
+
+/**
+ * Cell maps for the two tabs the generator used to leave completely untouched.
+ *
+ * Both inherited the master template's contents verbatim, which means every
+ * FEASO ever generated shipped with whatever deal the master was last saved
+ * from — the same failure as the "AH Beard" tenancy block, just one tab over.
+ * Outgoings carried $10k council rates / $5k water / $50k land tax / $5k
+ * insurance; Cashflow carried a 2025-2034 year row, a 50% year-one vacancy and
+ * two 20% rent-growth spikes in years 4 and 8.
+ */
+const OUTGOINGS = {
+  firstRow: 2,
+  lastRow: 8,          // A2:C8 is the table body; A9/B9 is the Total line
+  total: "B9",
+};
+
+const CF = {
+  ltv: "G12",                    // "LTV Ratio"
+  years: "C24:L24",              // the Cash Flow Analysis year header
+  rentGrowth: "D20:L20",         // years 2-10 rent growth
+  vacancyByYear: "C21:L21",      // years 1-10 vacancy
+};
+
+/**
+ * Rent growth Oracle cannot know. The master holds 4% in seven of the nine
+ * cells and 20% in two — those two are a previous deal's reletting events, so
+ * the tab is flattened to the template's OWN base rate rather than cleared:
+ * a blank would silently model 0% growth, and another client's spike is not an
+ * option. The analyst overrides it in the sheet.
+ */
+const CF_BASE_RENT_GROWTH = 0.04;
+
+export type OutgoingItem = { category?: string; amount?: number; recoverable?: boolean };
+
+/**
+ * The Outgoings tab body, as rows of [Item, Amount, Recoverable].
+ *
+ * With no outgoings recorded we clear ONLY the amounts: the item labels are the
+ * template's own prompts (Council Rates, Water Rates, Land Tax, ...) and are
+ * worth keeping for the analyst, but the dollar figures belong to another deal.
+ */
+export function outgoingsRows(items: OutgoingItem[] | undefined): {
+  rows: Array<Array<string | number>> | null;
+  amountsOnly: Array<[number | ""]> | null;
+} {
+  const capacity = OUTGOINGS.lastRow - OUTGOINGS.firstRow + 1;
+  const list = (items ?? []).filter((i) => i && (i.category || num(i.amount) !== null));
+
+  if (list.length === 0) {
+    return { rows: null, amountsOnly: Array.from({ length: capacity }, () => [""] as [""]) };
+  }
+
+  const rows: Array<Array<string | number>> = [];
+  for (let i = 0; i < capacity; i++) {
+    const item = list[i];
+    if (!item) { rows.push(["", "", ""]); continue; }
+    rows.push([
+      item.category ?? "",
+      num(item.amount) ?? "",
+      item.recoverable === true ? "yes" : item.recoverable === false ? "no" : "",
+    ]);
+  }
+  return { rows, amountsOnly: null };
+}
+
+/** Anything past the 7 template rows can't be written — say so rather than drop it. */
+export function outgoingsOverflow(items: OutgoingItem[] | undefined): number {
+  const capacity = OUTGOINGS.lastRow - OUTGOINGS.firstRow + 1;
+  return Math.max(0, (items ?? []).length - capacity);
+}
+
+/** The ten-year header, starting from the year the sheet is generated. */
+export function cashflowYears(startYear: number): number[] {
+  return Array.from({ length: 10 }, (_, i) => startYear + i);
+}
+
+/**
+ * Year-one vacancy as a fraction of the year, from the feaso's vacancy
+ * allowance in months. The master's 50% is exactly six months of a previous
+ * deal. Years 2-10 are 0 — an ongoing vacancy assumption is the analyst's call.
+ */
+export function vacancyByYear(vacancyMonths: number | undefined | null): Array<number | ""> {
+  const m = num(vacancyMonths);
+  const yearOne = m === null ? "" : Math.min(1, Math.max(0, m / 12));
+  return [yearOne, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
 const num = (x: any): number | null => (typeof x === "number" && Number.isFinite(x) ? x : null);
 
 async function saToken(scopes: string[]) {
@@ -235,6 +325,50 @@ async function cloneAndFill(token: string, templateId: string, sharedDriveId: st
     data.push({ range: `'${FEAS}'!M${row}`, values: [[feaso ? num(feaso.marketRentHigh) ?? "" : ""]] });
   });
 
+  // ── Outgoings tab ─────────────────────────────────────────────────────────
+  // Previously inherited from the master verbatim, so every generated FEASO
+  // carried $10k council rates / $5k water / $50k land tax / $5k insurance from
+  // whichever deal the template was last saved from.
+  const outgoings = Array.isArray(property.outgoings) ? property.outgoings : [];
+  const og = outgoingsRows(outgoings);
+  if (og.rows) {
+    data.push({
+      range: `'${OUT}'!A${OUTGOINGS.firstRow}:C${OUTGOINGS.lastRow}`,
+      values: og.rows,
+    });
+  } else if (og.amountsOnly) {
+    // No outgoings recorded: clear the money, keep the template's item prompts.
+    data.push({
+      range: `'${OUT}'!B${OUTGOINGS.firstRow}:B${OUTGOINGS.lastRow}`,
+      values: og.amountsOnly,
+    });
+  }
+  // The master totals =SUM(B2:B5) — only the first four of its seven rows, so
+  // anything written to rows 6-8 was silently excluded. Widen it in the copy.
+  data.push({
+    range: `'${OUT}'!${OUTGOINGS.total}`,
+    values: [[`=SUM(B${OUTGOINGS.firstRow}:B${OUTGOINGS.lastRow})`]],
+  });
+
+  // ── Cashflow Inputs & Analysis ────────────────────────────────────────────
+  // The year header was hardcoded 2025-2034 in the master, so every FEASO
+  // claimed the model started in 2025 no matter when it was generated.
+  data.push({ range: `'${CASH}'!${CF.years}`, values: [cashflowYears(new Date().getUTCFullYear())] });
+
+  // Year-one vacancy: the master's 50% is six months of a previous deal.
+  data.push({ range: `'${CASH}'!${CF.vacancyByYear}`, values: [vacancyByYear(feaso?.vacancyMonths)] });
+
+  // Rent growth: flatten the previous deal's two 20% spikes to the template's
+  // own base rate. See CF_BASE_RENT_GROWTH.
+  data.push({
+    range: `'${CASH}'!${CF.rentGrowth}`,
+    values: [Array.from({ length: 9 }, () => CF_BASE_RENT_GROWTH)],
+  });
+
+  if (feaso && num(feaso.ltvRatio) !== null) {
+    data.push({ range: `'${CASH}'!${CF.ltv}`, values: [[num(feaso.ltvRatio)]] });
+  }
+
   const { res: writeRes, body: writeBody } = await fetchWithRetry(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchUpdate`, {
     method: "POST", headers: auth,
     body: JSON.stringify({ valueInputOption: "USER_ENTERED", data }),
@@ -243,6 +377,33 @@ async function cloneAndFill(token: string, templateId: string, sharedDriveId: st
 
   return { id, url };
 }
+
+/**
+ * VERIFICATION tool: generate a FEASO from real data without touching the
+ * property's live sheet link. Internal.
+ *
+ * Deliberately does NOT call setFeasoSheet — a verification run must not
+ * replace the sheet the team is actually using. The generated file lands in
+ * the Shared Drive and the service account cannot delete it, so trash it by
+ * hand afterwards (same caveat as every previous verification run).
+ *
+ *   npx convex run --prod googleSheets:testGenerateFeaso '{"propertyId":"..."}'
+ */
+export const testGenerateFeaso = internalAction({
+  args: { propertyId: v.id("properties") },
+  handler: async (ctx, { propertyId }): Promise<{ url: string; id: string }> => {
+    const templateId = process.env.GOOGLE_FEASO_TEMPLATE_ID;
+    const sharedDriveId = process.env.GOOGLE_SHARED_DRIVE_ID;
+    if (!templateId || !sharedDriveId) throw new Error("FEASO template / shared drive not configured.");
+
+    const bundle: any = await ctx.runQuery(internal.testing.feasoBundle, { propertyId });
+    const token = await saToken([
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/drive",
+    ]);
+    return await cloneAndFill(token, templateId, sharedDriveId, bundle.property, bundle.comps ?? [], bundle.feaso);
+  },
+});
 
 /**
  * READ-ONLY maintenance tool: dump a FEASO sheet's structure.
