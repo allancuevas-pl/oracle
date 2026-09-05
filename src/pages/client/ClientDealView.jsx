@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { ArrowLeft, CheckCircle2, XCircle, FileText, Download } from 'lucide-react';
 import { PageLoader } from '../../components/ui/Loading';
 import { VideoCard } from '../../components/properties/PropertyVideos';
 import { formatCurrency, formatFileSize } from '../../utils/format';
+import { useGoBack } from '../../hooks/useGoBack';
 
 // Reuse same helpers as ReportView
 const fmtPct = (v) => (v != null ? `${v}%` : '—');
@@ -31,7 +32,7 @@ function SectionTitle({ children }) {
 
 export function ClientDealView() {
   const { token } = useParams();
-  const navigate  = useNavigate();
+  const goBack = useGoBack('/client');
   const submitDecision = useMutation(api.dealReports.submitClientDecision);
   const markViewed     = useMutation(api.dealReports.markReportViewed);
 
@@ -55,7 +56,7 @@ export function ClientDealView() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
         <p className="text-brand-100/40 text-sm">Deal not found or you don't have access to it.</p>
-        <button onClick={() => navigate('/client')} className="mt-4 text-brand-500 text-sm hover:text-brand-400">
+        <button onClick={goBack} className="mt-4 text-brand-500 text-sm hover:text-brand-400">
           Back to dashboard
         </button>
       </div>
@@ -93,7 +94,7 @@ export function ClientDealView() {
 
       {/* Back */}
       <button
-        onClick={() => navigate('/client')}
+        onClick={goBack}
         className="flex items-center gap-2 text-xs text-brand-100/40 hover:text-brand-400 transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" /> Back to dashboard
@@ -259,7 +260,7 @@ export function ClientDealView() {
                 ? 'You approved this deal' : 'You declined this deal'}
             </p>
             <p className="text-sm text-brand-100/40">Property Lions has been notified.</p>
-            <button onClick={() => navigate('/client')} className="mt-2 text-sm text-brand-500 hover:text-brand-400">
+            <button onClick={goBack} className="mt-2 text-sm text-brand-500 hover:text-brand-400">
               Back to dashboard
             </button>
           </div>

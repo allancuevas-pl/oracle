@@ -15,11 +15,13 @@ import { toast } from 'sonner';
 
 import { formatCurrency } from '../utils/format';
 import { daysOpen } from '../utils/briefDate';
+import { useGoBack } from '../hooks/useGoBack';
 
 
 export function ClientView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = useGoBack('/clients');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBriefModalOpen, setIsBriefModalOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -51,7 +53,7 @@ export function ClientView() {
     return (
       <div className="text-center mt-20">
         <p className="text-brand-100/50">Client not found.</p>
-        <button onClick={() => navigate('/clients')} className="mt-4 text-brand-500 hover:text-brand-400 text-sm">
+        <button onClick={goBack} className="mt-4 text-brand-500 hover:text-brand-400 text-sm">
           Back to Clients
         </button>
       </div>
@@ -70,7 +72,7 @@ export function ClientView() {
       <RecordWorkspace
         title={client.name}
         subtitle={client.company || undefined}
-        onBack={() => navigate('/clients')}
+        onBack={goBack}
         actions={
           <>
             <IconButton icon={Pencil} label="Edit Client" onClick={() => setIsEditModalOpen(true)} />

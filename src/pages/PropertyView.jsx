@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { ArrowLeft, Pencil, MoreHorizontal, Archive } from 'lucide-react';
@@ -18,6 +18,7 @@ import { ReportsTab }     from '../components/properties/tabs/ReportsTab';
 import { FilesTab }       from '../components/properties/tabs/FilesTab';
 import { PropertyVideos } from '../components/properties/PropertyVideos';
 import { PulseFeed }      from '../components/ui/PulseFeed';
+import { useGoBack } from '../hooks/useGoBack';
 
 const TABS = [
   { id: 'details',      label: 'Details' },
@@ -33,7 +34,7 @@ const TABS = [
 
 export function PropertyView() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const goBack = useGoBack('/properties');
   const [activeTab, setActiveTab] = useState('details');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -71,7 +72,7 @@ export function PropertyView() {
     return (
       <div className="text-center mt-20">
         <p className="text-brand-100/50">Property not found.</p>
-        <button onClick={() => navigate('/properties')} className="mt-4 text-brand-500 hover:text-brand-400 text-sm">
+        <button onClick={goBack} className="mt-4 text-brand-500 hover:text-brand-400 text-sm">
           Go Back
         </button>
       </div>
@@ -93,7 +94,7 @@ export function PropertyView() {
           <div className="border-b border-white/5 px-6 lg:px-8 py-5 flex items-center justify-between shadow-sm">
             <div className="flex items-center space-x-4 min-w-0">
               <button
-                onClick={() => navigate('/properties')}
+                onClick={goBack}
                 className="p-1.5 rounded-md bg-white/[0.02] hover:bg-white/[0.06] text-brand-100/50 hover:text-brand-400 transition-all border border-white/5 shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />

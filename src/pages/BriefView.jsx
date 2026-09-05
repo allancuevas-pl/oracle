@@ -14,10 +14,12 @@ import { PageLoader, Spinner } from '../components/ui/Loading';
 import { toast } from 'sonner';
 import { formatCurrency } from '../utils/format';
 import { daysOpen } from '../utils/briefDate';
+import { useGoBack } from '../hooks/useGoBack';
 
 export function BriefView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = useGoBack('/briefs');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -49,7 +51,7 @@ export function BriefView() {
     return (
       <div className="text-center mt-20">
         <p className="text-brand-100/50">Brief not found.</p>
-        <button onClick={() => navigate('/briefs')} className="mt-4 text-brand-500 hover:text-brand-400 text-sm">Go Back</button>
+        <button onClick={goBack} className="mt-4 text-brand-500 hover:text-brand-400 text-sm">Go Back</button>
       </div>
     );
   }
@@ -67,7 +69,7 @@ export function BriefView() {
       <RecordWorkspace
         title={brief.client ? brief.client.name : brief.clientName}
         subtitle={`${subtitlePrefix}${brief.client?.company ? brief.client.company + ' · ' : ''}Opened ${openFor} day${openFor !== 1 ? 's' : ''} ago`}
-        onBack={() => navigate('/briefs')}
+        onBack={goBack}
         actions={
           <>
             {/* Match Property — primary action */}

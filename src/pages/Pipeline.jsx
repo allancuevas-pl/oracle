@@ -120,13 +120,24 @@ function DealCard({ match, isDragging = false, usersMap = {} }) {
       }}
       className="hover:border-white/[0.14] hover:bg-white/[0.04] hover:shadow-md"
     >
-      {/* Property */}
+      {/* Property.
+          The address is the most prominent thing on the card and used to be
+          plain text: the card was drag-only, and its single navigable element
+          was a 12px arrow that went to the BRIEF. You could see a property on
+          the board and have no way to open it.
+          Safe inside the draggable — the PointerSensor needs 5px of movement
+          before a drag starts, so a plain click still reaches the link. */}
       <div className="flex items-start gap-2 mb-2.5">
         <Building2 size={12} className="text-brand-400 mt-0.5 shrink-0" />
         <div className="min-w-0">
-          <p className="text-brand-50 text-[13px] font-medium leading-snug truncate">
+          <Link
+            to={`/properties/${match.propertyId}`}
+            onClick={(e) => e.stopPropagation()}
+            title={property?.address ? `Open ${property.address}` : undefined}
+            className="block text-brand-50 text-[13px] font-medium leading-snug truncate hover:text-brand-400 hover:underline decoration-brand-500/40 underline-offset-2 transition-colors"
+          >
             {property?.address || 'Unknown Property'}
-          </p>
+          </Link>
           {property?.location && (
             <p className="text-brand-400/70 text-[10px] mt-0.5 flex items-center gap-1">
               <MapPin size={9} />
@@ -159,9 +170,14 @@ function DealCard({ match, isDragging = false, usersMap = {} }) {
       <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]">
         <div className="flex items-center gap-1.5 min-w-0">
           <FileText size={10} className="text-brand-500 shrink-0" />
-          <span className="text-brand-400/80 text-[11px] truncate">
+          <Link
+            to={`/briefs/${match.briefId}`}
+            onClick={(e) => e.stopPropagation()}
+            title={brief?.clientName ? `Open ${brief.clientName}'s brief` : undefined}
+            className="text-brand-400/80 text-[11px] truncate hover:text-brand-400 hover:underline decoration-brand-500/40 underline-offset-2 transition-colors"
+          >
             {brief?.clientName || 'Unknown Brief'}
-          </span>
+          </Link>
           {brief?.briefId && (
             <span className="text-brand-600 text-[10px] shrink-0">#{brief.briefId}</span>
           )}
